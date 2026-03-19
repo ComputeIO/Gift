@@ -115,6 +115,28 @@ pub static PLATFORM_EXTENSIONS: Lazy<HashMap<&'static str, PlatformExtensionDef>
             },
         );
 
+        #[cfg(feature = "code-mode")]
+        map.insert(
+            code_execution::EXTENSION_NAME,
+            PlatformExtensionDef {
+                name: code_execution::EXTENSION_NAME,
+                display_name: "Code Mode",
+                description:
+                    "Goose will make extension calls through code execution, saving tokens",
+                default_enabled: false,
+                unprefixed_tools: true,
+                client_factory: |ctx| {
+                    Box::new(
+                        code_execution::CodeExecutionClient::new(
+                            ctx,
+                            code_execution::get_tool_disclosure(),
+                        )
+                        .unwrap(),
+                    )
+                },
+            },
+        );
+
         map.insert(
             developer::EXTENSION_NAME,
             PlatformExtensionDef {
