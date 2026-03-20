@@ -67,14 +67,12 @@ fn setup_logging_internal(name: Option<&str>, force: bool, verbose: bool) -> Res
                 EnvFilter::try_from_default_env().unwrap_or_else(|_| default_env_filter());
 
             // Start building the subscriber
-            let mut layers = vec![
-                file_layer.with_filter(env_filter).boxed(),
-            ];
+            let mut layers = vec![file_layer.with_filter(env_filter).boxed()];
 
             // Console logging layer when verbose mode is enabled
             if verbose {
-                let console_filter = EnvFilter::try_from_default_env()
-                    .unwrap_or_else(|_| EnvFilter::new("debug"));
+                let console_filter =
+                    EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("debug"));
                 let console_layer = fmt::layer()
                     .with_target(true)
                     .with_level(true)

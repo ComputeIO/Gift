@@ -149,13 +149,7 @@ fn get_env_with_template_variables(
     let env = add_template_in_env(content, recipe_dir, undefined_behavior)?;
     let template_variables = {
         let template = env.get_template(CURRENT_TEMPLATE_NAME).unwrap();
-        let captured = template.render_captured(())?;
-        let state = captured.state();
-        let mut vars = HashSet::new();
-        for (_, tmpl) in state.env().templates() {
-            vars.extend(tmpl.undeclared_variables(true));
-        }
-        vars
+        template.undeclared_variables(true)
     };
     Ok((env, template_variables))
 }
