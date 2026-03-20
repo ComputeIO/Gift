@@ -447,9 +447,7 @@ fn select_model_from_list(
 
     // Sort models naturally
     let mut sorted_models = models.to_vec();
-    sorted_models.sort_by(|a, b| {
-        a.to_lowercase().cmp(&b.to_lowercase())
-    });
+    sorted_models.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
 
     if sorted_models.len() > MAX_MODELS {
         // Use models from API directly, not filtered through known_models
@@ -470,9 +468,7 @@ fn select_model_from_list(
             }
         }
 
-        recommended_models.sort_by(|a, b| {
-            a.to_lowercase().cmp(&b.to_lowercase())
-        });
+        recommended_models.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
 
         if !recommended_models.is_empty() {
             let mut model_items: Vec<(String, String, &str)> = recommended_models
@@ -510,8 +506,10 @@ fn select_model_from_list(
             Ok(interactive_model_search(&sorted_models)?)
         }
     } else {
-        let mut model_items: Vec<(String, String, &str)> =
-            sorted_models.iter().map(|m| (m.clone(), m.clone(), "")).collect();
+        let mut model_items: Vec<(String, String, &str)> = sorted_models
+            .iter()
+            .map(|m| (m.clone(), m.clone(), ""))
+            .collect();
 
         model_items.push((
             UNLISTED_MODEL_KEY.to_string(),

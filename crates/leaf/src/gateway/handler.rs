@@ -64,8 +64,7 @@ impl GatewayHandler {
                         .send_message(
                             &message.user,
                             OutgoingMessage::Text {
-                                body: "Welcome! Enter your pairing code to connect to leaf."
-                                    .into(),
+                                body: "Welcome! Enter your pairing code to connect to leaf.".into(),
                             },
                         )
                         .await?;
