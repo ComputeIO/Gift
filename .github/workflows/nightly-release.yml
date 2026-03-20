@@ -1,0 +1,148 @@
+# Nightly release workflow for Leaf CLI
+# Builds and publishes nightly releases on schedule or manual trigger
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+  workflow_dispatch:  # Allow manual trigger
+    inputs:
+      ref:
+        description: 'Branch or commit to build (defaults to cli branch)'
+        required: false
+        default: 'cli'
+
+name: Nightly Release
+
+# Permissions needed for AWS OIDC authentication in called workflows
+permissions:
+  id-token: write   # Required for AWS OIDC authentication in called workflow
+  contents: write   # Required for creating releases and by actions/checkout
+  actions: read     # May be needed for some workflows
+  attestations: write  # Required for SLSA build provenance attestations
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ------------------------------------
+  # 1) Build CLI for multiple OS/Arch
+  # ------------------------------------
+  build-cli:
+    uses: ./.github/workflows/build-cli.yml
+    with:
+      ref: ${{ github.event.inputs.ref || 'cli' }}
+
+  # ------------------------------------
+  # 2) Upload Install CLI Script
+  # ------------------------------------
+  install-script:
+    name: Upload Install Script
+    runs-on: ubuntu-latest
+    needs: [build-cli]
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+        with:
+          ref: ${{ github.event.inputs.ref || 'cli' }}
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+        with:
+          name: download_cli.sh
+          path: download_cli.sh
+
+  # ------------------------------------
+  # 3) Create/Update Nightly GitHub Release
+  # ------------------------------------
+  release:
+    name: Nightly Release
+    runs-on: ubuntu-latest
+    needs: [build-cli, install-script]
+    permissions:
+      contents: write
+      id-token: write      # Required for Sigstore OIDC signing
+      attestations: write  # Required for SLSA build provenance attestations
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
+        with:
+          merge-multiple: true
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f  # v3.2.0
+        with:
+          subject-path: |
+            leaf-*.tar.bz2
+            leaf-*.zip
+            download_cli.sh
+
+      # Delete old nightly releases (keep only latest)
+      - name: Delete old nightly releases
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea  # v7.0.1
+        with:
+          script: |
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 10
+            });
+            
+            for (const release of releases) {
+              if (release.tag_name === 'nightly' && release.id !== context.payload.release?.id) {
+                console.log(`Deleting old nightly release ${release.id}`);
+                await github.rest.repos.deleteRelease({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  release_id: release.id
+                });
+              }
+            }
+
+      # Update nightly tag to current commit
+      - name: Update nightly tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -fa nightly -m "Nightly build"
+          git push origin nightly --force
+
+      # Create/update the nightly release
+      - name: Release nightly
+        uses: ncipollo/release-action@b7eabc95ff50cbeeedec83973935c8f306dfcd0b  # v1.20.0
+        with:
+          tag: nightly
+          name: Nightly
+          body: |
+            ## Leaf CLI Nightly Build
+            
+            **Build Date:** ${{ github.event.repository.updated_at }}
+            **Commit:** ${{ github.sha }}
+            **Branch:** ${{ github.event.inputs.ref || 'cli' }}
+            
+            This is an automated nightly build of the Leaf CLI. These builds are
+            created daily from the latest code on the `cli` branch.
+            
+            ### Installation
+            
+            #### Linux/macOS
+            ```bash
+            curl -sSL https://github.com/LeafAI/Leaf/releases/download/nightly/download_cli.sh | bash
+            ```
+            
+            #### Windows
+            Download the appropriate `.zip` file for your architecture and extract it.
+            
+            ### Supported Platforms
+            - Linux (x86_64, aarch64)
+            - macOS (x86_64, aarch64/Apple Silicon)
+            - Windows (x86_64)
+            
+            ### Warning
+            Nightly builds are bleeding-edge and may contain bugs. For stable releases,
+            please use the [versioned releases](https://github.com/LeafAI/Leaf/releases).
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: |
+            leaf-*.tar.bz2
+            leaf-*.zip
+            download_cli.sh
+          allowUpdates: true
+          omitBody: false
+          omitPrereleaseDuringUpdate: true

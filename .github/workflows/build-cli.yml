@@ -121,14 +121,14 @@ jobs:
           echo "🚀 Building Windows CLI executable..."
           cargo build --release --target x86_64-pc-windows-msvc -p leaf-cli
 
-          if [ ! -f "./target/x86_64-pc-windows-msvc/release/goose.exe" ]; then
+          if [ ! -f "./target/x86_64-pc-windows-msvc/release/leaf.exe" ]; then
             echo "❌ Windows CLI binary not found."
             ls -la ./target/x86_64-pc-windows-msvc/release/ || echo "Release directory doesn't exist"
             exit 1
           fi
 
           echo "✅ Windows CLI binary found!"
-          ls -la ./target/x86_64-pc-windows-msvc/release/goose.exe
+          ls -la ./target/x86_64-pc-windows-msvc/release/leaf.exe
 
       - name: Package CLI (Linux/macOS)
         if: matrix.use-cross
@@ -137,15 +137,15 @@ jobs:
           export TARGET="${{ matrix.architecture }}-${{ matrix.target-suffix }}"
 
           # Create a directory for the package contents
-          mkdir -p "target/${TARGET}/release/goose-package"
+          mkdir -p "target/${TARGET}/release/leaf-package"
 
-          # Copy the goose binary
-          cp "target/${TARGET}/release/goose" "target/${TARGET}/release/goose-package/"
+          # Copy the leaf binary
+          cp "target/${TARGET}/release/leaf" "target/${TARGET}/release/leaf-package/"
 
           # Create the tar archive
           cd "target/${TARGET}/release"
-          tar -cjf "goose-${TARGET}.tar.bz2" -C goose-package .
-          echo "ARTIFACT=target/${TARGET}/release/goose-${TARGET}.tar.bz2" >> $GITHUB_ENV
+          tar -cjf "leaf-${TARGET}.tar.bz2" -C leaf-package .
+          echo "ARTIFACT=target/${TARGET}/release/leaf-${TARGET}.tar.bz2" >> $GITHUB_ENV
 
       - name: Package CLI (Windows)
         if: matrix.os == 'windows'
@@ -153,13 +153,13 @@ jobs:
         run: |
           export TARGET="${{ matrix.architecture }}-${{ matrix.target-suffix }}"
 
-          mkdir -p "target/${TARGET}/release/goose-package"
+          mkdir -p "target/${TARGET}/release/leaf-package"
 
-          cp "target/${TARGET}/release/goose.exe" "target/${TARGET}/release/goose-package/"
+          cp "target/${TARGET}/release/leaf.exe" "target/${TARGET}/release/leaf-package/"
 
           cd "target/${TARGET}/release"
-          7z a -tzip "goose-${TARGET}.zip" goose-package/
-          echo "ARTIFACT=target/${TARGET}/release/goose-${TARGET}.zip" >> $GITHUB_ENV
+          7z a -tzip "leaf-${TARGET}.zip" leaf-package/
+          echo "ARTIFACT=target/${TARGET}/release/leaf-${TARGET}.zip" >> $GITHUB_ENV
 
       - name: Upload CLI artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
