@@ -23,17 +23,24 @@ target/
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
 
+# UI
+node_modules
+./ui/desktop/out
+
+# Generated goose DLLs (built at build time, not checked in)
+ui/desktop/src/bin/goose_ffi.dll
+ui/desktop/src/bin/goose_llm.dll
+
 # Hermit
 .hermit/
 
 # Claude
-.claude/
+.claude
 
 debug_*.txt
 
 # Docs
 # Dependencies
-/node_modules
 
 # Production
 /build
@@ -47,9 +54,12 @@ benchmark-*
 benchconf.json
 scripts/fake.sh
 do_not_version/
+/ui/desktop/src/bin/temporal
 /temporal-service/temporal.db
+/ui/desktop/src/bin/temporal.db
 /temporal.db
-
+/ui/desktop/src/bin/goose-scheduler-executor
+/ui/desktop/src/bin/goose
 /.env
 
 /working_dir
@@ -67,6 +77,3 @@ result
 # Goose self-test artifacts
 gooseselftest/
 .tasks/
-
-**/tests/**/*.txt
-**/*tests*.new
