@@ -1,49 +1,138 @@
 <div align="center">
 
-# goose
+# Leaf
 
-_a local, extensible, open source AI agent that automates engineering tasks_
+_a pure CLI AI agent forked from Goose, focused on automation through the command line_
 
 <p align="center">
   <a href="https://opensource.org/licenses/Apache-2.0"
     ><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg"></a>
-  <a href="https://discord.gg/goose-oss"
-    ><img src="https://img.shields.io/discord/1287729918100246654?logo=discord&logoColor=white&label=Join+Us&color=blueviolet" alt="Discord"></a>
-  <a href="https://github.com/block/goose/actions/workflows/ci.yml"
-     ><img src="https://img.shields.io/github/actions/workflow/status/block/goose/ci.yml?branch=main" alt="CI"></a>
+  <a href="https://github.com/LeafAI/Leaf/actions/workflows/ci.yml"
+     ><img src="https://img.shields.io/github/actions/workflow/status/LeafAI/Leaf/ci.yml?branch=cli" alt="CI"></a>
 </p>
 </div>
 
-goose is your on-machine AI agent, capable of automating complex development tasks from start to finish. More than just code suggestions, goose can build entire projects from scratch, write and execute code, debug failures, orchestrate workflows, and interact with external APIs - _autonomously_.
+Leaf is a **pure CLI AI agent** forked from the [Goose](https://github.com/block/goose) project by Block. While Goose provides both desktop and CLI interfaces, Leaf focuses exclusively on command-line automation for developers who prefer terminal-based workflows.
 
-Whether you're prototyping an idea, refining existing code, or managing intricate engineering pipelines, goose adapts to your workflow and executes tasks with precision.
+## Key Differences from Goose
 
-Designed for maximum flexibility, goose works with any LLM and supports multi-model configuration to optimize performance and cost, seamlessly integrates with MCP servers, and is available as both a desktop app as well as CLI - making it the ultimate AI assistant for developers who want to move faster and focus on innovation.
+- **Pure CLI**: No desktop UI or Electron components - just a fast, terminal-based experience
+- **Lightweight**: Removed V8 dependencies and UI components for a smaller footprint
+- **Agent Protocol (ACP)**: Full support for Agent Client Protocol for multi-agent workflows
+- **MCP Integration**: Seamless integration with Model Context Protocol (MCP) servers
+- **Multi-Model**: Works with any LLM (OpenAI, Anthropic, local models, etc.)
 
-[![Watch the video](https://github.com/user-attachments/assets/ddc71240-3928-41b5-8210-626dfb28af7a)](https://youtu.be/D-DpDunrbpo)
+## What Leaf Can Do
 
-# Quick Links
-- [Quickstart](https://block.github.io/goose/docs/quickstart)
-- [Installation](https://block.github.io/goose/docs/getting-started/installation)
-- [Tutorials](https://block.github.io/goose/docs/category/tutorials)
-- [Documentation](https://block.github.io/goose/docs/category/getting-started)
-- [Governance](https://github.com/block/goose/blob/main/GOVERNANCE.md)
-- [Custom Distributions](https://github.com/block/goose/blob/main/CUSTOM_DISTROS.md) - build your own goose distro with preconfigured providers, extensions, and branding
+Leaf is your on-machine AI agent, capable of automating complex development tasks:
 
-## Need Help?
-- [Diagnostics & Reporting](https://block.github.io/goose/docs/troubleshooting/diagnostics-and-reporting)
-- [Known Issues](https://block.github.io/goose/docs/troubleshooting/known-issues)
+- **Code Generation**: Build projects from scratch, write and refactor code
+- **Debugging**: Analyze errors and fix issues autonomously
+- **Workflow Automation**: Execute complex multi-step engineering pipelines
+- **External Integrations**: Interact with APIs and external services via MCP
+- **Orchestration**: Delegate tasks to subagents with independent contexts
 
-# a little goose humor 🪿
+## Quick Start
 
-> Why did the developer choose goose as their AI agent?
-> 
-> Because it always helps them "migrate" their code to production! 🚀
+### Installation
 
-# goose around with us  
-- [Discord](https://discord.gg/goose-oss)
-- [YouTube](https://www.youtube.com/@goose-oss)
-- [LinkedIn](https://www.linkedin.com/company/goose-oss)
-- [Twitter/X](https://x.com/goose_oss)
-- [Bluesky](https://bsky.app/profile/opensource.block.xyz)
-- [Nostr](https://njump.me/opensource@block.xyz)
+```bash
+# Build from source
+cargo build --release --package leaf-cli
+
+# The binary will be at:
+./target/release/leaf
+```
+
+### Setup
+
+```bash
+# Configure your provider
+leaf configure
+
+# Start an interactive session
+leaf session
+
+# Or run a recipe
+leaf run --recipe my-recipe.yaml
+```
+
+### Example Usage
+
+```bash
+# Ask Leaf to help with a task
+leaf session
+
+# Run with a specific provider
+leaf session --provider openai
+
+# Use recipes for repeatable workflows
+leaf run --recipe deploy.yaml
+```
+
+## Architecture
+
+```
+crates/
+├── leaf              # Core agent logic
+├── leaf-acp          # Agent Client Protocol implementation
+├── leaf-cli          # Command-line interface
+├── leaf-mcp          # Model Context Protocol extensions
+└── leaf-server       # ACP server (leafd)
+```
+
+## Project Status
+
+Leaf is a community fork focused on CLI-only workflows. It maintains compatibility with:
+- **MCP Servers**: All standard Model Context Protocol servers
+- **Recipes**: YAML-based automation workflows
+- **Extensions**: Dynamic tool loading via MCP
+
+## Documentation
+
+- [Getting Started](#getting-started) - Installation and first steps
+- [Configuration](#configuration) - Setting up providers and extensions
+- [Recipes](#recipes) - Automation workflows
+- [MCP Extensions](#mcp-extensions) - Available tools and integrations
+
+## Development
+
+```bash
+# Setup
+source bin/activate-hermit
+
+# Build
+cargo build --release
+
+# Test
+cargo test --package leaf-cli
+
+# Lint
+cargo clippy --all-targets -- -D warnings
+cargo fmt
+```
+
+## Contributing
+
+We welcome contributions! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and linting
+5. Submit a PR
+
+## License
+
+Apache License 2.0 - see [LICENSE](LICENSE) file.
+
+## Acknowledgments
+
+Leaf is a fork of [Goose](https://github.com/block/goose) by Block. We're grateful for the solid foundation they built.
+
+---
+
+<div align="center">
+
+**Pure CLI. Maximum Control. No UI Overhead.**
+
+</div>
