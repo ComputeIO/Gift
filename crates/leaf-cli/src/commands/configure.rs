@@ -448,7 +448,7 @@ fn select_model_from_list(
 
     // Sort models naturally
     let mut sorted_models = models.to_vec();
-    sorted_models.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
+    sorted_models.sort_by_key(|a| a.to_lowercase());
 
     if sorted_models.len() > MAX_MODELS {
         // Use models from API directly, not filtered through known_models
@@ -469,7 +469,7 @@ fn select_model_from_list(
             }
         }
 
-        recommended_models.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
+        recommended_models.sort_by_key(|a| a.to_lowercase());
 
         if !recommended_models.is_empty() {
             let mut model_items: Vec<(String, String, &str)> = recommended_models

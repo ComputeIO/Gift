@@ -642,13 +642,13 @@ derive_utoipa!(Icon as IconSchema);
         super::tunnel::TunnelInfo,
         super::tunnel::TunnelState,
         super::routes::telemetry::TelemetryEventRequest,
-        leaf::goose_apps::GooseApp,
-        leaf::goose_apps::WindowProps,
-        leaf::goose_apps::McpAppResource,
-        leaf::goose_apps::CspMetadata,
-        leaf::goose_apps::PermissionsMetadata,
-        leaf::goose_apps::UiMetadata,
-        leaf::goose_apps::ResourceMetadata,
+        leaf::leaf_apps::GooseApp,
+        leaf::leaf_apps::WindowProps,
+        leaf::leaf_apps::McpAppResource,
+        leaf::leaf_apps::CspMetadata,
+        leaf::leaf_apps::PermissionsMetadata,
+        leaf::leaf_apps::UiMetadata,
+        leaf::leaf_apps::ResourceMetadata,
     ))
 )]
 pub struct ApiDoc;
