@@ -577,6 +577,7 @@ pub fn is_tool_visible_to_app(tool: &Tool) -> bool {
 }
 
 /// Check whether a tool should be visible to the model based on MCP Apps visibility metadata.
+#[allow(clippy::items_after_test_module)]
 pub fn is_tool_visible_to_model(tool: &Tool) -> bool {
     let Some(meta) = &tool.meta else {
         return true;

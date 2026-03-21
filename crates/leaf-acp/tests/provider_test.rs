@@ -7,8 +7,8 @@ use common_tests::{
     run_config_mcp, run_fs_read_text_file_true, run_fs_write_text_file_false,
     run_fs_write_text_file_true, run_initialize_doesnt_hit_provider, run_load_mode, run_load_model,
     run_load_session_mcp, run_mode_set, run_model_list, run_model_set, run_permission_persistence,
-    run_prompt_basic, run_prompt_codemode, run_prompt_image, run_prompt_image_attachment,
-    run_prompt_mcp, run_prompt_skill, run_shell_terminal_false, run_shell_terminal_true,
+    run_prompt_basic, run_prompt_image, run_prompt_image_attachment, run_prompt_mcp,
+    run_prompt_skill, run_shell_terminal_false, run_shell_terminal_true,
 };
 
 tests_mode_set_error!(ClientToProviderConnection);
