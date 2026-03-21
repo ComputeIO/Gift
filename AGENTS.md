@@ -1,7 +1,29 @@
 # AGENTS Instructions
 
-leaf is an AI agent framework in Rust with pure CLI interfaces.
-leaf is forked from block/goose project with UI/v8 related components removed and all 'goose' literal has been replaced with 'leaf'.
+**Leaf** is an AI agent framework in Rust with **pure CLI interfaces**.
+
+## Project Origin & Transformation
+
+Leaf is a **fork of the block/goose project** with the following key transformations:
+
+- **UI components removed**: All desktop/Electron UI code has been stripped
+- **V8 dependencies removed**: No JavaScript/V8 integration
+- **Naming changed**: All `goose`/`Goose` references renamed to `leaf`/`Leaf`
+- **CLI-only focus**: Terminal-based interface only, no GUI
+
+### What Was Removed
+- `ui/desktop/` - Desktop application (Electron-based)
+- `ui/text/` - Text UI components
+- `vendor/v8/` - V8 JavaScript engine
+- `code-mode` feature - Code execution via V8
+- Desktop packaging (`.deb`, `.rpm`, `.flatpak`)
+
+### What Was Kept
+- Core agent logic (`crates/leaf`)
+- CLI interface (`crates/leaf-cli`)
+- ACP protocol (`crates/leaf-acp`)
+- MCP extensions (`crates/leaf-mcp`)
+- Server backend (`crates/leaf-server` → `leafd`)
 
 ## Setup
 ```bash
@@ -69,11 +91,11 @@ evals/open-model-gym/  # benchmarking / evals
 
 ## Rules
 
-Test: Prefer tests/ folder, e.g. crates/goose/tests/
-Test: When adding features, update goose-self-test.yaml, rebuild, then run `goose run --recipe goose-self-test.yaml` to validate
+Test: Prefer tests/ folder, e.g. crates/leaf/tests/
+Test: When adding features, update leaf-self-test.yaml, rebuild, then run `leaf run --recipe leaf-self-test.yaml` to validate
 Error: Use anyhow::Result
 Provider: Implement Provider trait see providers/base.rs
-MCP: Extensions in crates/goose-mcp/
+MCP: Extensions in crates/leaf-mcp/
 Server: Changes need just generate-openapi
 
 ## Code Quality
@@ -95,6 +117,66 @@ Never: Merge without running clippy
 Never: Comment self-evident operations (`// Initialize`, `// Return result`), getters/setters, constructors, or standard Rust idioms
 
 ## Entry Points
-- CLI: crates/goose-cli/src/main.rs
-- Server: crates/goose-server/src/main.rs
-- Agent: crates/goose/src/agents/agent.rs
+- CLI: crates/leaf-cli/src/main.rs
+- Server: crates/leaf-server/src/main.rs
+- Agent: crates/leaf/src/agents/agent.rs
+
+## CLI-Only Constraints
+
+When contributing to Leaf, keep these CLI-only constraints in mind:
+
+### UI Components
+- ❌ **NO Desktop UI**: No React, Electron, or web-based components
+- ❌ **NO GUI Elements**: No windows, dialogs, or visual interfaces
+- ✅ **Terminal Only**: All interaction through command line and TUI (Terminal UI)
+
+### Dependencies
+- ❌ **NO V8/JavaScript**: No JavaScript execution or V8 integration
+- ❌ **NO Web Frameworks**: No web servers for UI (except API endpoints for ACP)
+- ✅ **Minimal Dependencies**: Keep binary size reasonable for CLI tool
+
+### Testing
+- ✅ **Unit Tests**: Standard Rust unit tests in `tests/` folders
+- ✅ **Integration Tests**: CLI behavior testing via recipes
+- ❌ **NO UI Tests**: No browser-based or GUI testing
+
+### Release Artifacts
+- ✅ **CLI Binaries**: tar.bz2 (Linux/macOS), zip (Windows)
+- ✅ **Install Scripts**: Shell scripts for easy installation
+- ❌ **NO Desktop Packages**: No .deb, .rpm, .flatpak, or app bundles
+
+### Binary Names
+- **CLI**: `leaf` (main CLI binary)
+- **Server**: `leafd` (daemon/server binary)
+- **Legacy**: All references to `goose` or `goosed` renamed to `leaf`/`leafd`
+
+### When Cherry-Picking from Goose
+
+When adapting commits from the upstream Goose project:
+
+1. **Skip UI commits**: Any commit touching `ui/desktop/` or `ui/text/` can be skipped
+2. **Skip V8/code-mode**: Remove any code-mode or V8-related changes
+3. **Rename imports**: Change `goose::` to `leaf::` throughout
+4. **Update binary names**: Change `goose` to `leaf`, `goosed` to `leafd`
+5. **Adapt provider changes**: Provider updates are usually safe to cherry-pick
+6. **Review agent changes**: Core agent logic is usually applicable
+
+### Common Adaptations Needed
+
+```rust
+// Old (Goose)
+use goose::config::GooseMode;
+use goose::providers::create;
+
+// New (Leaf)
+use leaf::config::LeafMode;
+use leaf::providers::create;
+```
+
+```yaml
+# Old (Goose)
+recipe: goose-self-test.yaml
+
+# New (Leaf)
+recipe: leaf-self-test.yaml
+```
