@@ -1,0 +1,13 @@
+{
+  "name": "@block/leaf-acp-server-linux-x64",
+  "version": "0.1.0",
+  "description": "Leaf ACP server binary for Linux x64",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LeafAI/Leaf.git"
+  },
+  "os": ["linux"],
+  "cpu": ["x64"],
+  "files": ["bin/leaf"]
+}

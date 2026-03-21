@@ -161,22 +161,80 @@ When adapting commits from the upstream Goose project:
 5. **Adapt provider changes**: Provider updates are usually safe to cherry-pick
 6. **Review agent changes**: Core agent logic is usually applicable
 
-### Common Adaptations Needed
+### Package and File Naming Conventions
 
+All package names and references must be changed from `goose` to `leaf`:
+
+**Rust Crate Names:**
+```toml
+# Old (Goose)
+crates/goose
+crates/goose-cli
+crates/goose-server
+crates/goose-acp
+
+# New (Leaf)
+crates/leaf
+crates/leaf-cli
+crates/leaf-server
+crates/leaf-acp
+```
+
+**NPM Packages (npm/ directory):**
+```json
+// Old (Goose)
+"@block/goose-acp-server-linux-x64"
+"@block/goose-acp-server-darwin-arm64"
+
+// New (Leaf)
+"@block/leaf-acp-server-linux-x64"
+"@block/leaf-acp-server-darwin-arm64"
+```
+
+**Binary Names:**
+```
+# Old (Goose)
+bin/goose           # CLI binary
+bin/goose.exe       # Windows CLI
+goosed              # Server binary
+
+# New (Leaf)
+bin/leaf            # CLI binary
+bin/leaf.exe        # Windows CLI
+leafd               # Server binary
+```
+
+**Configuration Files:**
+```yaml
+# Old (Goose)
+.goose/
+.goose/config.yaml
+goose-self-test.yaml
+
+# New (Leaf)
+.leaf/
+.leaf/config.yaml
+leaf-self-test.yaml
+```
+
+**Import Statements:**
 ```rust
 // Old (Goose)
 use goose::config::GooseMode;
 use goose::providers::create;
+use goose::agents::Agent;
 
 // New (Leaf)
 use leaf::config::LeafMode;
 use leaf::providers::create;
+use leaf::agents::Agent;
 ```
 
-```yaml
+**GitHub Repository References:**
+```
 # Old (Goose)
-recipe: goose-self-test.yaml
+https://github.com/block/goose
 
 # New (Leaf)
-recipe: leaf-self-test.yaml
+https://github.com/LeafAI/Leaf
 ```
