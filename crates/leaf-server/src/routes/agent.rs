@@ -10,21 +10,21 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use goose::agents::{Container, ExtensionLoadResult};
+use leaf::agents::{Container, ExtensionLoadResult};
 use leaf::leaf_apps::{fetch_mcp_apps, GooseApp, McpAppCache};
 
 use base64::Engine;
-use goose::agents::reply_parts::is_tool_visible_to_app;
-use goose::agents::ExtensionConfig;
-use goose::config::resolve_extensions_for_new_session;
-use goose::config::{Config, GooseMode};
-use goose::model::ModelConfig;
-use goose::providers::create;
-use goose::recipe::Recipe;
-use goose::recipe_deeplink;
-use goose::session::session_manager::SessionType;
-use goose::session::{EnabledExtensionsState, ExtensionState, Session};
-use goose::{
+use leaf::agents::reply_parts::is_tool_visible_to_app;
+use leaf::agents::ExtensionConfig;
+use leaf::config::resolve_extensions_for_new_session;
+use leaf::config::{Config, LeafMode};
+use leaf::model::ModelConfig;
+use leaf::providers::create;
+use leaf::recipe::Recipe;
+use leaf::recipe_deeplink;
+use leaf::session::session_manager::SessionType;
+use leaf::session::{EnabledExtensionsState, ExtensionState, Session};
+use leaf::{
     agents::{extension::ToolInfo, extension_manager::get_parameter_names},
     config::permission::PermissionLevel,
 };
@@ -54,7 +54,7 @@ pub struct UpdateProviderRequest {
 #[derive(Deserialize, utoipa::ToSchema)]
 pub struct UpdateSessionRequest {
     session_id: String,
-    goose_mode: Option<String>,
+    leaf_mode: Option<String>,
 }
 
 #[derive(Deserialize, utoipa::ToSchema)]
@@ -197,7 +197,7 @@ async fn start_agent(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<StartAgentRequest>,
 ) -> Result<Json<Session>, ErrorResponse> {
-    goose::posthog::set_session_context("desktop", false);
+    leaf::posthog::set_session_context("desktop", false);
 
     let StartAgentRequest {
         working_dir,
@@ -212,7 +212,7 @@ async fn start_agent(
             Ok(recipe) => Some(recipe),
             Err(err) => {
                 error!("Failed to decode recipe deeplink: {}", err);
-                goose::posthog::emit_error("recipe_deeplink_decode_failed", &err.to_string());
+                leaf::posthog::emit_error("recipe_deeplink_decode_failed", &err.to_string());
                 return Err(ErrorResponse {
                     message: err.to_string(),
                     status: StatusCode::BAD_REQUEST,
@@ -253,7 +253,7 @@ async fn start_agent(
         .await
         .map_err(|err| {
             error!("Failed to create session: {}", err);
-            goose::posthog::emit_error("session_create_failed", &err.to_string());
+            leaf::posthog::emit_error("session_create_failed", &err.to_string());
             ErrorResponse {
                 message: format!("Failed to create session: {}", err),
                 status: StatusCode::BAD_REQUEST,
@@ -292,7 +292,7 @@ async fn start_agent(
             if let Some(ref provider) = settings.goose_provider {
                 update = update.provider_name(provider);
 
-                if let Some(ref model) = settings.goose_model {
+                if let Some(ref model) = settings.leaf_model {
                     if let Ok(model_config) = ModelConfig::new(model) {
                         update = update.model_config(model_config);
                     }
@@ -370,7 +370,7 @@ async fn resume_agent(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<ResumeAgentRequest>,
 ) -> Result<Json<ResumeAgentResponse>, ErrorResponse> {
-    goose::posthog::set_session_context("desktop", true);
+    leaf::posthog::set_session_context("desktop", true);
 
     let session = state
         .session_manager()
@@ -378,7 +378,7 @@ async fn resume_agent(
         .await
         .map_err(|err| {
             error!("Failed to resume session {}: {}", payload.session_id, err);
-            goose::posthog::emit_error("session_resume_failed", &err.to_string());
+            leaf::posthog::emit_error("session_resume_failed", &err.to_string());
             ErrorResponse {
                 message: format!("Failed to resume session: {}", err),
                 status: StatusCode::NOT_FOUND,
@@ -522,7 +522,7 @@ async fn get_tools(
 ) -> Result<Json<Vec<ToolInfo>>, StatusCode> {
     let session_id = query.session_id;
     let agent = state.get_agent_for_route(session_id.clone()).await?;
-    let goose_mode = agent.goose_mode().await;
+    let leaf_mode = agent.leaf_mode().await;
     let permission_manager = agent.config.permission_manager.clone();
 
     let mut tools: Vec<ToolInfo> = agent
@@ -533,9 +533,9 @@ async fn get_tools(
             let permission = permission_manager
                 .get_user_permission(&tool.name)
                 .or_else(|| {
-                    if goose_mode == GooseMode::SmartApprove {
+                    if leaf_mode == LeafMode::SmartApprove {
                         permission_manager.get_smart_approve_permission(&tool.name)
-                    } else if goose_mode == GooseMode::Approve {
+                    } else if leaf_mode == LeafMode::Approve {
                         Some(PermissionLevel::AskBefore)
                     } else {
                         None
@@ -622,9 +622,9 @@ async fn update_agent_provider(
         })?;
 
     // Propagate session mode to the new provider
-    let mode = agent.goose_mode().await;
+    let mode = agent.leaf_mode().await;
     agent
-        .update_goose_mode(mode, &payload.session_id)
+        .update_leaf_mode(mode, &payload.session_id)
         .await
         .map_err(|e| {
             (
@@ -655,8 +655,8 @@ async fn update_session(
         .await
         .map_err(|e| (e, "No agent for session id".to_owned()))?;
 
-    if let Some(mode_str) = payload.goose_mode {
-        let mode: GooseMode = mode_str.parse().map_err(|_| {
+    if let Some(mode_str) = payload.leaf_mode {
+        let mode: LeafMode = mode_str.parse().map_err(|_| {
             (
                 StatusCode::BAD_REQUEST,
                 format!("Invalid mode: {}", mode_str),
@@ -664,7 +664,7 @@ async fn update_session(
         })?;
 
         agent
-            .update_goose_mode(mode, &payload.session_id)
+            .update_leaf_mode(mode, &payload.session_id)
             .await
             .map_err(|e| {
                 (
@@ -699,7 +699,7 @@ async fn agent_add_extension(
         .add_extension(request.config, &request.session_id)
         .await
         .map_err(|e| {
-            goose::posthog::emit_error(
+            leaf::posthog::emit_error(
                 "extension_add_failed",
                 &format!("{}: {}", extension_name, e),
             );
@@ -1086,7 +1086,7 @@ async fn call_tool(
         params
     };
 
-    let ctx = goose::agents::ToolCallContext::new(payload.session_id.clone(), None, None);
+    let ctx = leaf::agents::ToolCallContext::new(payload.session_id.clone(), None, None);
     let tool_result = agent
         .extension_manager
         .dispatch_tool_call(&ctx, tool_call, CancellationToken::default())
@@ -1275,7 +1275,7 @@ async fn import_app(
     })?;
 
     let mut app = GooseApp::from_html(&body.html).map_err(|e| ErrorResponse {
-        message: format!("Invalid Goose App HTML: {}", e),
+        message: format!("Invalid Leaf App HTML: {}", e),
         status: StatusCode::BAD_REQUEST,
     })?;
 
