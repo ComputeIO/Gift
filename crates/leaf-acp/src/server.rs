@@ -1557,6 +1557,81 @@ pub async fn run(builtins: Vec<String>) -> Result<()> {
     serve(agent, incoming, outgoing).await
 }
 
+pub async fn run_with_uds(builtins: Vec<String>) -> Result<()> {
+    use std::path::PathBuf;
+    use tokio::net::UnixListener;
+    use tokio::signal;
+
+    register_builtin_extensions(leaf_mcp::BUILTIN_EXTENSIONS.clone());
+
+    let socket_path = PathBuf::from(format!("/tmp/leaf-{}.sock", std::process::id()));
+
+    // Remove existing socket file if it exists
+    let _ = tokio::fs::remove_file(&socket_path).await;
+
+    let listener = UnixListener::bind(&socket_path).map_err(|e| {
+        anyhow::anyhow!(
+            "failed to bind unix socket at {}: {}",
+            socket_path.display(),
+            e
+        )
+    })?;
+
+    info!("listening on unix socket: {}", socket_path.display());
+
+    let server =
+        crate::server_factory::AcpServer::new(crate::server_factory::AcpServerFactoryConfig {
+            builtins,
+            data_dir: Paths::data_dir(),
+            config_dir: Paths::config_dir(),
+        });
+
+    // Spawn shutdown handler
+    let socket_path_clone = socket_path.clone();
+    let shutdown_token = CancellationToken::new();
+    let shutdown_token_clone = shutdown_token.clone();
+
+    tokio::spawn(async move {
+        signal::ctrl_c().await.ok();
+        info!("shutting down unix socket server");
+        shutdown_token_clone.cancel();
+        let _ = tokio::fs::remove_file(&socket_path_clone).await;
+    });
+
+    // Accept connections loop
+    loop {
+        tokio::select! {
+            result = listener.accept() => {
+                match result {
+                    Ok((stream, _)) => {
+                        use tokio_util::compat::{TokioAsyncReadCompatExt, TokioAsyncWriteCompatExt};
+
+                        let agent = server.create_agent().await?;
+                        let (read, write) = tokio::net::UnixStream::into_split(stream);
+                        tokio::spawn(async move {
+                            if let Err(e) = serve(agent, read.compat(), write.compat_write()).await {
+                                error!("connection error: {}", e);
+                            }
+                        });
+                    }
+                    Err(e) => {
+                        error!("accept error: {}", e);
+                    }
+                }
+            }
+            _ = shutdown_token.cancelled() => {
+                break;
+            }
+        }
+    }
+
+    // Cleanup socket file
+    let _ = tokio::fs::remove_file(&socket_path).await;
+    info!("unix socket {} cleaned up", socket_path.display());
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
