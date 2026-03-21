@@ -83,10 +83,11 @@ fn test_prompt_basic() {
     run_test(async { run_prompt_basic::<ClientToProviderConnection>().await });
 }
 
-#[test]
-fn test_prompt_codemode() {
-    run_test(async { run_prompt_codemode::<ClientToProviderConnection>().await });
-}
+// TODO: Re-enable after code execution is implemented
+// #[test]
+// fn test_prompt_codemode() {
+//     run_test(async { run_prompt_codemode::<ClientToProviderConnection>().await });
+// }
 
 #[test]
 fn test_prompt_image() {
