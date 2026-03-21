@@ -161,6 +161,43 @@ When adapting commits from the upstream Goose project:
 5. **Adapt provider changes**: Provider updates are usually safe to cherry-pick
 6. **Review agent changes**: Core agent logic is usually applicable
 
+### File and Folder Naming Constraints
+
+**CRITICAL: NO files or folders should contain "goose" in their names.**
+
+❌ **NEVER allow files/directories with "goose" in the name:**
+- Directories like: `goose_apps/`, `goose_tools/`, `goose_data/`
+- Files like: `goose_config.rs`, `goose_utils.py`, `.goosehints`
+- Configuration files: `goose-self-test.yaml`, `goose-config.json`
+- Scripts: `goose-db-helper.sh`, `goose_setup.py`
+
+✅ **ALWAYS use "leaf" instead:**
+- Directories: `leaf_apps/`, `leaf_tools/`, `leaf_data/`
+- Files: `leaf_config.rs`, `leaf_utils.py`, `.leafhints`
+- Configuration files: `leaf-self-test.yaml`, `leaf-config.json`
+- Scripts: `leaf-db-helper.sh`, `leaf_setup.py`
+
+**When you find files/folders with "goose" in the name:**
+1. **Rename immediately** - Use `mv oldname newname` or `git mv`
+2. **Update all references** - Search for code references to the old name
+3. **Update imports** - Change `crate::goose_apps` to `crate::leaf_apps`
+4. **Update include_str!** - Change `include_str!("../goose_apps/...")` to `include_str!("../leaf_apps/...")`
+5. **Test compilation** - Run `cargo check` to ensure nothing broke
+6. **Commit the rename** - Make it a separate commit for clarity
+
+**Common patterns to watch for:**
+```bash
+# Find files with goose in the name
+find . -type f -name "*goose*" | grep -v ".git"
+find . -type d -name "*goose*" | grep -v ".git"
+
+# Common files that often have goose names
+*.snap files: goose__agents__*.snap → leaf__agents__*.snap
+Docs: goose_doc_guide.md → leaf_doc_guide.md
+Scripts: goose-*.sh → leaf-*.sh
+Config: .goose* → .leaf*, goose-*.yaml → leaf-*.yaml
+```
+
 ### Package and File Naming Conventions
 
 All package names and references must be changed from `goose` to `leaf`:
