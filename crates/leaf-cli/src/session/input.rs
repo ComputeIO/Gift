@@ -26,6 +26,7 @@ pub enum InputResult {
     Recipe(Option<String>),
     Compact,
     ToggleFullToolOutput,
+    Shell(String),
 }
 
 #[derive(Debug)]
@@ -144,6 +145,16 @@ pub fn get_input(
     // Handle non-slash commands first
     if !input.starts_with('/') {
         let trimmed = input.trim();
+
+        // Handle shell commands (prefix with !)
+        if trimmed.starts_with('!') {
+            let cmd = trimmed.strip_prefix('!').unwrap_or("").trim();
+            if cmd.is_empty() {
+                return Ok(InputResult::Retry);
+            }
+            return Ok(InputResult::Shell(cmd.to_string()));
+        }
+
         if trimmed.is_empty()
             || trimmed.eq_ignore_ascii_case("exit")
             || trimmed.eq_ignore_ascii_case("quit")
@@ -205,6 +216,16 @@ fn get_regular_input(
     // Handle non-slash commands first
     if !input.starts_with('/') {
         let trimmed = input.trim();
+
+        // Handle shell commands (prefix with !)
+        if trimmed.starts_with('!') {
+            let cmd = trimmed.strip_prefix('!').unwrap_or("").trim();
+            if cmd.is_empty() {
+                return Ok(InputResult::Retry);
+            }
+            return Ok(InputResult::Shell(cmd.to_string()));
+        }
+
         if trimmed.is_empty()
             || trimmed.eq_ignore_ascii_case("exit")
             || trimmed.eq_ignore_ascii_case("quit")
@@ -428,6 +449,9 @@ fn print_help() {
 /compact - Compact the current conversation to reduce context length while preserving key information.
 /? or /help - Display this help message
 /clear - Clears the current chat history
+
+Inline Shell:
+!command - Execute a shell command (e.g., !pwd, !git status)
 
 Navigation:
 Ctrl+C - Clear current line if text is entered, otherwise exit the session
@@ -686,5 +710,40 @@ mod tests {
         // Test recipe with invalid extension
         let result = handle_slash_command("/recipe /path/to/file.txt");
         assert!(matches!(result, Some(InputResult::Retry)));
+    }
+
+    #[test]
+    fn test_shell_command_parsing() {
+        // Test shell command parsing via get_input (we test the logic directly)
+        let test_cases: Vec<(&str, &str)> = vec![
+            ("!pwd", "pwd"),
+            ("!ls -la", "ls -la"),
+            ("!git status", "git status"),
+            ("!git status -s", "git status -s"),
+            ("! echo hello", "echo hello"),
+            ("!echo hello world", "echo hello world"),
+        ];
+
+        for (input, expected_cmd) in test_cases {
+            let trimmed = input.trim();
+            if trimmed.starts_with('!') {
+                let cmd = trimmed.strip_prefix('!').unwrap_or("").trim();
+                assert_eq!(cmd, expected_cmd);
+            }
+        }
+
+        // Test empty command after !
+        let empty = "!";
+        let trimmed = empty.trim();
+        assert!(trimmed.starts_with('!'));
+        let cmd = trimmed.strip_prefix('!').unwrap_or("").trim();
+        assert!(cmd.is_empty());
+
+        // Test just spaces after !
+        let spaces = "!   ";
+        let trimmed = spaces.trim();
+        assert!(trimmed.starts_with('!'));
+        let cmd = trimmed.strip_prefix('!').unwrap_or("").trim();
+        assert!(cmd.is_empty());
     }
 }

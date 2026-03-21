@@ -603,6 +603,9 @@ impl CliSession {
                 history.save(editor);
                 self.handle_compact().await?;
             }
+            InputResult::Shell(cmd) => {
+                self.handle_shell_command(&cmd);
+            }
         }
         Ok(())
     }
@@ -806,6 +809,60 @@ impl CliSession {
                     "{}: {:?}",
                     console::style("Failed to generate recipe").red(),
                     e
+                );
+            }
+        }
+    }
+
+    fn handle_shell_command(&self, cmd: &str) {
+        use std::io::{BufRead, BufReader};
+        use std::process::{Command, Stdio};
+
+        let mut child = match Command::new("sh")
+            .arg("-c")
+            .arg(cmd)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+        {
+            Ok(child) => child,
+            Err(e) => {
+                eprintln!(
+                    "{}",
+                    console::style(format!("Failed to execute command: {}", e)).red()
+                );
+                return;
+            }
+        };
+
+        let stdout = child.stdout.take().map(BufReader::new);
+        let stderr = child.stderr.take().map(BufReader::new);
+
+        if let Some(reader) = stdout {
+            for line in reader.lines().map_while(Result::ok) {
+                println!("{}", line);
+            }
+        }
+
+        if let Some(reader) = stderr {
+            for line in reader.lines().map_while(Result::ok) {
+                eprintln!("{}", line);
+            }
+        }
+
+        match child.wait() {
+            Ok(status) => {
+                if !status.success() {
+                    eprintln!(
+                        "{}",
+                        console::style(format!("Command exited with status: {}", status)).red()
+                    );
+                }
+            }
+            Err(e) => {
+                eprintln!(
+                    "{}",
+                    console::style(format!("Failed to wait for command: {}", e)).red()
                 );
             }
         }
