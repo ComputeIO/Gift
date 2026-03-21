@@ -43,6 +43,14 @@ pub struct Cli {
     )]
     pub verbose: bool,
 
+    #[arg(
+        long = "acp",
+        global = true,
+        help = "Enable ACP protocol on Unix domain socket",
+        long_help = "Export ACP protocol via Unix domain socket at /tmp/leaf-<pid>.sock for external client connections."
+    )]
+    pub acp: bool,
+
     #[command(subcommand)]
     command: Option<Command>,
 }
@@ -1498,6 +1506,15 @@ pub async fn run_cli(cli: Cli) -> anyhow::Result<()> {
         command = command_name,
         "CLI command executed"
     );
+
+    // Start ACP Unix domain socket server if --acp flag is set
+    if cli.acp {
+        tokio::spawn(async move {
+            if let Err(e) = leaf_acp::server::run_with_uds(vec![]).await {
+                eprintln!("ACP server error: {}", e);
+            }
+        });
+    }
 
     match cli.command {
         Some(Command::Completion { shell, bin_name }) => {
