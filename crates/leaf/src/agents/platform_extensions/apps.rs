@@ -4,8 +4,8 @@ use crate::agents::reply_parts::coerce_tool_arguments;
 use crate::agents::tool_execution::ToolCallContext;
 use crate::config::paths::Paths;
 use crate::conversation::message::Message;
-use crate::goose_apps::McpAppResource;
-use crate::goose_apps::{GooseApp, WindowProps};
+use crate::leaf_apps::McpAppResource;
+use crate::leaf_apps::{GooseApp, WindowProps};
 use crate::prompt_template::render_template;
 use crate::providers::base::Provider;
 use async_trait::async_trait;
@@ -132,7 +132,7 @@ impl AppsManagerClient {
 
     fn ensure_default_apps(&self) -> Result<(), String> {
         // TODO(Douwe): we have the same check in cache, consider unifying that
-        const CLOCK_HTML: &str = include_str!("../../goose_apps/clock.html");
+        const CLOCK_HTML: &str = include_str!("../../leaf_apps/clock.html");
 
         // Check if clock app exists
         let clock_path = self.apps_dir.join("clock.html");

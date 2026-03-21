@@ -6,8 +6,8 @@ use tracing::warn;
 
 use super::app::GooseApp;
 
-static CLOCK_HTML: &str = include_str!("../goose_apps/clock.html");
-static CHAT_HTML: &str = include_str!("../goose_apps/chat.html");
+static CLOCK_HTML: &str = include_str!("../leaf_apps/clock.html");
+static CHAT_HTML: &str = include_str!("../leaf_apps/chat.html");
 const APPS_EXTENSION_NAME: &str = "apps";
 
 pub struct McpAppCache {
