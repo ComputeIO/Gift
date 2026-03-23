@@ -6,7 +6,9 @@ use tracing_subscriber::{
     Registry,
 };
 
+#[cfg(feature = "telemetry")]
 use leaf::otel::otlp;
+#[cfg(feature = "telemetry")]
 use leaf::tracing::langfuse_layer;
 
 // Used to ensure we only set up tracing once
@@ -81,10 +83,12 @@ fn setup_logging_internal(name: Option<&str>, force: bool, verbose: bool) -> Res
                 layers.push(console_layer.with_filter(console_filter).boxed());
             }
 
+            #[cfg(feature = "telemetry")]
             if !force {
                 layers.extend(otlp::init_otlp_layers(leaf::config::Config::global()));
             }
 
+            #[cfg(feature = "telemetry")]
             if let Some(langfuse) = langfuse_layer::create_langfuse_observer() {
                 layers.push(langfuse.with_filter(LevelFilter::DEBUG).boxed());
             }
@@ -151,6 +155,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg(feature = "telemetry")]
     async fn test_langfuse_layer_creation() {
         let _temp_dir = setup_temp_home();
 

@@ -36,16 +36,13 @@ pub fn canonical_name(provider: &str, model: &str) -> String {
 }
 
 fn is_meta_provider(provider: &str) -> bool {
-    matches!(provider, "databricks" | "tetrate" | "bedrock" | "azure")
+    matches!(provider, "databricks" | "tetrate")
 }
 
 fn map_provider_name(provider: &str) -> &str {
     match provider {
         // Goose provider names that differ from models.dev names
         "xai" => "x-ai",
-        "azure_openai" => "azure",
-        "aws_bedrock" => "amazon-bedrock",
-        "gcp_vertex_ai" => "google-vertex",
         // OpenCode provider names - strip the suffix to get base provider
         _ if provider.starts_with("opencode-") => "opencode",
         _ => provider,

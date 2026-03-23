@@ -23,6 +23,9 @@ pub struct ProviderEntry {
 }
 
 impl ProviderEntry {
+    pub fn metadata(&self) -> &ProviderMetadata {
+        &self.metadata
+    }
     pub async fn create_with_default_model(
         &self,
         extensions: Vec<ExtensionConfig>,
@@ -32,6 +35,17 @@ impl ProviderEntry {
         let model_config =
             ModelConfig::new(default_model.as_str())?.with_canonical_limits(provider_name);
         (self.constructor)(model_config, extensions).await
+    }
+
+    pub fn with_fallback_display_name(&self, original_name: &str) -> Self {
+        let mut metadata = self.metadata.clone();
+        metadata.display_name = format!("{} ({} fallback)", metadata.display_name, original_name);
+        Self {
+            metadata,
+            constructor: self.constructor.clone(),
+            cleanup: self.cleanup.clone(),
+            provider_type: self.provider_type.clone(),
+        }
     }
 }
 

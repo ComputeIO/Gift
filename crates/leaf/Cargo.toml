@@ -9,6 +9,7 @@ description.workspace = true
 
 [features]
 default = []
+telemetry = ["dep:tracing-opentelemetry", "dep:opentelemetry", "dep:opentelemetry_sdk", "dep:opentelemetry-appender-tracing", "dep:opentelemetry-otlp", "dep:opentelemetry-stdout"]
 
 [lints]
 workspace = true
@@ -53,12 +54,12 @@ lazy_static = "1.5.0"
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 tracing-futures = { workspace = true }
-tracing-opentelemetry = { workspace = true }
-opentelemetry = { workspace = true }
-opentelemetry_sdk = { workspace = true }
-opentelemetry-appender-tracing = { workspace = true }
-opentelemetry-otlp = { workspace = true }
-opentelemetry-stdout = { workspace = true }
+tracing-opentelemetry = { workspace = true, optional = true }
+opentelemetry = { workspace = true, optional = true }
+opentelemetry_sdk = { workspace = true, optional = true }
+opentelemetry-appender-tracing = { workspace = true, optional = true }
+opentelemetry-otlp = { workspace = true, optional = true }
+opentelemetry-stdout = { workspace = true, optional = true }
 keyring = { version = "3.6.2", features = [
     "apple-native",
     "windows-native",
@@ -83,15 +84,7 @@ sqlx = { version = "0.8", default-features = false, features = [
     "migrate",
 ] }
 
-# For Bedrock provider
-aws-config = { version = "=1.8.12", features = ["behavior-version-latest"] }
-aws-smithy-types = "=1.3.5"
-aws-sdk-bedrockruntime = "=1.120.0"
-
-# For SageMaker TGI provider
-aws-sdk-sagemakerruntime = "1.62.0"
-
-# For GCP Vertex AI provider auth
+# For GCP auth (used by chatgpt_codex)
 jsonwebtoken = { version = "10.3.0", features = ["aws_lc_rs"] }
 
 blake3 = "1.5"

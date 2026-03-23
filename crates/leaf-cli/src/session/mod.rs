@@ -179,6 +179,12 @@ pub struct CompletionCache {
     pub prompt_info: HashMap<String, output::PromptInfo>,
     pub last_updated: Instant,
     pub hint_status: HintStatus,
+    pub providers: Option<
+        Vec<(
+            leaf::providers::base::ProviderMetadata,
+            leaf::providers::base::ProviderType,
+        )>,
+    >,
 }
 
 impl CompletionCache {
@@ -188,6 +194,7 @@ impl CompletionCache {
             prompt_info: HashMap::new(),
             last_updated: Instant::now(),
             hint_status: HintStatus::Default,
+            providers: None,
         }
     }
 }
@@ -580,6 +587,10 @@ impl CliSession {
                 history.save(editor);
                 self.handle_leaf_mode(&mode)?;
             }
+            InputResult::Model(options) => {
+                history.save(editor);
+                self.handle_model_command(options).await?;
+            }
             InputResult::Plan(options) => {
                 self.handle_plan_mode(options).await?;
             }
@@ -729,6 +740,112 @@ impl CliSession {
         };
         config.set_goose_mode(mode)?;
         output::leaf_mode_message(&format!("Goose mode set to '{mode}'"));
+        Ok(())
+    }
+
+    async fn handle_model_command(&self, options: input::ModelCommandOptions) -> Result<()> {
+        use leaf::providers;
+
+        let available_providers = providers::providers().await;
+
+        if options.provider.is_none() {
+            let default_line_length = 120 - "    [001] ".len();
+            let current_provider = self.agent.provider_name().await;
+            let current_model = self.agent.model_name().await;
+            println!("Current model: {}/{}", current_provider, current_model);
+            println!("\nAvailable providers:");
+            let mut sorted_providers: Vec<_> = available_providers.iter().collect();
+            sorted_providers.sort_by(|a, b| a.0.name.cmp(&b.0.name));
+            for (meta, _) in &sorted_providers {
+                let mut models: Vec<String> =
+                    meta.known_models.iter().map(|m| m.name.clone()).collect();
+                models.sort();
+                print!(
+                    " 🚀 {} - {} (default: {})",
+                    console::style(meta.name.clone()).fg(Color::Green).bold(),
+                    meta.display_name,
+                    meta.default_model
+                );
+                let mut line_length = 0;
+                let mut i = 1;
+                let mut newline = true;
+                for model in &models {
+                    let model_len = model.len();
+                    if line_length + model_len + 2 > default_line_length {
+                        newline = true;
+                    }
+                    if newline {
+                        newline = false;
+                        line_length = 0;
+                        println!();
+                        print!("    [{:03}] ", i);
+                        i += 1;
+                    } else {
+                        print!(", ");
+                        line_length += 2;
+                    }
+                    print!("{}", console::style(model).fg(Color::Blue).italic());
+                    line_length += model_len;
+                }
+                println!();
+            }
+            return Ok(());
+        }
+
+        let provider_name = options.provider.as_ref().unwrap();
+        let available: Vec<&str> = available_providers
+            .iter()
+            .map(|(m, _)| m.name.as_str())
+            .collect();
+
+        let provider_meta = available_providers
+            .iter()
+            .find(|(meta, _)| meta.name == *provider_name)
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "Unknown provider '{}'. Available: {}",
+                    provider_name,
+                    available.join(", ")
+                )
+            })?;
+
+        let model_name = match &options.model {
+            Some(m) => {
+                let known_models: Vec<&str> = provider_meta
+                    .0
+                    .known_models
+                    .iter()
+                    .map(|mm| mm.name.as_str())
+                    .collect();
+                if !known_models.contains(&m.as_str()) {
+                    let available: Vec<&str> = provider_meta
+                        .0
+                        .known_models
+                        .iter()
+                        .map(|mm| mm.name.as_str())
+                        .collect();
+                    anyhow::bail!(
+                        "Unknown model '{}' for provider '{}'. Available: {}",
+                        m,
+                        provider_name,
+                        available.join(", ")
+                    );
+                }
+                m.clone()
+            }
+            None => provider_meta.0.default_model.clone(),
+        };
+
+        let extensions =
+            leaf::config::extensions::get_enabled_extensions_with_config(Config::global());
+        let new_provider =
+            providers::create_with_named_model(provider_name, &model_name, extensions).await?;
+
+        self.agent
+            .update_provider(new_provider, &self.session_id)
+            .await?;
+
+        println!("Model set to '{}/{}'", provider_name, model_name);
         Ok(())
     }
 
@@ -1277,6 +1394,7 @@ impl CliSession {
     pub async fn update_completion_cache(&mut self) -> Result<()> {
         // Get fresh data
         let prompts = self.agent.list_extension_prompts(&self.session_id).await;
+        let providers = leaf::providers::providers().await;
 
         // Update the cache with write lock
         let mut cache = self.completion_cache.write().unwrap();
@@ -1299,6 +1417,8 @@ impl CliSession {
                 );
             }
         }
+
+        cache.providers = Some(providers);
 
         cache.last_updated = Instant::now();
         Ok(())

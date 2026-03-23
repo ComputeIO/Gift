@@ -3,17 +3,12 @@ use std::sync::{Arc, RwLock};
 use super::{
     anthropic::AnthropicProvider,
     avian::AvianProvider,
-    azure::AzureProvider,
     base::{Provider, ProviderMetadata},
-    bedrock::BedrockProvider,
     chatgpt_codex::ChatGptCodexProvider,
     claude_acp::ClaudeAcpProvider,
-    claude_code::ClaudeCodeProvider,
-    codex::CodexProvider,
     codex_acp::CodexAcpProvider,
     cursor_agent::CursorAgentProvider,
     databricks::DatabricksProvider,
-    gcpvertexai::GcpVertexAIProvider,
     gemini_acp::GeminiAcpProvider,
     gemini_cli::GeminiCliProvider,
     githubcopilot::GithubCopilotProvider,
@@ -25,7 +20,6 @@ use super::{
     opencode,
     openrouter::OpenRouterProvider,
     provider_registry::ProviderRegistry,
-    sagemaker_tgi::SageMakerTgiProvider,
     snowflake::SnowflakeProvider,
     tetrate::TetrateProvider,
     venice::VeniceProvider,
@@ -47,17 +41,12 @@ async fn init_registry() -> RwLock<ProviderRegistry> {
     let mut registry = ProviderRegistry::new().with_providers(|registry| {
         registry.register::<AnthropicProvider>(true);
         registry.register::<AvianProvider>(false);
-        registry.register::<AzureProvider>(false);
-        registry.register::<BedrockProvider>(false);
         registry.register::<ChatGptCodexProvider>(true);
         registry.register::<ClaudeAcpProvider>(false);
         registry.register::<GeminiAcpProvider>(false);
-        registry.register::<ClaudeCodeProvider>(true);
         registry.register::<CodexAcpProvider>(false);
-        registry.register::<CodexProvider>(true);
         registry.register::<CursorAgentProvider>(false);
         registry.register::<DatabricksProvider>(true);
-        registry.register::<GcpVertexAIProvider>(false);
         registry.register::<GeminiCliProvider>(false);
         registry.register::<GithubCopilotProvider>(false);
         registry.register::<GoogleProvider>(true);
@@ -66,7 +55,6 @@ async fn init_registry() -> RwLock<ProviderRegistry> {
         registry.register::<OllamaProvider>(true);
         registry.register::<OpenAiProvider>(true);
         registry.register::<OpenRouterProvider>(true);
-        registry.register::<SageMakerTgiProvider>(false);
         registry.register::<SnowflakeProvider>(false);
         registry.register::<TetrateProvider>(true);
         registry.register::<VeniceProvider>(false);
@@ -125,11 +113,24 @@ pub async fn refresh_custom_providers() -> Result<()> {
 
 pub async fn get_from_registry(name: &str) -> Result<ProviderEntry> {
     let guard = get_registry().await.read().unwrap();
-    guard
+    if let Some(entry) = guard.entries.get(name) {
+        return Ok(entry.clone());
+    }
+
+    // Provider not found, return first available provider with fallback display name
+    let first_entry = guard
         .entries
-        .get(name)
-        .ok_or_else(|| anyhow::anyhow!("Unknown provider: {}", name))
-        .cloned()
+        .values()
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("No providers available"))?;
+
+    tracing::warn!(
+        "Provider '{}' not found, falling back to '{}'",
+        name,
+        first_entry.metadata().name
+    );
+
+    Ok(first_entry.with_fallback_display_name(name))
 }
 
 pub async fn create(

@@ -7,12 +7,8 @@ use leaf::conversation::message::{ActionRequiredData, Message, MessageContent};
 use leaf::permission::permission_confirmation::PrincipalType;
 use leaf::permission::{Permission, PermissionConfirmation};
 use leaf::providers::anthropic::ANTHROPIC_DEFAULT_MODEL;
-use leaf::providers::azure::AZURE_DEFAULT_MODEL;
 use leaf::providers::base::Provider;
-use leaf::providers::bedrock::BEDROCK_DEFAULT_MODEL;
 use leaf::providers::claude_acp::CLAUDE_ACP_DEFAULT_MODEL;
-use leaf::providers::claude_code::CLAUDE_CODE_DEFAULT_MODEL;
-use leaf::providers::codex::CODEX_DEFAULT_MODEL;
 use leaf::providers::codex_acp::CODEX_ACP_DEFAULT_MODEL;
 use leaf::providers::create_with_named_model;
 use leaf::providers::databricks::DATABRICKS_DEFAULT_MODEL;
@@ -21,7 +17,6 @@ use leaf::providers::gemini_acp::GEMINI_ACP_DEFAULT_MODEL;
 use leaf::providers::google::GOOGLE_DEFAULT_MODEL;
 use leaf::providers::litellm::LITELLM_DEFAULT_MODEL;
 use leaf::providers::openai::OPEN_AI_DEFAULT_MODEL;
-use leaf::providers::sagemaker_tgi::SAGEMAKER_TGI_DEFAULT_MODEL;
 use leaf::providers::snowflake::SNOWFLAKE_DEFAULT_MODEL;
 use leaf::providers::xai::XAI_DEFAULT_MODEL;
 use leaf::session::{SessionManager, SessionType};
@@ -716,52 +711,6 @@ async fn test_openai_provider() -> Result<()> {
 }
 
 #[tokio::test]
-async fn test_azure_provider() -> Result<()> {
-    ProviderTestConfig::with_llm_provider(
-        "Azure",
-        AZURE_DEFAULT_MODEL,
-        &[
-            "AZURE_OPENAI_API_KEY",
-            "AZURE_OPENAI_ENDPOINT",
-            "AZURE_OPENAI_DEPLOYMENT_NAME",
-        ],
-    )
-    .run()
-    .await
-}
-
-#[tokio::test]
-async fn test_bedrock_provider_long_term_credentials() -> Result<()> {
-    ProviderTestConfig::with_llm_provider(
-        "aws_bedrock",
-        BEDROCK_DEFAULT_MODEL,
-        &["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
-    )
-    .run()
-    .await
-}
-
-#[tokio::test]
-async fn test_bedrock_provider_aws_profile_credentials() -> Result<()> {
-    ProviderTestConfig::with_llm_provider("aws_bedrock", BEDROCK_DEFAULT_MODEL, &["AWS_PROFILE"])
-        .clear_env(&["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"])
-        .run()
-        .await
-}
-
-#[tokio::test]
-async fn test_bedrock_provider_bearer_token() -> Result<()> {
-    ProviderTestConfig::with_llm_provider(
-        "aws_bedrock",
-        BEDROCK_DEFAULT_MODEL,
-        &["AWS_BEARER_TOKEN_BEDROCK", "AWS_REGION"],
-    )
-    .clear_env(&["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_PROFILE"])
-    .run()
-    .await
-}
-
-#[tokio::test]
 async fn test_databricks_provider() -> Result<()> {
     ProviderTestConfig::with_llm_provider(
         "Databricks",
@@ -827,17 +776,6 @@ async fn test_snowflake_provider() -> Result<()> {
 }
 
 #[tokio::test]
-async fn test_sagemaker_tgi_provider() -> Result<()> {
-    ProviderTestConfig::with_llm_provider(
-        "SageMakerTgi",
-        SAGEMAKER_TGI_DEFAULT_MODEL,
-        &["SAGEMAKER_ENDPOINT_NAME"],
-    )
-    .run()
-    .await
-}
-
-#[tokio::test]
 async fn test_litellm_provider() -> Result<()> {
     ProviderTestConfig::with_llm_provider("LiteLLM", LITELLM_DEFAULT_MODEL, &["LITELLM_HOST"])
         .run()
@@ -847,22 +785,6 @@ async fn test_litellm_provider() -> Result<()> {
 #[tokio::test]
 async fn test_xai_provider() -> Result<()> {
     ProviderTestConfig::with_llm_provider("Xai", XAI_DEFAULT_MODEL, &["XAI_API_KEY"])
-        .run()
-        .await
-}
-
-#[tokio::test]
-async fn test_claude_code_provider() -> Result<()> {
-    ProviderTestConfig::with_agentic_provider("claude-code", CLAUDE_CODE_DEFAULT_MODEL, "claude")
-        .model_switch_name("sonnet")
-        .run()
-        .await
-}
-
-#[tokio::test]
-async fn test_codex_provider() -> Result<()> {
-    ProviderTestConfig::with_agentic_provider("codex", CODEX_DEFAULT_MODEL, "codex")
-        .test_permissions(false)
         .run()
         .await
 }

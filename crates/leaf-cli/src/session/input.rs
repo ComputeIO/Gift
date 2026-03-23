@@ -27,6 +27,7 @@ pub enum InputResult {
     Compact,
     ToggleFullToolOutput,
     Shell(String),
+    Model(ModelCommandOptions),
 }
 
 #[derive(Debug)]
@@ -39,6 +40,12 @@ pub struct PromptCommandOptions {
 #[derive(Debug)]
 pub struct PlanCommandOptions {
     pub message_text: String,
+}
+
+#[derive(Debug)]
+pub struct ModelCommandOptions {
+    pub provider: Option<String>,
+    pub model: Option<String>,
 }
 
 struct CtrlCHandler {
@@ -256,6 +263,7 @@ fn handle_slash_command(input: &str) -> Option<InputResult> {
     const CMD_EXTENSION: &str = "/extension ";
     const CMD_BUILTIN: &str = "/builtin ";
     const CMD_MODE: &str = "/mode ";
+    const CMD_MODEL: &str = "/model";
     const CMD_PLAN: &str = "/plan";
     const CMD_ENDPLAN: &str = "/endplan";
     const CMD_CLEAR: &str = "/clear";
@@ -318,6 +326,9 @@ fn handle_slash_command(input: &str) -> Option<InputResult> {
         s if s.starts_with(CMD_MODE) => Some(InputResult::LeafMode(
             s.get(CMD_MODE.len()..).unwrap_or("").to_string(),
         )),
+        s if s.starts_with(CMD_MODEL) => {
+            parse_model_command(s.get(CMD_MODEL.len()..).unwrap_or(""))
+        }
         s if s.starts_with(CMD_PLAN) => {
             parse_plan_command(s.get(CMD_PLAN.len()..).unwrap_or("").trim().to_string())
         }
@@ -420,6 +431,36 @@ fn parse_plan_command(input: String) -> Option<InputResult> {
     Some(InputResult::Plan(options))
 }
 
+fn parse_model_command(input: &str) -> Option<InputResult> {
+    let input = input.trim();
+
+    if input.is_empty() {
+        return Some(InputResult::Model(ModelCommandOptions {
+            provider: None,
+            model: None,
+        }));
+    }
+
+    if let Some((provider, model)) = input.split_once(':') {
+        let provider = provider.trim().to_string();
+        if provider.is_empty() {
+            return Some(InputResult::Model(ModelCommandOptions {
+                provider: None,
+                model: None,
+            }));
+        }
+        Some(InputResult::Model(ModelCommandOptions {
+            provider: Some(provider),
+            model: Some(model.trim().to_string()),
+        }))
+    } else {
+        Some(InputResult::Model(ModelCommandOptions {
+            provider: Some(input.to_string()),
+            model: None,
+        }))
+    }
+}
+
 fn get_input_prompt_string() -> String {
     "🌿 ".to_string()
 }
@@ -438,6 +479,7 @@ fn print_help() {
 /prompts [--extension <name>] - List all available prompts, optionally filtered by extension
 /prompt <n> [--info] [key=value...] - Get prompt info or execute a prompt
 /mode <name> - Set the goose mode to use ({modes})
+/model [<provider>][:<model>] - Change the provider and/or model (e.g., /model anthropic, /model openai:gpt-4o)
 /plan <message_text> -  Enters 'plan' mode with optional message. Create a plan based on the current messages and asks user if they want to act on it.
                         If user acts on the plan, goose mode is set to 'auto' and returns to 'normal' goose mode.
                         To warm up goose before using '/plan', we recommend setting '/mode approve' & putting appropriate context into goose.

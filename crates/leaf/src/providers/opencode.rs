@@ -174,10 +174,11 @@ fn register_providers_from_catalog(
             let npm = get_model_npm(provider_npm, model);
             let model_api = model.provider.as_ref().and_then(|p| p.api.as_ref());
             let model_base_url = model_api.map(|s| s.as_str()).unwrap_or(&base_url);
-            let key = format!("{}:{}", npm, model_base_url);
+            // Use npm as grouping key (not npm:url)
+            let key = npm.to_string();
 
             let entry = groups
-                .entry(key)
+                .entry(key.clone())
                 .or_insert_with(|| (engine, model_base_url.to_string(), Vec::new()));
 
             entry.2.push(ModelInfo {
@@ -201,17 +202,11 @@ fn register_providers_from_catalog(
                 format!("{}_API_KEY", provider_id.to_uppercase())
             };
 
-            let name = if groups.len() == 1 {
-                provider_id.clone()
-            } else {
-                format!("{}-{}", provider_id, key)
-            };
+            // Always include engine in name: opencode-{provider_id}-{engine}
+            let engine_name = key.trim_start_matches("@ai-sdk/");
+            let name = format!("opencode-{}-{}", provider_id, engine_name);
 
-            let display_name = if groups.len() == 1 {
-                format!("OpenCode::{}", provider_info.name)
-            } else {
-                format!("OpenCode::{} ({})", provider_info.name, key)
-            };
+            let display_name = format!("OpenCode::{}({})", provider_info.name, engine_name);
 
             let config = DeclarativeProviderConfig {
                 name: name.clone(),

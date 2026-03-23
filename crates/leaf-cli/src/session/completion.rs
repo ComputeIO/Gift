@@ -121,6 +121,76 @@ impl GooseCompleter {
         Ok((line.len(), vec![]))
     }
 
+    /// Complete flags for the /model command
+    fn complete_model_flags(&self, line: &str) -> Result<(usize, Vec<Pair>)> {
+        let providers = {
+            let cache = self.completion_cache.read().unwrap();
+            match &cache.providers {
+                Some(p) => p.clone(),
+                None => return Ok((line.len(), vec![])),
+            }
+        };
+
+        let after_model = line.trim_start_matches("/model").trim();
+
+        if after_model.is_empty() || after_model == " " {
+            return Ok((
+                line.len(),
+                providers
+                    .iter()
+                    .map(|(meta, _)| Pair {
+                        display: meta.name.clone(),
+                        replacement: format!("{}:", meta.name),
+                    })
+                    .collect(),
+            ));
+        }
+
+        if let Some((provider_name, model_part)) = after_model.split_once(':') {
+            let provider_meta = providers
+                .iter()
+                .find(|(meta, _)| meta.name == provider_name);
+            if let Some((meta, _)) = provider_meta {
+                let model_prefix = model_part.trim();
+                return Ok((
+                    line.len() - model_part.len(),
+                    meta.known_models
+                        .iter()
+                        .filter(|m| {
+                            m.name
+                                .to_lowercase()
+                                .starts_with(&model_prefix.to_lowercase())
+                        })
+                        .map(|m| Pair {
+                            display: m.name.clone(),
+                            replacement: format!("{}:{} ", provider_name, m.name),
+                        })
+                        .collect(),
+                ));
+            }
+        } else {
+            let provider_prefix = after_model.trim();
+            let matching_providers: Vec<Pair> = providers
+                .iter()
+                .filter(|(meta, _)| {
+                    meta.name
+                        .to_lowercase()
+                        .starts_with(&provider_prefix.to_lowercase())
+                })
+                .map(|(meta, _)| Pair {
+                    display: meta.name.clone(),
+                    replacement: format!("{}:", meta.name),
+                })
+                .collect();
+
+            if !matching_providers.is_empty() {
+                return Ok((line.len() - provider_prefix.len(), matching_providers));
+            }
+        }
+
+        Ok((line.len(), vec![]))
+    }
+
     /// Complete slash commands
     fn complete_slash_commands(&self, line: &str) -> Result<(usize, Vec<Pair>)> {
         // Define available slash commands
@@ -135,6 +205,7 @@ impl GooseCompleter {
             "/prompts",
             "/prompt",
             "/mode",
+            "/model",
             "/recipe",
         ];
 
@@ -372,6 +443,10 @@ impl Completer for GooseCompleter {
 
             if line.starts_with("/mode") {
                 return self.complete_mode_flags(line);
+            }
+
+            if line.starts_with("/model") {
+                return self.complete_model_flags(line);
             }
 
             return Ok((pos, vec![]));

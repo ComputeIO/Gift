@@ -131,11 +131,12 @@ pub fn format_messages(messages: &[Message]) -> Vec<Value> {
                 MessageContent::ToolRequest(tool_request) => {
                     match &tool_request.tool_call {
                         Ok(tool_call) => {
+                            let input = tool_call.arguments.as_ref().map(|a| json!(a)).unwrap_or(json!({}));
                             content.push(json!({
                                 TYPE_FIELD: TOOL_USE_TYPE,
                                 ID_FIELD: tool_request.id,
                                 NAME_FIELD: tool_call.name,
-                                INPUT_FIELD: tool_call.arguments
+                                INPUT_FIELD: input
                             }));
                         }
                         Err(_tool_error) => {
@@ -208,11 +209,12 @@ pub fn format_messages(messages: &[Message]) -> Vec<Value> {
                 }
                 MessageContent::FrontendToolRequest(tool_request) => {
                     if let Ok(tool_call) = &tool_request.tool_call {
+                        let input = tool_call.arguments.as_ref().map(|a| json!(a)).unwrap_or(json!({}));
                         content.push(json!({
                             TYPE_FIELD: TOOL_USE_TYPE,
                             ID_FIELD: tool_request.id,
                             NAME_FIELD: tool_call.name,
-                            INPUT_FIELD: tool_call.arguments
+                            INPUT_FIELD: input
                         }));
                     }
                 }

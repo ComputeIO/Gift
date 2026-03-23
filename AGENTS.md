@@ -275,3 +275,80 @@ https://github.com/block/goose
 # New (Leaf)
 https://github.com/LeafAI/Leaf
 ```
+
+## OpenCode Provider System (Reference from upstream)
+
+The OpenCode project uses a sophisticated provider system from models.dev. Understanding this is crucial for proper provider implementation.
+
+### Provider vs Model npm (Engine)
+
+**Provider npm** (`provider.npm`): The SDK/format used by the provider
+- `@ai-sdk/openai-compatible` → OpenAI-compatible format (tool_calls with string arguments)
+- `@ai-sdk/anthropic` → Anthropic format (tool_use with object input)
+- Other npm packages indicate specific provider SDKs (e.g., `@ai-sdk/google-vertex/anthropic`)
+
+**Model override** (`model.provider.npm`): Can override the provider's npm for specific models
+- If set, this takes precedence over the provider's npm
+- Used when a model expects a different format than the provider's default
+
+### npm Resolution Order
+```typescript
+model.api.npm = model.provider?.npm ?? provider.npm ?? "@ai-sdk/openai-compatible"
+```
+
+### Request Flow in OpenCode Gateway
+
+1. Request arrives at endpoint (e.g., `/zen/go/v1/messages`)
+2. Endpoint has a default format (e.g., `format: "anthropic"`)
+3. Handler looks up model and selects provider from model's provider list
+4. Provider determines actual backend format
+5. If endpoint format ≠ provider format, handler converts the request
+
+### Format Conversion
+
+OpenCode's handler uses `createBodyConverter` to transform requests:
+- `fromAnthropicRequest`: Converts Anthropic format to CommonRequest
+- `toOaCompatibleRequest`: Converts CommonRequest to OpenAI-compatible format
+
+**Key difference in tool call format:**
+
+OpenAI format (tool_calls with string arguments):
+```json
+{
+  "tool_calls": [{
+    "id": "call_123",
+    "type": "function", 
+    "function": {
+      "name": "get_weather",
+      "arguments": "{\"location\":\"Boston\"}"
+    }
+  }]
+}
+```
+
+Anthropic format (tool_use with object input):
+```json
+{
+  "content": [{
+    "type": "tool_use",
+    "id": "toolu_123",
+    "name": "get_weather", 
+    "input": {"location": "Boston"}
+  }]
+}
+```
+
+### Zen/go Endpoints
+
+The `/zen/go/v1/*` endpoints are configured with `format: "anthropic"` but the handler converts requests to match the selected provider's format.
+
+### Common Issues
+
+**Error: "Input should be a valid dictionary"**
+
+This error occurs when the API receives a tool_use.input that is not an object. Possible causes:
+1. `tool_call.arguments` stored as string instead of object
+2. Format conversion not handling the arguments properly
+3. Provider selection mismatch for models with provider override
+
+The fix requires ensuring that when using Anthropic format, `tool_use.input` is always a proper JSON object, not a string.

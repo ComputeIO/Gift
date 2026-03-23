@@ -1757,6 +1757,24 @@ impl Agent {
         *self.current_leaf_mode.lock().await
     }
 
+    pub async fn provider_name(&self) -> String {
+        self.provider
+            .lock()
+            .await
+            .as_ref()
+            .map(|p| p.get_name().to_string())
+            .unwrap_or_else(|| "unknown".to_string())
+    }
+
+    pub async fn model_name(&self) -> String {
+        self.provider
+            .lock()
+            .await
+            .as_ref()
+            .map(|p| p.get_model_config().model_name.clone())
+            .unwrap_or_else(|| "unknown".to_string())
+    }
+
     /// Restore the provider from session data or fall back to global config
     /// This is used when resuming a session to restore the provider state
     /// Returns true if the session's provider was replaced with a fallback.

@@ -69,11 +69,11 @@ winapi = { version = "0.3", features = ["wincred"] }
 
 [features]
 default = []
+telemetry = ["leaf/telemetry"]
 # disables the update command
 disable-update = []
 
 [dev-dependencies]
-tempfile = { workspace = true }
 test-case = { workspace = true }
 tokio = { workspace = true }
 

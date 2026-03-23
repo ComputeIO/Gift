@@ -5,7 +5,9 @@ use tracing_subscriber::{
     Registry,
 };
 
+#[cfg(feature = "telemetry")]
 use leaf::otel::otlp;
+#[cfg(feature = "telemetry")]
 use leaf::tracing::langfuse_layer;
 
 /// Sets up the logging infrastructure for the application.
@@ -50,13 +52,15 @@ pub fn setup_logging(name: Option<&str>) -> Result<()> {
         .with_line_number(true)
         .pretty();
 
-    let mut layers = vec![
+    let layers = vec![
         file_layer.with_filter(base_env_filter.clone()).boxed(),
         console_layer.with_filter(base_env_filter).boxed(),
     ];
 
+    #[cfg(feature = "telemetry")]
     layers.extend(otlp::init_otlp_layers(leaf::config::Config::global()));
 
+    #[cfg(feature = "telemetry")]
     if let Some(langfuse) = langfuse_layer::create_langfuse_observer() {
         layers.push(langfuse.with_filter(LevelFilter::DEBUG).boxed());
     }

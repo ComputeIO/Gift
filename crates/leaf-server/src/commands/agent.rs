@@ -99,6 +99,7 @@ pub async fn run() -> Result<()> {
             .await?;
     }
 
+    #[cfg(feature = "telemetry")]
     if leaf::otel::otlp::is_otlp_initialized() {
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
         leaf::otel::otlp::shutdown_otlp();
