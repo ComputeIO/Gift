@@ -96,7 +96,7 @@ fn build_and_get_binary_path() -> PathBuf {
             "build",
             "--frozen",
             "-p",
-            "goose-test",
+            "leaf-test",
             "--bin",
             "capture",
             "--message-format=json",
@@ -184,11 +184,11 @@ async fn test_replayed_session(
     std::env::set_var("GOOSE_MCP_CLIENT_VERSION", "0.0.0");
 
     // Setup test file for developer extension tests
-    let test_file_path = "/tmp/goose_test/goose.txt";
+    let test_file_path = "/tmp/leaf_test/leaf.txt";
     if let Some(parent) = std::path::Path::new(test_file_path).parent() {
         fs::create_dir_all(parent).ok();
     }
-    fs::write(test_file_path, "# goose\n").ok();
+    fs::write(test_file_path, "# leaf\n").ok();
     let replay_file_name = command
         .iter()
         .map(|s| s.replace("/", "_"))

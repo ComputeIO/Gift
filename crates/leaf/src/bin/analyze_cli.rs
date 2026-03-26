@@ -1,5 +1,5 @@
 //! CLI wrapper for the analyze platform extension.
-//! Usage: cargo run -p goose --bin analyze_cli -- <path> [--focus <symbol>] [--depth <n>] [--follow <n>] [--force]
+//! Usage: cargo run -p leaf --bin analyze_cli -- <path> [--focus <symbol>] [--depth <n>] [--follow <n>] [--force]
 
 use clap::Parser;
 use leaf::agents::platform_extensions::analyze::{format, graph, AnalyzeClient};

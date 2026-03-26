@@ -19,7 +19,7 @@ fn test_config_mcp() {
 }
 
 #[test]
-#[ignore = "provider is a plug-in to the goose CLI, UI and terminal clients, none of which handle buffered changes to files"]
+#[ignore = "provider is a plug-in to the leaf CLI, UI and terminal clients, none of which handle buffered changes to files"]
 fn test_fs_read_text_file_true() {
     run_test(async { run_fs_read_text_file_true::<ClientToProviderConnection>().await });
 }
@@ -30,7 +30,7 @@ fn test_fs_write_text_file_false() {
 }
 
 #[test]
-#[ignore = "provider is a plug-in to the goose CLI, UI and terminal clients, none of which handle buffered changes to files"]
+#[ignore = "provider is a plug-in to the leaf CLI, UI and terminal clients, none of which handle buffered changes to files"]
 fn test_fs_write_text_file_true() {
     run_test(async { run_fs_write_text_file_true::<ClientToProviderConnection>().await });
 }

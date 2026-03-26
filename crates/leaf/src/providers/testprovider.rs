@@ -77,7 +77,7 @@ impl TestProvider {
         use crate::conversation::message::MessageContent;
 
         // Strip internal metadata (e.g. tool_meta/_meta) from content before hashing.
-        // This metadata is used for internal routing (like goose_extension ownership)
+        // This metadata is used for internal routing (like leaf_extension ownership)
         // and isn't part of the semantic input the LLM sees, so it shouldn't affect
         // replay matching.
         let stable_messages: Vec<_> = messages

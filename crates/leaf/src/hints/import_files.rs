@@ -49,7 +49,7 @@ fn sanitize_reference_path(
 }
 
 fn parse_file_references(content: &str) -> Vec<PathBuf> {
-    // Keep size limits for ReDoS protection - .goosehints should be reasonably sized
+    // Keep size limits for ReDoS protection - .leafhints should be reasonably sized
     const MAX_CONTENT_LENGTH: usize = 131_072; // 128KB limit
 
     if content.len() > MAX_CONTENT_LENGTH {

@@ -17,7 +17,7 @@ use once_cell::sync::Lazy;
 
 pub use ext_manager::MANAGE_EXTENSIONS_TOOL_NAME_COMPLETE;
 
-// These are used by integration tests in crates/goose/tests/
+// These are used by integration tests in crates/leaf/tests/
 #[allow(unused_imports)]
 pub use ext_manager::MANAGE_EXTENSIONS_TOOL_NAME;
 #[allow(unused_imports)]
@@ -46,8 +46,7 @@ pub static PLATFORM_EXTENSIONS: Lazy<HashMap<&'static str, PlatformExtensionDef>
             PlatformExtensionDef {
                 name: todo::EXTENSION_NAME,
                 display_name: "Todo",
-                description:
-                    "Enable a todo list for goose so it can keep track of what it is doing",
+                description: "Enable a todo list for leaf so it can keep track of what it is doing",
                 default_enabled: true,
                 unprefixed_tools: false,
                 hidden: false,
@@ -61,7 +60,7 @@ pub static PLATFORM_EXTENSIONS: Lazy<HashMap<&'static str, PlatformExtensionDef>
                 name: apps::EXTENSION_NAME,
                 display_name: "Apps",
                 description:
-                    "Create and manage custom Goose apps through chat. Apps are HTML/CSS/JavaScript and run in sandboxed windows.",
+                    "Create and manage custom Leaf apps through chat. Apps are HTML/CSS/JavaScript and run in sandboxed windows.",
                 default_enabled: true,
                 unprefixed_tools: false,
                 hidden: false,

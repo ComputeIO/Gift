@@ -19,7 +19,7 @@ fn secret_key_for(gateway_type: &str) -> String {
     format!("gateway_platform_config_{}", gateway_type)
 }
 
-/// Serialized form stored in goose config (no secrets).
+/// Serialized form stored in leaf config (no secrets).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct SavedGatewayEntry {
     gateway_type: String,

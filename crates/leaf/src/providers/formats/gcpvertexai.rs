@@ -84,7 +84,7 @@ pub const KNOWN_MODELS: &[&str] = &[
     "gemini-2.0-flash-lite",
 ];
 
-/// Represents available GCP Vertex AI models for goose.
+/// Represents available GCP Vertex AI models for leaf.
 ///
 /// This enum encompasses different model families that are supported
 /// in the GCP Vertex AI platform.

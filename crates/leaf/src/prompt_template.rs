@@ -9,7 +9,7 @@ static CORE_PROMPTS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/src/prompts");
 static TEMPLATE_REGISTRY: &[(&str, &str)] = &[
     (
         "system.md",
-        "Main system prompt that defines goose's personality and behavior",
+        "Main system prompt that defines leaf's personality and behavior",
     ),
     (
         "compaction.md",
@@ -37,7 +37,7 @@ static TEMPLATE_REGISTRY: &[(&str, &str)] = &[
     ),
     (
         "plan.md",
-        "Prompt used when goose creates step-by-step plans. CLI only",
+        "Prompt used when leaf creates step-by-step plans. CLI only",
     ),
     (
         "tiny_model_system.md",
