@@ -107,7 +107,7 @@ pub fn configure_telemetry_consent_dialog() -> anyhow::Result<bool> {
 
 async fn handle_first_time_setup(config: &Config) -> anyhow::Result<()> {
     println!();
-    println!("{}", style("Welcome to goose! Let's get you set up.").dim());
+    println!("{}", style("Welcome to leaf! Let's get you set up.").dim());
     println!(
         "{}",
         style("  you can rerun this command later to update your configuration").dim()
@@ -117,7 +117,7 @@ async fn handle_first_time_setup(config: &Config) -> anyhow::Result<()> {
     configure_telemetry_consent_dialog()?;
 
     println!();
-    cliclack::intro(style(" goose-configure ").on_cyan().black())?;
+    cliclack::intro(style(" leaf-configure ").on_cyan().black())?;
 
     let setup_method = cliclack::select("How would you like to set up your provider?")
         .item(
@@ -180,7 +180,7 @@ async fn handle_manual_provider_setup(config: &Config) {
         Ok(false) => {
             let _ = config.clear();
             println!(
-                "\n  {}: We did not save your config, inspect your credentials\n   and run '{}' again to ensure goose can connect",
+                "\n  {}: We did not save your config, inspect your credentials\n   and run '{}' again to ensure leaf can connect",
                 style("Warning").yellow().italic(),
                 style("leaf configure").cyan()
             );
@@ -231,7 +231,7 @@ fn print_manual_config_error(e: &anyhow::Error) {
         }
         _ => {
             println!(
-                "\n  {} {} \n  We did not save your config, inspect your credentials\n   and run '{}' again to ensure goose can connect",
+                "\n  {} {} \n  We did not save your config, inspect your credentials\n   and run '{}' again to ensure leaf can connect",
                 style("Error").red().italic(),
                 e,
                 style("leaf configure").cyan()
@@ -285,7 +285,7 @@ async fn handle_existing_config() -> anyhow::Result<()> {
     );
     println!();
 
-    cliclack::intro(style(" goose-configure ").on_cyan().black())?;
+    cliclack::intro(style(" leaf-configure ").on_cyan().black())?;
     let action = cliclack::select("What would you like to configure?")
         .item(
             "providers",
@@ -306,8 +306,8 @@ async fn handle_existing_config() -> anyhow::Result<()> {
         .item("remove", "Remove Extension", "Remove an extension")
         .item(
             "settings",
-            "goose settings",
-            "Set the goose mode, Tool Output, Tool Permissions, Experiment, goose recipe github repo and more",
+            "leaf settings",
+            "Set the leaf mode, Tool Output, Tool Permissions, Experiment, leaf recipe github repo and more",
         )
         .interact()?;
 
@@ -875,7 +875,7 @@ pub async fn configure_provider_dialog() -> anyhow::Result<bool> {
     }
 }
 
-/// Configure extensions that can be used with goose
+/// Configure extensions that can be used with leaf
 /// Dialog for toggling which extensions are enabled/disabled
 pub fn toggle_extensions_dialog() -> anyhow::Result<()> {
     for warning in leaf::config::get_warnings() {
@@ -1197,7 +1197,7 @@ pub fn configure_extensions_dialog() -> anyhow::Result<()> {
         .item(
             "built-in",
             "Built-in Extension",
-            "Use an extension that comes with goose",
+            "Use an extension that comes with leaf",
         )
         .item(
             "stdio",
@@ -1285,7 +1285,7 @@ pub fn remove_extension_dialog() -> anyhow::Result<()> {
 
 pub async fn configure_settings_dialog() -> anyhow::Result<()> {
     let setting_type = cliclack::select("What setting would you like to configure?")
-        .item("leaf_mode", "goose mode", "Configure goose mode")
+        .item("leaf_mode", "leaf mode", "Configure leaf mode")
         .item(
             "telemetry",
             "Telemetry",
@@ -1318,8 +1318,8 @@ pub async fn configure_settings_dialog() -> anyhow::Result<()> {
         )
         .item(
             "recipe",
-            "goose recipe github repo",
-            "goose will pull recipes from this repo if not found locally.",
+            "leaf recipe github repo",
+            "leaf will pull recipes from this repo if not found locally.",
         )
         .interact()?;
 
@@ -1369,7 +1369,7 @@ pub fn configure_leaf_mode_dialog() -> anyhow::Result<()> {
         let _ = cliclack::log::info("Notice: GOOSE_MODE environment variable is set and will override the configuration here.");
     }
 
-    let mode = cliclack::select("Which goose mode would you like to configure?")
+    let mode = cliclack::select("Which leaf mode would you like to configure?")
         .item(
             LeafMode::Auto,
             "Auto Mode",
@@ -1481,7 +1481,7 @@ pub fn configure_keyring_dialog() -> anyhow::Result<()> {
     };
 
     let _ = cliclack::log::info(format!("Current secret storage: {}", current_status));
-    let _ = cliclack::log::warning("Note: Disabling the keyring stores secrets in a plain text file (~/.config/goose/secrets.yaml)");
+    let _ = cliclack::log::warning("Note: Disabling the keyring stores secrets in a plain text file (~/.config/leaf/secrets.yaml)");
 
     let storage_option = cliclack::select("How would you like to store secrets?")
         .item(
@@ -1502,16 +1502,16 @@ pub fn configure_keyring_dialog() -> anyhow::Result<()> {
             config.set_param("GOOSE_DISABLE_KEYRING", Value::String("".to_string()))?;
             cliclack::outro("Secret storage set to system keyring (secure)")?;
             let _ =
-                cliclack::log::info("You may need to restart goose for this change to take effect");
+                cliclack::log::info("You may need to restart leaf for this change to take effect");
         }
         "file" => {
             // Set the disable flag to use file storage
             config.set_param("GOOSE_DISABLE_KEYRING", Value::String("true".to_string()))?;
             cliclack::outro(
-                "Secret storage set to file (~/.config/goose/secrets.yaml). Keep this file secure!",
+                "Secret storage set to file (~/.config/leaf/secrets.yaml). Keep this file secure!",
             )?;
             let _ =
-                cliclack::log::info("You may need to restart goose for this change to take effect");
+                cliclack::log::info("You may need to restart leaf for this change to take effect");
         }
         _ => unreachable!(),
     };
@@ -1519,7 +1519,7 @@ pub fn configure_keyring_dialog() -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Configure experiment features that can be used with goose
+/// Configure experiment features that can be used with leaf
 /// Dialog for toggling which experiments are enabled/disabled
 pub fn toggle_experiments_dialog() -> anyhow::Result<()> {
     let experiments = ExperimentManager::get_all()?;
@@ -1735,10 +1735,9 @@ fn configure_recipe_dialog() -> anyhow::Result<()> {
     let default_recipe_repo = std::env::var(key_name)
         .ok()
         .or_else(|| config.get_param(key_name).unwrap_or(None));
-    let mut recipe_repo_input = cliclack::input(
-        "Enter your goose recipe GitHub repo (owner/repo): eg: my_org/goose-recipes",
-    )
-    .required(false);
+    let mut recipe_repo_input =
+        cliclack::input("Enter your leaf recipe GitHub repo (owner/repo): eg: my_org/leaf-recipes")
+            .required(false);
     if let Some(recipe_repo) = default_recipe_repo {
         recipe_repo_input = recipe_repo_input.default_input(&recipe_repo);
     }
@@ -1776,7 +1775,7 @@ pub fn configure_max_turns_dialog() -> anyhow::Result<()> {
     config.set_param("GOOSE_MAX_TURNS", max_turns)?;
 
     cliclack::outro(format!(
-        "Set maximum turns to {} - goose will ask for input after {} consecutive actions",
+        "Set maximum turns to {} - leaf will ask for input after {} consecutive actions",
         max_turns, max_turns
     ))?;
 
@@ -1823,7 +1822,7 @@ pub async fn handle_openrouter_auth() -> anyhow::Result<()> {
                 .complete(
                     &provider_model_config,
                     "",
-                    "You are goose, an AI assistant.",
+                    "You are leaf, an AI assistant.",
                     &[Message::user().with_text("Say 'Configuration test successful!'")],
                     &[],
                 )
@@ -1853,7 +1852,7 @@ pub async fn handle_openrouter_auth() -> anyhow::Result<()> {
                         println!("✓ Developer extension enabled");
                     }
 
-                    cliclack::outro("OpenRouter setup complete! You can now use goose.")?;
+                    cliclack::outro("OpenRouter setup complete! You can now use leaf.")?;
                 }
                 Err(e) => {
                     eprintln!("⚠️  Configuration test failed: {}", e);
@@ -1923,7 +1922,7 @@ pub async fn handle_tetrate_auth() -> anyhow::Result<()> {
                     }
 
                     cliclack::outro(
-                        "Tetrate Agent Router Service setup complete! You can now use goose.",
+                        "Tetrate Agent Router Service setup complete! You can now use leaf.",
                     )?;
                 }
                 Err(e) => {

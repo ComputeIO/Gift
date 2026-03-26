@@ -1057,7 +1057,7 @@ impl CliSession {
                 if should_act {
                     output::render_act_on_plan();
                     self.run_mode = RunMode::Normal;
-                    // set goose mode: auto if that isn't already the case
+                    // set leaf mode: auto if that isn't already the case
                     let config = Config::global();
                     let curr_leaf_mode = config.get_leaf_mode().unwrap_or_default();
                     if curr_leaf_mode != LeafMode::Auto {
@@ -1075,7 +1075,7 @@ impl CliSession {
                         .await?;
                     output::hide_thinking();
 
-                    // Reset run & goose mode
+                    // Reset run & leaf mode
                     if curr_leaf_mode != LeafMode::Auto {
                         config.set_leaf_mode(curr_leaf_mode)?;
                     }

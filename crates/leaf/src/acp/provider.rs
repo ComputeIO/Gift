@@ -356,7 +356,7 @@ impl Provider for AcpProvider {
         let reject_all_tools = leaf_mode == LeafMode::Chat;
 
         Ok(Box::pin(try_stream! {
-            // ACP agents execute tools internally. Goose never dispatches tool calls;
+            // ACP agents execute tools internally. Leaf never dispatches tool calls;
             // it only sees text, thoughts, and permission requests from the agent.
             //
             // In Chat mode (reject_all_tools), we suppress all text after a tool

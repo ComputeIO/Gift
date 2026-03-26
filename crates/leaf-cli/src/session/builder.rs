@@ -357,7 +357,7 @@ fn resolve_provider_and_model(
         .provider
         .clone()
         .or(saved_provider)
-        .or_else(|| recipe_settings.and_then(|s| s.goose_provider.clone()))
+        .or_else(|| recipe_settings.and_then(|s| s.leaf_provider.clone()))
         .or_else(|| config.get_leaf_provider().ok())
         .expect("No provider configured. Run 'leaf configure' first");
 

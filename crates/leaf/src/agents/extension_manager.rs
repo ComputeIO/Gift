@@ -110,7 +110,7 @@ pub struct ExtensionManagerCapabilities {
     pub mcpui: bool,
 }
 
-/// Manages goose extensions / MCP clients and their interactions
+/// Manages leaf extensions / MCP clients and their interactions
 pub struct ExtensionManager {
     extensions: Mutex<HashMap<String, Extension>>,
     context: PlatformExtensionContext,
@@ -193,7 +193,7 @@ pub fn get_parameter_names(tool: &Tool) -> Vec<String> {
     names
 }
 
-const TOOL_EXTENSION_META_KEY: &str = "goose_extension";
+const TOOL_EXTENSION_META_KEY: &str = "leaf_extension";
 
 pub fn get_tool_owner(tool: &Tool) -> Option<String> {
     tool.meta
@@ -399,8 +399,8 @@ pub(crate) fn substitute_env_vars(value: &str, env_map: &HashMap<String, String>
     result
 }
 
-const GOOSE_USER_AGENT: reqwest::header::HeaderValue =
-    reqwest::header::HeaderValue::from_static(concat!("goose/", env!("CARGO_PKG_VERSION")));
+const LEAF_USER_AGENT: reqwest::header::HeaderValue =
+    reqwest::header::HeaderValue::from_static(concat!("leaf/", env!("CARGO_PKG_VERSION")));
 
 #[allow(clippy::too_many_arguments)]
 async fn create_streamable_http_client(
@@ -415,7 +415,7 @@ async fn create_streamable_http_client(
 ) -> ExtensionResult<Box<dyn McpClientTrait>> {
     let mut default_headers = HeaderMap::new();
 
-    default_headers.insert(reqwest::header::USER_AGENT, GOOSE_USER_AGENT);
+    default_headers.insert(reqwest::header::USER_AGENT, LEAF_USER_AGENT);
 
     for (key, value) in headers {
         default_headers.insert(
@@ -458,7 +458,7 @@ async fn create_streamable_http_client(
             .await
             .map_err(|_| ExtensionError::SetupError("auth error".to_string()))?;
         let mut auth_headers = HeaderMap::new();
-        auth_headers.insert(reqwest::header::USER_AGENT, GOOSE_USER_AGENT);
+        auth_headers.insert(reqwest::header::USER_AGENT, LEAF_USER_AGENT);
         let auth_http_client = reqwest::Client::builder()
             .default_headers(auth_headers)
             .build()
@@ -569,7 +569,7 @@ impl ExtensionManager {
 
         let effective_working_dir = working_dir
             .clone()
-            .or_else(|| std::env::var("GOOSE_WORKING_DIR").ok().map(PathBuf::from))
+            .or_else(|| std::env::var("LEAF_WORKING_DIR").ok().map(PathBuf::from))
             .unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
 
         let client: Box<dyn McpClientTrait> = match &config {

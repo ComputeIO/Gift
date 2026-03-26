@@ -17,9 +17,9 @@ fn main() {
         .map(|(k, v)| (k, serde_json::to_value(v).unwrap_or(json!({}))))
         .collect();
 
-    // Strip the `_goose/` prefix to get the bare method name for x-method.
+    // Strip the `_leaf/` prefix to get the bare method name for x-method.
     fn bare_method(full: &str) -> &str {
-        full.strip_prefix("_goose/").unwrap_or(full)
+        full.strip_prefix("_leaf/").unwrap_or(full)
     }
 
     // Track which types map to which methods so we can detect shared types.

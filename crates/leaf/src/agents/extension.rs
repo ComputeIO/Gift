@@ -185,7 +185,7 @@ pub enum ExtensionConfig {
         #[serde(default)]
         available_tools: Vec<String>,
     },
-    /// Built-in extension that is part of the bundled goose MCP server
+    /// Built-in extension that is part of the bundled leaf MCP server
     #[serde(rename = "builtin")]
     Builtin {
         /// The name used to identify this extension

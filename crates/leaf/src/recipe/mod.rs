@@ -97,7 +97,7 @@ pub struct Author {
 #[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct Settings {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub goose_provider: Option<String>,
+    pub leaf_provider: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub leaf_model: Option<String>,

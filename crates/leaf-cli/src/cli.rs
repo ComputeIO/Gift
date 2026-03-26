@@ -108,7 +108,7 @@ pub struct SessionOptions {
         long = "container",
         value_name = "CONTAINER_ID",
         help = "Docker container ID to run extensions inside",
-        long_help = "Run extensions (stdio and built-in) inside the specified container. The extension must exist in the container. For built-in extensions, goose must be installed inside the container."
+        long_help = "Run extensions (stdio and built-in) inside the specified container. The extension must exist in the container. For built-in extensions, leaf must be installed inside the container."
     )]
     pub container: Option<String>,
 }
@@ -171,7 +171,7 @@ pub struct ExtensionOptions {
         long = "with-builtin",
         value_name = "NAME",
         help = "Add builtin extensions by name (e.g., 'developer' or multiple: 'developer,github')",
-        long_help = "Add one or more builtin extensions that are bundled with goose by specifying their names, comma-separated",
+        long_help = "Add one or more builtin extensions that are bundled with leaf by specifying their names, comma-separated",
         value_delimiter = ','
     )]
     pub builtins: Vec<String>,
@@ -202,8 +202,8 @@ pub struct InputOptions {
         short = 't',
         long = "text",
         value_name = "TEXT",
-        help = "Input text to provide to goose directly",
-        long_help = "Input text containing commands for goose. Use this in lieu of the instructions argument.",
+        help = "Input text to provide to leaf directly",
+        long_help = "Input text containing commands for leaf. Use this in lieu of the instructions argument.",
         conflicts_with = "instructions",
         conflicts_with = "recipe"
     )]
@@ -234,7 +234,7 @@ pub struct InputOptions {
     #[arg(
         long,
         value_name = "KEY=VALUE",
-        help = "Dynamic parameters (e.g., --params username=alice --params channel_name=goose-channel)",
+        help = "Dynamic parameters (e.g., --params username=alice --params channel_name=leaf-channel)",
         long_help = "Key-value parameters to pass to the recipe file. Can be specified multiple times.",
         action = clap::ArgAction::Append,
         value_parser = parse_key_val,
@@ -704,12 +704,12 @@ enum RecipeCommand {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Configure goose settings
-    #[command(about = "Configure goose settings")]
+    /// Configure leaf settings
+    #[command(about = "Configure leaf settings")]
     Configure {},
 
-    /// Display goose configuration information
-    #[command(about = "Display goose information")]
+    /// Display leaf configuration information
+    #[command(about = "Display leaf information")]
     Info {
         /// Show verbose information including current configuration
         #[arg(short, long, help = "Show verbose information including config.yaml")]
@@ -717,21 +717,21 @@ enum Command {
     },
 
     /// Manage system prompts and behaviors
-    #[command(about = "Run one of the mcp servers bundled with goose")]
+    #[command(about = "Run one of the mcp servers bundled with leaf")]
     Mcp {
         #[arg(value_parser = clap::value_parser!(McpCommand))]
         server: McpCommand,
     },
 
-    /// Run goose as an ACP (Agent Client Protocol) agent
-    #[command(about = "Run goose as an ACP agent server on stdio")]
+    /// Run leaf as an ACP (Agent Client Protocol) agent
+    #[command(about = "Run leaf as an ACP agent server on stdio")]
     Acp {
         /// Add builtin extensions by name
         #[arg(
             long = "with-builtin",
             value_name = "NAME",
             help = "Add builtin extensions by name (e.g., 'developer' or multiple: 'developer,github')",
-            long_help = "Add one or more builtin extensions that are bundled with goose by specifying their names, comma-separated",
+            long_help = "Add one or more builtin extensions that are bundled with leaf by specifying their names, comma-separated",
             value_delimiter = ','
         )]
         builtins: Vec<String>,
@@ -839,33 +839,33 @@ enum Command {
         command: GatewayCommand,
     },
 
-    /// Update the goose CLI version
-    #[command(about = "Update the goose CLI version")]
+    /// Update the leaf CLI version
+    #[command(about = "Update the leaf CLI version")]
     Update {
         /// Update to canary version
         #[arg(
             short,
             long,
             help = "Update to canary version",
-            long_help = "Update to the latest canary version of the goose CLI, otherwise updates to the latest stable version."
+            long_help = "Update to the latest canary version of the leaf CLI, otherwise updates to the latest stable version."
         )]
         canary: bool,
 
-        /// Enforce to re-configure goose during update
-        #[arg(short, long, help = "Enforce to re-configure goose during update")]
+        /// Enforce to re-configure leaf during update
+        #[arg(short, long, help = "Enforce to re-configure leaf during update")]
         reconfigure: bool,
     },
 
     /// Terminal-integrated session (one session per terminal)
     #[command(
-        about = "Terminal-integrated goose session",
-        long_about = "Runs a goose session tied to your terminal window.\n\
+        about = "Terminal-integrated leaf session",
+        long_about = "Runs a leaf session tied to your terminal window.\n\
                       Each terminal maintains its own persistent session that resumes automatically.\n\n\
                       Setup:\n  \
-                        eval \"$(goose term init zsh)\"  # Add to ~/.zshrc\n\n\
+                        eval \"$(leaf term init zsh)\"  # Add to ~/.zshrc\n\n\
                       Usage:\n  \
-                        goose term run \"list files in this directory\"\n  \
-                        @goose \"create a python script\"  # using alias\n  \
+                        leaf term run \"list files in this directory\"\n  \
+                        @leaf \"create a python script\"  # using alias\n  \
                         @g \"quick question\"  # short alias"
     )]
     Term {
@@ -900,12 +900,12 @@ enum TermCommand {
     #[command(
         about = "Print shell initialization script",
         long_about = "Prints shell configuration to set up terminal-integrated sessions.\n\
-                      Each terminal gets a persistent goose session that automatically resumes.\n\n\
+                      Each terminal gets a persistent leaf session that automatically resumes.\n\n\
                       Setup:\n  \
-                        echo 'eval \"$(goose term init zsh)\"' >> ~/.zshrc\n  \
+                        echo 'eval \"$(leaf term init zsh)\"' >> ~/.zshrc\n  \
                         source ~/.zshrc\n\n\
-                      With --default (anything typed that isn't a command goes to goose):\n  \
-                        echo 'eval \"$(goose term init zsh --default)\"' >> ~/.zshrc"
+                      With --default (anything typed that isn't a command goes to leaf):\n  \
+                        echo 'eval \"$(leaf term init zsh --default)\"' >> ~/.zshrc"
     )]
     Init {
         /// Shell type (bash, zsh, fish, powershell)
@@ -915,11 +915,11 @@ enum TermCommand {
         #[arg(short, long, help = "Name for the terminal session")]
         name: Option<String>,
 
-        /// Make goose the default handler for unknown commands
+        /// Make leaf the default handler for unknown commands
         #[arg(
             long = "default",
-            help = "Make goose the default handler for unknown commands",
-            long_help = "When enabled, anything you type that isn't a valid command will be sent to goose. Only supported for zsh and bash."
+            help = "Make leaf the default handler for unknown commands",
+            long_help = "When enabled, anything you type that isn't a valid command will be sent to leaf. Only supported for zsh and bash."
         )]
         default: bool,
     },
@@ -936,12 +936,12 @@ enum TermCommand {
         about = "Run a prompt in the terminal session",
         long_about = "Run a prompt in the terminal-integrated session.\n\n\
                       Examples:\n  \
-                        goose term run list files in this directory\n  \
-                        @goose list files  # using alias\n  \
+                        leaf term run list files in this directory\n  \
+                        @leaf list files  # using alias\n  \
                         @g why did that fail  # short alias"
     )]
     Run {
-        /// The prompt to send to goose (multiple words allowed without quotes)
+        /// The prompt to send to leaf (multiple words allowed without quotes)
         #[arg(required = true, num_args = 1..)]
         prompt: Vec<String>,
     },
@@ -1215,7 +1215,7 @@ fn parse_run_input(
         (Some(file), _, _) => {
             let contents = std::fs::read_to_string(file).unwrap_or_else(|err| {
                 eprintln!(
-                    "Instruction file not found — did you mean to use goose run --text?\n{}",
+                    "Instruction file not found — did you mean to use leaf run --text?\n{}",
                     err
                 );
                 std::process::exit(1);
