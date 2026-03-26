@@ -49,8 +49,24 @@ struct DeltaToolCall {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(untagged)]
+enum DeltaContent {
+    String(String),
+    Array(Vec<ContentPart>),
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct ContentPart {
+    r#type: String,
+    text: String,
+    #[serde(rename = "thoughtSignature")]
+    thought_signature: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 struct Delta {
-    content: Option<String>,
+    #[serde(default)]
+    content: Option<DeltaContent>,
     role: Option<String>,
     tool_calls: Option<Vec<DeltaToolCall>>,
     reasoning_details: Option<Vec<Value>>,
@@ -72,6 +88,32 @@ struct StreamingChunk {
     id: Option<String>,
     usage: Option<Value>,
     model: Option<String>,
+}
+
+fn extract_content_and_signature(
+    delta_content: Option<&DeltaContent>,
+) -> (Option<String>, Option<String>) {
+    match delta_content {
+        Some(DeltaContent::String(s)) => (Some(s.clone()), None),
+        Some(DeltaContent::Array(parts)) => {
+            let text_parts: Vec<_> = parts.iter().filter(|p| p.r#type == "text").collect();
+
+            let text = text_parts
+                .iter()
+                .map(|p| p.text.as_str())
+                .collect::<String>();
+
+            let signature = text_parts
+                .iter()
+                .find_map(|p| p.thought_signature.as_ref())
+                .cloned();
+
+            let text = if text.is_empty() { None } else { Some(text) };
+
+            (text, signature)
+        }
+        None => (None, None),
+    }
 }
 
 pub fn format_messages(messages: &[Message], image_format: &ImageFormat) -> Vec<Value> {
@@ -564,6 +606,7 @@ where
 
         let mut accumulated_reasoning: Vec<Value> = Vec::new();
         let mut accumulated_reasoning_content = String::new();
+        let mut last_signature: Option<String> = None;
 
         'outer: while let Some(response) = stream.next().await {
             let response_str = response?;
@@ -685,14 +728,23 @@ where
                             serde_json::from_str::<Value>(arguments)
                         };
 
-                        let metadata = extra_fields.as_ref().filter(|m| !m.is_empty());
+                        let metadata = if let Some(sig) = &last_signature {
+                            let mut combined = extra_fields.clone().unwrap_or_default();
+                            combined.insert(
+                                crate::providers::formats::google::THOUGHT_SIGNATURE_KEY.to_string(),
+                                json!(sig)
+                            );
+                            Some(combined)
+                        } else {
+                            extra_fields.as_ref().filter(|m| !m.is_empty()).cloned()
+                        };
 
                         let content = match parsed {
                             Ok(params) => {
                                 MessageContent::tool_request_with_metadata(
                                     id.clone(),
                                     Ok(CallToolRequestParams::new(function_name.clone()).with_arguments(object(params))),
-                                    metadata,
+                                    metadata.as_ref(),
                                 )
                             },
                             Err(e) => {
@@ -704,7 +756,7 @@ where
                                     )),
                                     data: None,
                                 };
-                                MessageContent::tool_request_with_metadata(id.clone(), Err(error), metadata)
+                                MessageContent::tool_request_with_metadata(id.clone(), Err(error), metadata.as_ref())
                             }
                         };
                         contents.push(content);
@@ -731,13 +783,20 @@ where
 
                 if let Some(reasoning) = &chunk.choices[0].delta.reasoning_content {
                     if !reasoning.is_empty() {
-                        content.push(MessageContent::thinking(reasoning, ""));
+                        let signature = last_signature.as_deref().unwrap_or("");
+                        content.push(MessageContent::thinking(reasoning, signature));
                     }
                 }
 
-                if let Some(text) = &chunk.choices[0].delta.content {
+                let (text_content, thought_signature) = extract_content_and_signature(chunk.choices[0].delta.content.as_ref());
+
+                if let Some(sig) = thought_signature {
+                    last_signature = Some(sig);
+                }
+
+                if let Some(text) = text_content {
                     if !text.is_empty() {
-                        content.push(MessageContent::text(text));
+                        content.push(MessageContent::text(&text));
                     }
                 }
 

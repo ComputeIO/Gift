@@ -36,6 +36,7 @@ pub struct AcpProviderConfig {
     pub work_dir: PathBuf,
     pub mcp_servers: Vec<McpServer>,
     pub session_mode_id: Option<String>,
+    pub mode_mapping: HashMap<LeafMode, String>,
     pub permission_mapping: PermissionMapping,
     pub notification_callback: Option<Arc<dyn Fn(SessionNotification) + Send + Sync>>,
 }
