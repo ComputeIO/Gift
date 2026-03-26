@@ -1105,7 +1105,7 @@ async fn handle_interactive_session(
         }
     }
 
-    let leaf_mode = Config::global().get_goose_mode().unwrap_or_default();
+    let leaf_mode = Config::global().get_leaf_mode().unwrap_or_default();
     let mut session_id = get_or_create_session_id(identifier, resume, false, leaf_mode).await?;
 
     if fork {
@@ -1319,7 +1319,7 @@ async fn handle_run_command(
         }
     }
 
-    let leaf_mode = Config::global().get_goose_mode().unwrap_or_default();
+    let leaf_mode = Config::global().get_leaf_mode().unwrap_or_default();
     let session_id = get_or_create_session_id(
         identifier,
         run_behavior.resume,
@@ -1451,7 +1451,7 @@ async fn handle_default_session() -> Result<()> {
         configure_telemetry_consent_dialog()?;
     }
 
-    let leaf_mode = Config::global().get_goose_mode().unwrap_or_default();
+    let leaf_mode = Config::global().get_leaf_mode().unwrap_or_default();
     let session_id = get_or_create_session_id(None, false, false, leaf_mode).await?;
 
     let mut session = build_session(SessionBuilderConfig {

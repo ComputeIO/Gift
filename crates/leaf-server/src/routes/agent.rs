@@ -11,7 +11,7 @@ use axum::{
     Json, Router,
 };
 use leaf::agents::{Container, ExtensionLoadResult};
-use leaf::leaf_apps::{fetch_mcp_apps, GooseApp, McpAppCache};
+use leaf::leaf_apps::{fetch_mcp_apps, LeafApp, McpAppCache};
 
 use base64::Engine;
 use leaf::agents::reply_parts::is_tool_visible_to_app;
@@ -241,7 +241,7 @@ async fn start_agent(
 
     let manager = state.session_manager();
     let config = Config::global();
-    let current_mode = config.get_goose_mode().unwrap_or_default();
+    let current_mode = config.get_leaf_mode().unwrap_or_default();
 
     let mut session = manager
         .create_session(
@@ -580,7 +580,7 @@ async fn update_agent_provider(
         .map_err(|e| (e, "No agent for session id".to_owned()))?;
 
     let config = Config::global();
-    let model = match payload.model.or_else(|| config.get_goose_model().ok()) {
+    let model = match payload.model.or_else(|| config.get_leaf_model().ok()) {
         Some(m) => m,
         None => {
             return Err((StatusCode::BAD_REQUEST, "No model specified".to_owned()));
@@ -1121,7 +1121,7 @@ pub struct ListAppsRequest {
 #[derive(Serialize, utoipa::ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ListAppsResponse {
-    pub apps: Vec<GooseApp>,
+    pub apps: Vec<LeafApp>,
 }
 
 #[utoipa::path(
@@ -1274,7 +1274,7 @@ async fn import_app(
         status: StatusCode::INTERNAL_SERVER_ERROR,
     })?;
 
-    let mut app = GooseApp::from_html(&body.html).map_err(|e| ErrorResponse {
+    let mut app = LeafApp::from_html(&body.html).map_err(|e| ErrorResponse {
         message: format!("Invalid Leaf App HTML: {}", e),
         status: StatusCode::BAD_REQUEST,
     })?;

@@ -738,7 +738,7 @@ impl CliSession {
                 return Ok(());
             }
         };
-        config.set_goose_mode(mode)?;
+        config.set_leaf_mode(mode)?;
         output::leaf_mode_message(&format!("Goose mode set to '{mode}'"));
         Ok(())
     }
@@ -1059,9 +1059,9 @@ impl CliSession {
                     self.run_mode = RunMode::Normal;
                     // set goose mode: auto if that isn't already the case
                     let config = Config::global();
-                    let curr_leaf_mode = config.get_goose_mode().unwrap_or_default();
+                    let curr_leaf_mode = config.get_leaf_mode().unwrap_or_default();
                     if curr_leaf_mode != LeafMode::Auto {
-                        config.set_goose_mode(LeafMode::Auto).unwrap();
+                        config.set_leaf_mode(LeafMode::Auto).unwrap();
                     }
 
                     // clear the messages before acting on the plan
@@ -1077,7 +1077,7 @@ impl CliSession {
 
                     // Reset run & goose mode
                     if curr_leaf_mode != LeafMode::Auto {
-                        config.set_goose_mode(curr_leaf_mode)?;
+                        config.set_leaf_mode(curr_leaf_mode)?;
                     }
                 } else {
                     // add the plan response (assistant message) & carry the conversation forward
@@ -1483,7 +1483,7 @@ impl CliSession {
             .unwrap_or(false);
 
         let provider_name = config
-            .get_goose_provider()
+            .get_leaf_provider()
             .unwrap_or_else(|_| "unknown".to_string());
 
         match self.get_session().await {
@@ -2049,9 +2049,9 @@ async fn get_reasoner() -> Result<Arc<dyn Provider>, anyhow::Error> {
     let provider = if let Ok(provider) = config.get_param::<String>("GOOSE_PLANNER_PROVIDER") {
         provider
     } else {
-        println!("WARNING: GOOSE_PLANNER_PROVIDER not found. Using default provider...");
+        println!("WARNING: LEAF_PLANNER_PROVIDER not found. Using default provider...");
         config
-            .get_goose_provider()
+            .get_leaf_provider()
             .expect("No provider configured. Run 'leaf configure' first")
     };
 
@@ -2059,14 +2059,14 @@ async fn get_reasoner() -> Result<Arc<dyn Provider>, anyhow::Error> {
     let model = if let Ok(model) = config.get_param::<String>("GOOSE_PLANNER_MODEL") {
         model
     } else {
-        println!("WARNING: GOOSE_PLANNER_MODEL not found. Using default model...");
+        println!("WARNING: LEAF_PLANNER_MODEL not found. Using default model...");
         config
-            .get_goose_model()
+            .get_leaf_model()
             .expect("No model configured. Run 'leaf configure' first")
     };
 
     let model_config =
-        ModelConfig::new_with_context_env(model, &provider, Some("GOOSE_PLANNER_CONTEXT_LIMIT"))?;
+        ModelConfig::new_with_context_env(model, &provider, Some("LEAF_PLANNER_CONTEXT_LIMIT"))?;
     let extensions = leaf::config::extensions::get_enabled_extensions_with_config(config);
     let reasoner = create(&provider, model_config, extensions).await?;
 

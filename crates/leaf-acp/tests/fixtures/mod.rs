@@ -11,7 +11,7 @@ use leaf::providers::base::Provider;
 use leaf::providers::openai::OpenAiProvider;
 use leaf::providers::provider_registry::ProviderConstructor;
 use leaf::session_context::SESSION_ID_HEADER;
-use leaf_acp::server::{serve, GooseAcpAgent};
+use leaf_acp::server::{serve, LeafAcpAgent};
 use leaf_test_support::{ExpectedSessionId, TEST_MODEL};
 use sacp::schema::{
     AuthMethod, CreateTerminalResponse, KillTerminalCommandResponse, McpServer,
@@ -132,9 +132,7 @@ pub type DuplexTransport = sacp::ByteStreams<
 /// Wires up duplex streams, spawns `serve` for the given agent, and returns
 /// a ready-to-use sacp transport plus the server handle.
 #[allow(dead_code)]
-pub async fn serve_agent_in_process(
-    agent: Arc<GooseAcpAgent>,
-) -> (DuplexTransport, JoinHandle<()>) {
+pub async fn serve_agent_in_process(agent: Arc<LeafAcpAgent>) -> (DuplexTransport, JoinHandle<()>) {
     let (client_read, server_write) = tokio::io::duplex(64 * 1024);
     let (server_read, client_write) = tokio::io::duplex(64 * 1024);
 
@@ -181,7 +179,7 @@ pub async fn spawn_acp_server_in_process(
     });
 
     let agent = Arc::new(
-        GooseAcpAgent::new(
+        LeafAcpAgent::new(
             provider_factory,
             builtins.to_vec(),
             data_root.to_path_buf(),

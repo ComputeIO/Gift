@@ -358,7 +358,7 @@ fn resolve_provider_and_model(
         .clone()
         .or(saved_provider)
         .or_else(|| recipe_settings.and_then(|s| s.goose_provider.clone()))
-        .or_else(|| config.get_goose_provider().ok())
+        .or_else(|| config.get_leaf_provider().ok())
         .expect("No provider configured. Run 'leaf configure' first");
 
     let model_name = session_config
@@ -366,7 +366,7 @@ fn resolve_provider_and_model(
         .clone()
         .or_else(|| saved_model_config.as_ref().map(|mc| mc.model_name.clone()))
         .or_else(|| recipe_settings.and_then(|s| s.leaf_model.clone()))
-        .or_else(|| config.get_goose_model().ok())
+        .or_else(|| config.get_leaf_model().ok())
         .expect("No model configured. Run 'leaf configure' first");
 
     let model_config = if session_config.resume

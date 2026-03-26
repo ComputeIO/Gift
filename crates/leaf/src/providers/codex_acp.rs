@@ -51,7 +51,7 @@ impl ProviderDef for CodexAcpProvider {
                 .resolve(CODEX_ACP_BINARY)?;
             let work_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
             let env = vec![];
-            let leaf_mode = config.get_goose_mode().unwrap_or(LeafMode::Auto);
+            let leaf_mode = config.get_leaf_mode().unwrap_or(LeafMode::Auto);
             let mcp_servers = extension_configs_to_mcp_servers(&extensions);
 
             let permission_mapping = PermissionMapping {

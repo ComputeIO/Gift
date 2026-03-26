@@ -54,7 +54,7 @@ impl From<keyring::Error> for ConfigError {
     }
 }
 
-/// Configuration management for goose.
+/// Configuration management for leaf.
 ///
 /// This module provides a flexible configuration system that supports:
 /// - Dynamic configuration keys
@@ -66,13 +66,13 @@ impl From<keyring::Error> for ConfigError {
 ///
 /// Configuration values are loaded with the following precedence:
 /// 1. Environment variables (exact key match)
-/// 2. Configuration file (~/.config/goose/config.yaml by default)
+/// 2. Configuration file (~/.config/leaf/config.yaml by default)
 ///
 /// Secrets are loaded with the following precedence:
 /// 1. Environment variables (exact key match)
-/// 2. System keyring (which can be disabled with GOOSE_DISABLE_KEYRING)
+/// 2. System keyring (which can be disabled with LEAF_DISABLE_KEYRING)
 /// 3. If the keyring is disabled, secrets are stored in a secrets file
-///    (~/.config/goose/secrets.yaml by default)
+///    (~/.config/leaf/secrets.yaml by default)
 ///
 /// # Examples
 ///
@@ -99,7 +99,7 @@ impl From<keyring::Error> for ConfigError {
 /// checking for environment overrides. e.g. openai_api_key will check for an
 /// environment variable OPENAI_API_KEY
 ///
-/// For goose-specific configuration, consider prefixing with "goose_" to avoid conflicts.
+/// For leaf-specific configuration, consider prefixing with "leaf_" to avoid conflicts.
 pub struct Config {
     config_path: PathBuf,
     defaults_path: Option<PathBuf>,
@@ -132,7 +132,7 @@ impl Default for Config {
             }
         });
 
-        let secrets = match env::var("GOOSE_DISABLE_KEYRING") {
+        let secrets = match env::var("LEAF_DISABLE_KEYRING") {
             Ok(_) => SecretStorage::File {
                 path: config_dir.join("secrets.yaml"),
             },
@@ -232,7 +232,7 @@ fn parse_yaml_content(content: &str) -> Result<Mapping, ConfigError> {
 impl Config {
     /// Get the global configuration instance.
     ///
-    /// This will initialize the configuration with the default path (~/.config/goose/config.yaml)
+    /// This will initialize the configuration with the default path (~/.config/leaf/config.yaml)
     /// if it hasn't been initialized yet.
     pub fn global() -> &'static Config {
         GLOBAL_CONFIG.get_or_init(Config::default)
@@ -672,7 +672,7 @@ impl Config {
     ///
     /// This will attempt to get the value from (in order):
     /// 1. Environment variable with the uppercase key name
-    /// 2. Configuration file (~/.config/goose/config.yaml)
+    /// 2. Configuration file (~/.config/leaf/config.yaml)
     /// 3. Bundled defaults file (defaults.yaml in workspace root or executable directory)
     ///
     /// The value will be deserialized into the requested type. This works with
@@ -968,7 +968,7 @@ impl Config {
         fallback_values: Option<&HashMap<String, Value>>,
     ) -> Result<T, ConfigError> {
         if self.is_keyring_availability_error(&keyring_err.to_string()) {
-            std::env::set_var("GOOSE_DISABLE_KEYRING", "1");
+            std::env::set_var("LEAF_DISABLE_KEYRING", "1");
             tracing::warn!("Keyring unavailable. Using file storage for secrets.");
 
             if let Some(values) = fallback_values {
@@ -1014,13 +1014,13 @@ config_value!(CODEX_ENABLE_SKILLS, String, "true");
 config_value!(CODEX_SKIP_GIT_CHECK, String, "false");
 config_value!(CHATGPT_CODEX_REASONING_EFFORT, String, "medium");
 
-config_value!(GOOSE_SEARCH_PATHS, Vec<String>);
-config_value!(GOOSE_MODE, LeafMode);
-config_value!(GOOSE_PROVIDER, String);
-config_value!(GOOSE_MODEL, String);
-config_value!(GOOSE_PROMPT_EDITOR, Option<String>);
-config_value!(GOOSE_MAX_ACTIVE_AGENTS, usize);
-config_value!(GOOSE_DISABLE_SESSION_NAMING, bool);
+config_value!(LEAF_SEARCH_PATHS, Vec<String>);
+config_value!(LEAF_MODE, LeafMode);
+config_value!(LEAF_PROVIDER, String);
+config_value!(LEAF_MODEL, String);
+config_value!(LEAF_PROMPT_EDITOR, Option<String>);
+config_value!(LEAF_MAX_ACTIVE_AGENTS, usize);
+config_value!(LEAF_DISABLE_SESSION_NAMING, bool);
 config_value!(GEMINI3_THINKING_LEVEL, String);
 config_value!(CLAUDE_THINKING_TYPE, String);
 config_value!(CLAUDE_THINKING_EFFORT, String);

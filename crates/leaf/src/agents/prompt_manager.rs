@@ -136,7 +136,7 @@ impl<'a> SystemPromptBuilder<'a, PromptManager> {
 
         let leaf_mode = self
             .leaf_mode
-            .unwrap_or_else(|| Config::global().get_goose_mode().unwrap_or_default());
+            .unwrap_or_else(|| Config::global().get_leaf_mode().unwrap_or_default());
 
         let extension_tool_limits = self
             .extension_tool_count

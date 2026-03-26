@@ -50,7 +50,7 @@ pub struct ShellOutput {
 
 /// Resolve the user's full PATH by running a login shell.
 ///
-/// When goosed is launched from a desktop app (e.g. Electron), it may inherit
+/// When leafd is launched from a desktop app (e.g. Electron), it may inherit
 /// a minimal PATH like `/usr/bin:/bin`. This function spawns a login shell to
 /// source the user's profile and recover the full PATH.
 #[cfg(not(windows))]
@@ -388,7 +388,7 @@ fn build_shell_command(command_line: &str) -> tokio::process::Command {
 
     #[cfg(not(windows))]
     let mut command = {
-        let shell = std::env::var("GOOSE_SHELL").unwrap_or_else(|_| {
+        let shell = std::env::var("LEAF_SHELL").unwrap_or_else(|_| {
             if PathBuf::from("/bin/bash").is_file() {
                 "/bin/bash".to_string()
             } else {

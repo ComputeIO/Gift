@@ -794,8 +794,8 @@ pub async fn set_config_provider(
         .and_then(|_| {
             let config = Config::global();
             config
-                .set_goose_provider(provider.clone())
-                .and_then(|_| config.set_goose_model(model.clone()))
+                .set_leaf_provider(provider.clone())
+                .and_then(|_| config.set_leaf_model(model.clone()))
                 .map_err(|e| anyhow::anyhow!(e))
         })
         .map_err(|err| {
