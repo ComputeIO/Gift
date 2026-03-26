@@ -260,8 +260,8 @@ async fn test_replayed_session(
     let extension_manager = Arc::new(ExtensionManager::new(
         provider,
         session_manager,
-        LeafPlatform::LeafDesktop.to_string(),
-        ExtensionManagerCapabilities { mcpui: true },
+        LeafPlatform::LeafCli.to_string(),
+        ExtensionManagerCapabilities { mcpui: false },
     ));
 
     #[allow(clippy::redundant_closure_call)]

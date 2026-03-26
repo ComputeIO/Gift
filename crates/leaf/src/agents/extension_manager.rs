@@ -34,7 +34,7 @@ use super::tool_execution::{ToolCallContext, ToolCallResult};
 use super::types::SharedProvider;
 use crate::agents::extension::{Envs, ProcessExit};
 use crate::agents::extension_malware_check;
-use crate::agents::mcp_client::{GooseMcpClientCapabilities, McpClient, McpClientTrait};
+use crate::agents::mcp_client::{LeafMcpClientCapabilities, McpClient, McpClientTrait};
 use crate::builtin_extension::get_builtin_extension;
 use crate::config::extensions::name_to_key;
 use crate::config::search_path::SearchPaths;
@@ -242,7 +242,7 @@ async fn child_process_client(
     working_dir: &PathBuf,
     docker_container: Option<String>,
     client_name: String,
-    capabilities: GooseMcpClientCapabilities,
+    capabilities: LeafMcpClientCapabilities,
 ) -> ExtensionResult<McpClient> {
     configure_subprocess(&mut command);
 
@@ -410,7 +410,7 @@ async fn create_streamable_http_client(
     name: &str,
     provider: SharedProvider,
     client_name: String,
-    capabilities: GooseMcpClientCapabilities,
+    capabilities: LeafMcpClientCapabilities,
     roots_dir: &std::path::Path,
 ) -> ExtensionResult<Box<dyn McpClientTrait>> {
     let mut default_headers = HeaderMap::new();
@@ -594,7 +594,7 @@ impl ExtensionManager {
                     .iter()
                     .map(|(k, v)| (k.clone(), substitute_env_vars(v, &all_envs)))
                     .collect();
-                let capability = GooseMcpClientCapabilities {
+                let capability = LeafMcpClientCapabilities {
                     mcpui: self.capabilities.mcpui,
                 };
 
@@ -656,7 +656,7 @@ impl ExtensionManager {
                                 .arg(&normalized_name);
                         });
 
-                        let capabilities = GooseMcpClientCapabilities {
+                        let capabilities = LeafMcpClientCapabilities {
                             mcpui: self.capabilities.mcpui,
                         };
 
@@ -676,7 +676,7 @@ impl ExtensionManager {
                         let (client_read, server_write) = tokio::io::duplex(65536);
                         extension_fn(server_read, server_write);
 
-                        let capabilities = GooseMcpClientCapabilities {
+                        let capabilities = LeafMcpClientCapabilities {
                             mcpui: self.capabilities.mcpui,
                         };
 
@@ -736,7 +736,7 @@ impl ExtensionManager {
                     })
                 };
 
-                let capabilities = GooseMcpClientCapabilities {
+                let capabilities = LeafMcpClientCapabilities {
                     mcpui: self.capabilities.mcpui,
                 };
                 let client = child_process_client(
@@ -771,7 +771,7 @@ impl ExtensionManager {
                     command.arg("python").arg(file_path.to_str().unwrap());
                 });
 
-                let capabilities = GooseMcpClientCapabilities {
+                let capabilities = LeafMcpClientCapabilities {
                     mcpui: self.capabilities.mcpui,
                 };
 

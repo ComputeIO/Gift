@@ -700,7 +700,7 @@ pub async fn configure_provider_dialog() -> anyhow::Result<bool> {
         .collect();
 
     // Get current default provider if it exists
-    let current_provider: Option<String> = config.get_goose_provider().ok();
+    let current_provider: Option<String> = config.get_leaf_provider().ok();
     let default_provider = current_provider.unwrap_or_default();
 
     // Select provider
@@ -862,8 +862,8 @@ pub async fn configure_provider_dialog() -> anyhow::Result<bool> {
     match test_provider_configuration(provider_name, &model, toolshim_enabled, toolshim_model).await
     {
         Ok(()) => {
-            config.set_goose_provider(provider_name)?;
-            config.set_goose_model(&model)?;
+            config.set_leaf_provider(provider_name)?;
+            config.set_leaf_model(&model)?;
             print_config_file_saved()?;
             Ok(true)
         }
@@ -1392,7 +1392,7 @@ pub fn configure_leaf_mode_dialog() -> anyhow::Result<()> {
         )
         .interact()?;
 
-    config.set_goose_mode(mode)?;
+    config.set_leaf_mode(mode)?;
     let msg = match mode {
         LeafMode::Auto => "Set to Auto Mode - full file modification enabled",
         LeafMode::Approve => "Set to Approve Mode - all tools and modifications require approval",
@@ -1581,11 +1581,11 @@ pub async fn configure_tool_permissions_dialog() -> anyhow::Result<()> {
     let config = Config::global();
 
     let provider_name: String = config
-        .get_goose_provider()
+        .get_leaf_provider()
         .expect("No provider configured. Please set model provider first");
 
     let model: String = config
-        .get_goose_model()
+        .get_leaf_model()
         .expect("No model configured. Please set model first");
     let model_config = ModelConfig::new(&model)?.with_canonical_limits(&provider_name);
 
@@ -1806,7 +1806,7 @@ pub async fn handle_openrouter_auth() -> anyhow::Result<()> {
 
     // Test configuration - get the model that was configured
     println!("\nTesting configuration...");
-    let configured_model: String = config.get_goose_model()?;
+    let configured_model: String = config.get_leaf_model()?;
     let model_config = match leaf::model::ModelConfig::new(&configured_model) {
         Ok(config) => config.with_canonical_limits("openrouter"),
         Err(e) => {
@@ -1885,7 +1885,7 @@ pub async fn handle_tetrate_auth() -> anyhow::Result<()> {
 
     // Test configuration
     println!("\nTesting configuration...");
-    let configured_model: String = config.get_goose_model()?;
+    let configured_model: String = config.get_leaf_model()?;
     let model_config = match leaf::model::ModelConfig::new(&configured_model) {
         Ok(config) => config.with_canonical_limits("tetrate"),
         Err(e) => {

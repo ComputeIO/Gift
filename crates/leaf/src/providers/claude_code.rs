@@ -349,7 +349,7 @@ impl ClaudeCodeProvider {
     /// Returns true when the control protocol is enabled.
     fn apply_permission_flags(cmd: &mut Command) -> Result<bool, ProviderError> {
         let config = Config::global();
-        let leaf_mode = config.get_goose_mode().unwrap_or(LeafMode::Auto);
+        let leaf_mode = config.get_leaf_mode().unwrap_or(LeafMode::Auto);
 
         match leaf_mode {
             LeafMode::Auto => {

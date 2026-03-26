@@ -1,4 +1,4 @@
-use leaf_acp::server::GooseAcpAgent;
+use leaf_acp::server::LeafAcpAgent;
 use schemars::SchemaGenerator;
 use serde_json::{json, Map, Value};
 use std::collections::{BTreeSet, HashMap};
@@ -8,7 +8,7 @@ use std::path::PathBuf;
 
 fn main() {
     let mut generator = SchemaGenerator::default();
-    let methods = GooseAcpAgent::custom_method_schemas(&mut generator);
+    let methods = LeafAcpAgent::custom_method_schemas(&mut generator);
 
     // Collect $defs from the generator (all types referenced via subschema_for).
     let mut defs: Map<String, Value> = generator

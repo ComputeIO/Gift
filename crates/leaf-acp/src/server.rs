@@ -50,15 +50,15 @@ use url::Url;
 
 // Agent binds provider, extensions, and permission channels to a single session.
 // ACP has no session/close, so sessions accumulate until transport closes.
-struct GooseAcpSession {
+struct LeafAcpSession {
     agent: Arc<Agent>,
     messages: Conversation,
     tool_requests: HashMap<String, leaf::conversation::message::ToolRequest>,
     cancel_token: Option<CancellationToken>,
 }
 
-pub struct GooseAcpAgent {
-    sessions: Arc<Mutex<HashMap<String, GooseAcpSession>>>,
+pub struct LeafAcpAgent {
+    sessions: Arc<Mutex<HashMap<String, LeafAcpSession>>>,
     provider_factory: ProviderConstructor,
     builtins: Vec<String>,
     client_fs_capabilities: OnceCell<FileSystemCapability>,
@@ -341,7 +341,7 @@ fn build_mode_state(current_mode: LeafMode) -> Result<SessionModeState, sacp::Er
     ))
 }
 
-impl GooseAcpAgent {
+impl LeafAcpAgent {
     pub fn permission_manager(&self) -> Arc<PermissionManager> {
         Arc::clone(&self.permission_manager)
     }
@@ -505,7 +505,7 @@ impl GooseAcpAgent {
         &self,
         content_item: &MessageContent,
         session_id: &SessionId,
-        session: &mut GooseAcpSession,
+        session: &mut LeafAcpSession,
         cx: &JrConnectionCx<AgentToClient>,
     ) -> Result<(), sacp::Error> {
         match content_item {
@@ -561,7 +561,7 @@ impl GooseAcpAgent {
         &self,
         tool_request: &leaf::conversation::message::ToolRequest,
         session_id: &SessionId,
-        session: &mut GooseAcpSession,
+        session: &mut LeafAcpSession,
         cx: &JrConnectionCx<AgentToClient>,
     ) -> Result<(), sacp::Error> {
         session
@@ -591,7 +591,7 @@ impl GooseAcpAgent {
         &self,
         tool_response: &leaf::conversation::message::ToolResponse,
         session_id: &SessionId,
-        session: &mut GooseAcpSession,
+        session: &mut LeafAcpSession,
         cx: &JrConnectionCx<AgentToClient>,
     ) -> Result<(), sacp::Error> {
         let status = match &tool_response.tool_result {
@@ -762,7 +762,7 @@ fn build_tool_call_content(tool_result: &ToolResult<CallToolResult>) -> Vec<Tool
     }
 }
 
-impl GooseAcpAgent {
+impl LeafAcpAgent {
     async fn on_initialize(
         &self,
         args: InitializeRequest,
@@ -832,7 +832,7 @@ impl GooseAcpAgent {
 
         Self::add_mcp_extensions(&agent, args.mcp_servers, &goose_session.id).await?;
 
-        let session = GooseAcpSession {
+        let session = LeafAcpSession {
             agent,
             messages: Conversation::new_unvalidated(Vec::new()),
             tool_requests: HashMap::new(),
@@ -864,8 +864,8 @@ impl GooseAcpAgent {
             None => {
                 let config_path = self.config_dir.join(CONFIG_YAML_NAME);
                 let config = Config::new(&config_path, "leaf")?;
-                let model_id = config.get_goose_model()?;
-                let provider_name = config.get_goose_provider()?;
+                let model_id = config.get_leaf_model()?;
+                let provider_name = config.get_leaf_provider()?;
                 leaf::model::ModelConfig::new(&model_id)?.with_canonical_limits(&provider_name)
             }
         };
@@ -962,7 +962,7 @@ impl GooseAcpAgent {
                     .data(format!("Failed to update session working directory: {}", e))
             })?;
 
-        let mut session = GooseAcpSession {
+        let mut session = LeafAcpSession {
             agent,
             messages: conversation.clone(),
             tool_requests: HashMap::new(),
@@ -1136,7 +1136,7 @@ impl GooseAcpAgent {
         let config = Config::new(&config_path, "leaf").map_err(|e| {
             sacp::Error::internal_error().data(format!("Failed to read config: {}", e))
         })?;
-        let provider_name = config.get_goose_provider().map_err(|_| {
+        let provider_name = config.get_leaf_provider().map_err(|_| {
             sacp::Error::internal_error().data("No provider configured".to_string())
         })?;
         let model_config = leaf::model::ModelConfig::new(model_id)
@@ -1184,7 +1184,7 @@ impl GooseAcpAgent {
 }
 
 #[custom_methods]
-impl GooseAcpAgent {
+impl LeafAcpAgent {
     #[custom_method("extensions/add")]
     async fn on_add_extension(
         &self,
@@ -1369,11 +1369,11 @@ impl GooseAcpAgent {
     }
 }
 
-pub struct GooseAcpHandler {
-    pub agent: Arc<GooseAcpAgent>,
+pub struct LeafAcpHandler {
+    pub agent: Arc<LeafAcpAgent>,
 }
 
-impl JrMessageHandler for GooseAcpHandler {
+impl JrMessageHandler for LeafAcpHandler {
     type Link = AgentToClient;
 
     fn describe_chain(&self) -> impl std::fmt::Debug {
@@ -1519,7 +1519,7 @@ impl JrMessageHandler for GooseAcpHandler {
 }
 
 pub fn serve<R, W>(
-    agent: Arc<GooseAcpAgent>,
+    agent: Arc<LeafAcpAgent>,
     read: R,
     write: W,
 ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + Send>>
@@ -1528,7 +1528,7 @@ where
     W: futures::AsyncWrite + Unpin + Send + 'static,
 {
     Box::pin(async move {
-        let handler = GooseAcpHandler { agent };
+        let handler = LeafAcpHandler { agent };
 
         AgentToClient::builder()
             .name("leaf-acp")

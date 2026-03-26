@@ -139,7 +139,7 @@ pub async fn handle_term_init(
                     working_dir,
                     "Goose Term Session".to_string(),
                     SessionType::Terminal,
-                    Config::global().get_goose_mode().unwrap_or_default(),
+                    Config::global().get_leaf_mode().unwrap_or_default(),
                 )
                 .await?;
 
@@ -278,7 +278,7 @@ pub async fn handle_term_info() -> Result<()> {
 
     let config = leaf::config::Config::global();
     let model_name = config
-        .get_goose_model()
+        .get_leaf_model()
         .ok()
         .map(|name| {
             let short = name.rsplit('/').next().unwrap_or(&name);
@@ -291,10 +291,10 @@ pub async fn handle_term_info() -> Result<()> {
         .unwrap_or_else(|| "?".to_string());
 
     let context_limit = config
-        .get_goose_model()
+        .get_leaf_model()
         .ok()
         .and_then(|model_name| {
-            config.get_goose_provider().ok().and_then(|provider_name| {
+            config.get_leaf_provider().ok().and_then(|provider_name| {
                 leaf::model::ModelConfig::new(&model_name)
                     .ok()
                     .map(|c| c.with_canonical_limits(&provider_name))

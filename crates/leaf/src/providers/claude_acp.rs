@@ -48,7 +48,7 @@ impl ProviderDef for ClaudeAcpProvider {
             let resolved_command = SearchPaths::builder()
                 .with_npm()
                 .resolve(CLAUDE_ACP_BINARY)?;
-            let leaf_mode = config.get_goose_mode().unwrap_or(LeafMode::Auto);
+            let leaf_mode = config.get_leaf_mode().unwrap_or(LeafMode::Auto);
 
             let permission_mapping = PermissionMapping {
                 allow_option_id: Some("allow".to_string()),

@@ -101,7 +101,7 @@ pub fn get_input(
     conversation_messages: Option<&Vec<String>>,
 ) -> Result<InputResult> {
     let config = Config::global();
-    if let Ok(Some(editor_cmd)) = config.get_goose_prompt_editor() {
+    if let Ok(Some(editor_cmd)) = config.get_leaf_prompt_editor() {
         let messages = extract_recent_messages(conversation_messages);
         let message_refs: Vec<&str> = messages.iter().map(|s| s.as_str()).collect();
         let (message, has_meaningful_content) =

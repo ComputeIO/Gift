@@ -3,7 +3,7 @@ use leaf::providers::provider_registry::ProviderConstructor;
 use std::sync::Arc;
 use tracing::info;
 
-use crate::server::GooseAcpAgent;
+use crate::server::LeafAcpAgent;
 
 pub struct AcpServerFactoryConfig {
     pub builtins: Vec<String>,
@@ -20,7 +20,7 @@ impl AcpServer {
         Self { config }
     }
 
-    pub async fn create_agent(&self) -> Result<Arc<GooseAcpAgent>> {
+    pub async fn create_agent(&self) -> Result<Arc<LeafAcpAgent>> {
         let config_path = self
             .config
             .config_dir
@@ -28,9 +28,9 @@ impl AcpServer {
         let config = leaf::config::Config::new(&config_path, "leaf")?;
 
         let leaf_mode = config
-            .get_goose_mode()
+            .get_leaf_mode()
             .unwrap_or(leaf::config::LeafMode::Auto);
-        let disable_session_naming = config.get_goose_disable_session_naming().unwrap_or(false);
+        let disable_session_naming = config.get_leaf_disable_session_naming().unwrap_or(false);
 
         let config_dir = self.config.config_dir.clone();
         let provider_factory: ProviderConstructor = Arc::new(move |model_config, extensions| {
@@ -38,12 +38,12 @@ impl AcpServer {
             Box::pin(async move {
                 let config_path = config_dir.join(leaf::config::base::CONFIG_YAML_NAME);
                 let config = leaf::config::Config::new(&config_path, "leaf")?;
-                let provider_name = config.get_goose_provider()?;
+                let provider_name = config.get_leaf_provider()?;
                 leaf::providers::create(&provider_name, model_config, extensions).await
             })
         });
 
-        let agent = GooseAcpAgent::new(
+        let agent = LeafAcpAgent::new(
             provider_factory,
             self.config.builtins.clone(),
             self.config.data_dir.clone(),

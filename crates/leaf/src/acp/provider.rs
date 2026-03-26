@@ -86,7 +86,7 @@ pub struct AcpProvider {
     rejected_tool_calls: Arc<TokioMutex<HashSet<String>>>,
     pending_confirmations:
         Arc<TokioMutex<HashMap<String, oneshot::Sender<PermissionConfirmation>>>>,
-    goose_to_acp_id: Arc<TokioMutex<HashMap<String, NewSessionResponse>>>,
+    leaf_to_acp_id: Arc<TokioMutex<HashMap<String, NewSessionResponse>>>,
     auth_methods: Vec<AuthMethod>,
 }
 
@@ -187,7 +187,7 @@ impl AcpProvider {
             permission_mapping,
             rejected_tool_calls,
             pending_confirmations: Arc::new(TokioMutex::new(HashMap::new())),
-            goose_to_acp_id: Arc::new(TokioMutex::new(HashMap::new())),
+            leaf_to_acp_id: Arc::new(TokioMutex::new(HashMap::new())),
             auth_methods,
         }
     }
@@ -240,7 +240,7 @@ impl AcpProvider {
         session_id: Option<&str>,
     ) -> Result<NewSessionResponse, ProviderError> {
         if let Some(session_id) = session_id {
-            if let Some(response) = self.goose_to_acp_id.lock().await.get(session_id) {
+            if let Some(response) = self.leaf_to_acp_id.lock().await.get(session_id) {
                 return Ok(response.clone());
             }
         }
@@ -250,7 +250,7 @@ impl AcpProvider {
         })?;
 
         if let Some(session_id) = session_id {
-            self.goose_to_acp_id
+            self.leaf_to_acp_id
                 .lock()
                 .await
                 .insert(session_id.to_string(), response.clone());
@@ -288,7 +288,7 @@ impl Provider for AcpProvider {
     }
 
     async fn update_mode(&self, session_id: &str, mode: LeafMode) -> Result<(), ProviderError> {
-        let map = self.goose_to_acp_id.lock().await;
+        let map = self.leaf_to_acp_id.lock().await;
         if map.is_empty() {
             // Pre-initialization: no ACP session yet, just store the mode.
             // The shared Arc<Mutex<LeafMode>> is read at session creation time.

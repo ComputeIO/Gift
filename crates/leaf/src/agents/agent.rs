@@ -91,7 +91,6 @@ pub struct ExtensionLoadResult {
 
 #[derive(Clone, Debug)]
 pub enum LeafPlatform {
-    LeafDesktop,
     LeafCli,
 }
 
@@ -99,7 +98,6 @@ impl fmt::Display for LeafPlatform {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             LeafPlatform::LeafCli => write!(f, "leaf-cli"),
-            LeafPlatform::LeafDesktop => write!(f, "leaf-desktop"),
         }
     }
 }
@@ -209,8 +207,8 @@ impl Agent {
             Arc::new(SessionManager::instance()),
             PermissionManager::instance(),
             None,
-            config.get_goose_mode().unwrap_or_default(),
-            config.get_goose_disable_session_naming().unwrap_or(false),
+            config.get_leaf_mode().unwrap_or_default(),
+            config.get_leaf_disable_session_naming().unwrap_or(false),
             LeafPlatform::LeafCli,
         ))
     }
@@ -222,7 +220,6 @@ impl Agent {
         let leaf_platform = config.leaf_platform.clone();
         let initial_mode = config.leaf_mode;
         let capabilities = match config.leaf_platform {
-            LeafPlatform::LeafDesktop => ExtensionManagerCapabilities { mcpui: true },
             LeafPlatform::LeafCli => ExtensionManagerCapabilities { mcpui: false },
         };
         let session_manager = Arc::clone(&config.session_manager);
@@ -234,7 +231,7 @@ impl Agent {
             extension_manager: Arc::new(ExtensionManager::new(
                 provider.clone(),
                 session_manager,
-                goose_platform.to_string(),
+                leaf_platform.to_string(),
                 capabilities,
             )),
             final_output_tool: Arc::new(Mutex::new(None)),
@@ -1784,14 +1781,14 @@ impl Agent {
         let provider_name = session
             .provider_name
             .clone()
-            .or_else(|| config.get_goose_provider().ok())
+            .or_else(|| config.get_leaf_provider().ok())
             .ok_or_else(|| anyhow!("Could not configure agent: missing provider"))?;
 
         let model_config = match session.model_config.clone() {
             Some(saved_config) => saved_config,
             None => {
                 let model_name = config
-                    .get_goose_model()
+                    .get_leaf_model()
                     .ok()
                     .ok_or_else(|| anyhow!("Could not configure agent: missing model"))?;
                 crate::model::ModelConfig::new(&model_name)
@@ -1813,7 +1810,7 @@ impl Agent {
             (p, false)
         } else {
             let fallback_provider_name = config
-                .get_goose_provider()
+                .get_leaf_provider()
                 .ok()
                 .filter(|name| name != &provider_name)
                 .ok_or_else(|| {
@@ -1830,7 +1827,7 @@ impl Agent {
             );
 
             let fallback_model_name = config
-                .get_goose_model()
+                .get_leaf_model()
                 .ok()
                 .ok_or_else(|| anyhow!("Could not configure fallback provider: missing model"))?;
             let fallback_model_config = crate::model::ModelConfig::new(&fallback_model_name)
@@ -2143,7 +2140,7 @@ impl Agent {
         // but it doesn't know and the plumbing looks complicated.
         let config = Config::global();
         let provider_name: String = config
-            .get_goose_provider()
+            .get_leaf_provider()
             .expect("No provider configured. Run 'leaf configure' first");
 
         let settings = Settings {

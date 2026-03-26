@@ -162,7 +162,7 @@ use crate::config::Config;
 
 pub fn configure_tetrate(config: &Config, api_key: String) -> Result<()> {
     config.set_secret("TETRATE_API_KEY", &api_key)?;
-    config.set_goose_provider("tetrate")?;
-    config.set_goose_model(TETRATE_DEFAULT_MODEL)?;
+    config.set_leaf_provider("tetrate")?;
+    config.set_leaf_model(TETRATE_DEFAULT_MODEL)?;
     Ok(())
 }

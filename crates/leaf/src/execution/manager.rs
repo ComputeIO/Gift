@@ -56,9 +56,9 @@ impl AgentManager {
             .get_or_try_init(|| async {
                 let config = Config::global();
                 let max_sessions = config
-                    .get_goose_max_active_agents()
+                    .get_leaf_max_active_agents()
                     .unwrap_or(DEFAULT_MAX_SESSION);
-                let default_mode = config.get_goose_mode().unwrap_or_default();
+                let default_mode = config.get_leaf_mode().unwrap_or_default();
                 let schedule_file_path = Paths::data_dir().join("schedule.json");
                 let session_manager = Arc::new(SessionManager::instance());
                 let manager = Self::new(
@@ -110,9 +110,9 @@ impl AgentManager {
             Some(Arc::clone(&self.scheduler)),
             mode,
             Config::global()
-                .get_goose_disable_session_naming()
+                .get_leaf_disable_session_naming()
                 .unwrap_or(false),
-            LeafPlatform::LeafDesktop,
+            LeafPlatform::LeafCli,
         );
         let agent = Arc::new(Agent::with_config(config));
 

@@ -26,8 +26,8 @@ pub struct SystemInfo {
 impl SystemInfo {
     pub fn collect() -> Self {
         let config = Config::global();
-        let provider = config.get_goose_provider().ok();
-        let model = config.get_goose_model().ok();
+        let provider = config.get_leaf_provider().ok();
+        let model = config.get_leaf_model().ok();
         let enabled_extensions = get_enabled_extensions()
             .into_iter()
             .map(|ext| ext.name().to_string())

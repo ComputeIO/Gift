@@ -135,7 +135,7 @@ impl GatewayHandler {
                 working_dir,
                 session_name,
                 SessionType::Gateway,
-                config.get_goose_mode().unwrap_or_default(),
+                config.get_leaf_mode().unwrap_or_default(),
             )
             .await?;
 
@@ -144,10 +144,10 @@ impl GatewayHandler {
         // Store the current provider and model config on the session so the agent
         // can be restored after LRU eviction, matching the start_agent flow.
         let mut update = manager.update(&session.id);
-        if let Ok(provider) = config.get_goose_provider() {
+        if let Ok(provider) = config.get_leaf_provider() {
             update = update.provider_name(provider);
         }
-        if let Ok(model_name) = config.get_goose_model() {
+        if let Ok(model_name) = config.get_leaf_model() {
             if let Ok(model_config) = ModelConfig::new(&model_name) {
                 update = update.model_config(model_config);
             }
@@ -198,10 +198,10 @@ impl GatewayHandler {
         let manager = self.agent_manager.session_manager();
 
         // --- current global config ---
-        let current_provider = config.get_goose_provider().ok();
-        let current_model_name = config.get_goose_model().ok();
+        let current_provider = config.get_leaf_provider().ok();
+        let current_model_name = config.get_leaf_model().ok();
         let current_extensions = get_enabled_extensions();
-        let current_mode = config.get_goose_mode().unwrap_or_default();
+        let current_mode = config.get_leaf_mode().unwrap_or_default();
 
         // --- what the session has ---
         let session_extensions: Vec<ExtensionConfig> =

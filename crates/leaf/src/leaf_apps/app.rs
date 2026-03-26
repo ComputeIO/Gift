@@ -17,7 +17,7 @@ pub struct WindowProps {
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct GooseApp {
+pub struct LeafApp {
     #[serde(flatten)]
     pub resource: McpAppResource,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -28,10 +28,10 @@ pub struct GooseApp {
     pub prd: Option<String>,
 }
 
-impl GooseApp {
+impl LeafApp {
     const METADATA_SCRIPT_TYPE: &'static str = "application/ld+json";
     const PRD_SCRIPT_TYPE: &'static str = "application/x-goose-prd";
-    const GOOSE_APP_TYPE: &'static str = "GooseApp";
+    const GOOSE_APP_TYPE: &'static str = "LeafApp";
     const GOOSE_SCHEMA_CONTEXT: &'static str = "urn:goose.ai:schema";
 
     pub fn from_html(html: &str) -> Result<Self, String> {
@@ -52,7 +52,7 @@ impl GooseApp {
         let json_str = metadata_re
             .captures(html)
             .and_then(|cap| cap.get(1))
-            .ok_or_else(|| "No GooseApp JSON-LD metadata found in HTML".to_string())?
+            .ok_or_else(|| "No LeafApp JSON-LD metadata found in HTML".to_string())?
             .as_str();
 
         let metadata: serde_json::Value = serde_json::from_str(json_str)
@@ -107,7 +107,7 @@ impl GooseApp {
         let clean_html = metadata_re.replace(html, "");
         let clean_html = prd_re.replace(&clean_html, "").to_string();
 
-        Ok(GooseApp {
+        Ok(LeafApp {
             resource: McpAppResource {
                 uri: format!("ui://apps/{}", name),
                 name,
@@ -209,7 +209,7 @@ impl GooseApp {
 pub async fn fetch_mcp_apps(
     extension_manager: &ExtensionManager,
     session_id: &str,
-) -> Result<Vec<GooseApp>, ErrorData> {
+) -> Result<Vec<LeafApp>, ErrorData> {
     let mut apps = Vec::new();
 
     let ui_resources = extension_manager.get_ui_resources(session_id).await?;
@@ -286,7 +286,7 @@ pub async fn fetch_mcp_apps(
                         })
                     };
 
-                    let app = GooseApp {
+                    let app = LeafApp {
                         resource: mcp_resource,
                         mcp_servers: vec![extension_name],
                         window_props,

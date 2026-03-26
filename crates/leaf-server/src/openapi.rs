@@ -642,7 +642,7 @@ derive_utoipa!(Icon as IconSchema);
         super::tunnel::TunnelInfo,
         super::tunnel::TunnelState,
         super::routes::telemetry::TelemetryEventRequest,
-        leaf::leaf_apps::GooseApp,
+        leaf::leaf_apps::LeafApp,
         leaf::leaf_apps::WindowProps,
         leaf::leaf_apps::McpAppResource,
         leaf::leaf_apps::CspMetadata,

@@ -111,7 +111,7 @@ pub struct LeafClient {
     provider: SharedProvider,
     session_id: Mutex<Option<String>>,
     client_name: String,
-    capabilities: GooseMcpClientCapabilities,
+    capabilities: LeafMcpClientCapabilities,
     working_dir: Arc<tokio::sync::RwLock<PathBuf>>,
 }
 
@@ -120,7 +120,7 @@ impl LeafClient {
         handlers: Arc<Mutex<Vec<Sender<ServerNotification>>>>,
         provider: SharedProvider,
         client_name: String,
-        capabilities: GooseMcpClientCapabilities,
+        capabilities: LeafMcpClientCapabilities,
         working_dir: PathBuf,
     ) -> Self {
         LeafClient {
@@ -375,7 +375,7 @@ impl ClientHandler for LeafClient {
 }
 
 #[derive(Debug, Clone)]
-pub struct GooseMcpClientCapabilities {
+pub struct LeafMcpClientCapabilities {
     pub mcpui: bool,
 }
 
@@ -394,7 +394,7 @@ impl McpClient {
         timeout: std::time::Duration,
         provider: SharedProvider,
         client_name: String,
-        capabilities: GooseMcpClientCapabilities,
+        capabilities: LeafMcpClientCapabilities,
         working_dir: PathBuf,
     ) -> Result<Self, ClientInitializeError>
     where
@@ -419,7 +419,7 @@ impl McpClient {
         provider: SharedProvider,
         docker_container: Option<String>,
         client_name: String,
-        capabilities: GooseMcpClientCapabilities,
+        capabilities: LeafMcpClientCapabilities,
         working_dir: PathBuf,
     ) -> Result<Self, ClientInitializeError>
     where
@@ -770,8 +770,7 @@ mod tests {
 
     fn new_client(platform: LeafPlatform) -> LeafClient {
         let capabilities = match platform {
-            LeafPlatform::LeafDesktop => GooseMcpClientCapabilities { mcpui: true },
-            LeafPlatform::LeafCli => GooseMcpClientCapabilities { mcpui: false },
+            LeafPlatform::LeafCli => LeafMcpClientCapabilities { mcpui: false },
         };
 
         LeafClient::new(
@@ -971,7 +970,7 @@ mod tests {
 
     #[test]
     fn test_client_info_advertises_mcp_apps_ui_extension() {
-        let client = new_client(LeafPlatform::LeafDesktop);
+        let client = new_client(LeafPlatform::LeafCli);
         let info = ClientHandler::get_info(&client);
 
         // Verify the client advertises the MCP Apps UI extension capability
