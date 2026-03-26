@@ -7,7 +7,7 @@ use leaf::acp::PermissionDecision;
 use leaf::agents::extension::{Envs, PLATFORM_EXTENSIONS};
 use leaf::agents::mcp_client::McpClientTrait;
 use leaf::agents::platform_extensions::developer::DeveloperClient;
-use leaf::agents::{Agent, AgentConfig, ExtensionConfig, GoosePlatform, SessionConfig};
+use leaf::agents::{Agent, AgentConfig, ExtensionConfig, LeafPlatform, SessionConfig};
 use leaf::builtin_extension::register_builtin_extensions;
 use leaf::config::base::CONFIG_YAML_NAME;
 use leaf::config::extensions::get_enabled_extensions_with_config;
@@ -384,7 +384,7 @@ impl GooseAcpAgent {
             None,
             mode,
             self.disable_session_naming,
-            GoosePlatform::LeafCli,
+            LeafPlatform::LeafCli,
         ));
         let agent = Arc::new(agent);
 

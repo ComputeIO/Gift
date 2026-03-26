@@ -1249,7 +1249,7 @@ impl SummonClient {
             None,
             LeafMode::Auto,
             true, // disable session naming for subagents
-            crate::agents::GoosePlatform::LeafCli,
+            crate::agents::LeafPlatform::LeafCli,
         );
 
         let subagent_session = self
@@ -1710,7 +1710,7 @@ impl SummonClient {
             None,
             LeafMode::Auto,
             true, // disable session naming for subagents
-            crate::agents::GoosePlatform::LeafCli,
+            crate::agents::LeafPlatform::LeafCli,
         );
 
         let subagent_session = self

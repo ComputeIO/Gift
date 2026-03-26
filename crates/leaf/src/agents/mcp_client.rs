@@ -764,14 +764,14 @@ fn inject_session_context_into_request(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::agents::GoosePlatform;
+    use crate::agents::LeafPlatform;
     use serde_json::json;
     use test_case::test_case;
 
-    fn new_client(platform: GoosePlatform) -> LeafClient {
+    fn new_client(platform: LeafPlatform) -> LeafClient {
         let capabilities = match platform {
-            GoosePlatform::LeafDesktop => GooseMcpClientCapabilities { mcpui: true },
-            GoosePlatform::LeafCli => GooseMcpClientCapabilities { mcpui: false },
+            LeafPlatform::LeafDesktop => GooseMcpClientCapabilities { mcpui: true },
+            LeafPlatform::LeafCli => GooseMcpClientCapabilities { mcpui: false },
         };
 
         LeafClient::new(
@@ -858,7 +858,7 @@ mod tests {
     ) {
         let runtime = tokio::runtime::Runtime::new().unwrap();
         runtime.block_on(async {
-            let client = new_client(GoosePlatform::LeafCli);
+            let client = new_client(LeafPlatform::LeafCli);
             if let Some(session_id) = current_session {
                 client.set_session_id(session_id).await;
             }
@@ -971,7 +971,7 @@ mod tests {
 
     #[test]
     fn test_client_info_advertises_mcp_apps_ui_extension() {
-        let client = new_client(GoosePlatform::LeafDesktop);
+        let client = new_client(LeafPlatform::LeafDesktop);
         let info = ClientHandler::get_info(&client);
 
         // Verify the client advertises the MCP Apps UI extension capability
@@ -993,7 +993,7 @@ mod tests {
 
     #[test]
     fn test_client_capabilities_advertise_roots() {
-        let client = new_client(GoosePlatform::LeafCli);
+        let client = new_client(LeafPlatform::LeafCli);
         let info = ClientHandler::get_info(&client);
         assert!(
             info.capabilities.roots.is_some(),

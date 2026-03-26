@@ -1,7 +1,7 @@
 use anyhow::Result;
 use dotenvy::dotenv;
 use futures::StreamExt;
-use leaf::agents::{Agent, AgentConfig, AgentEvent, GoosePlatform, PromptManager, SessionConfig};
+use leaf::agents::{Agent, AgentConfig, AgentEvent, LeafPlatform, PromptManager, SessionConfig};
 use leaf::config::{ExtensionConfig, LeafMode, PermissionManager};
 use leaf::conversation::message::{ActionRequiredData, Message, MessageContent};
 use leaf::permission::permission_confirmation::PrincipalType;
@@ -238,7 +238,7 @@ impl ProviderFixture {
             None,
             mode,
             true,
-            GoosePlatform::LeafCli,
+            LeafPlatform::LeafCli,
         ));
         let session = session_manager
             .create_session(
