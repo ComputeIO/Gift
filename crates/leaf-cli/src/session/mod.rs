@@ -30,7 +30,7 @@ use leaf::providers::base::Provider;
 use leaf::utils::safe_truncate;
 
 use anyhow::{Context, Result};
-use completion::GooseCompleter;
+use completion::LeafCompleter;
 use input::InputResult;
 use leaf::agents::extension::{Envs, ExtensionConfig, PLATFORM_EXTENSIONS};
 use leaf::agents::types::RetryConfig;
@@ -120,7 +120,7 @@ impl HistoryManager {
 
     fn load(
         &self,
-        editor: &mut rustyline::Editor<GooseCompleter, rustyline::history::DefaultHistory>,
+        editor: &mut rustyline::Editor<LeafCompleter, rustyline::history::DefaultHistory>,
     ) {
         if let Some(parent) = self.history_file.parent() {
             if !parent.exists() {
@@ -140,7 +140,7 @@ impl HistoryManager {
 
     fn save(
         &self,
-        editor: &mut rustyline::Editor<GooseCompleter, rustyline::history::DefaultHistory>,
+        editor: &mut rustyline::Editor<LeafCompleter, rustyline::history::DefaultHistory>,
     ) {
         if let Err(err) = editor.save_history(&self.history_file) {
             eprintln!("Warning: Failed to save command history: {}", err);
@@ -521,7 +521,7 @@ impl CliSession {
 
     fn create_editor(
         &self,
-    ) -> Result<rustyline::Editor<GooseCompleter, rustyline::history::DefaultHistory>> {
+    ) -> Result<rustyline::Editor<LeafCompleter, rustyline::history::DefaultHistory>> {
         let builder =
             rustyline::Config::builder().completion_type(rustyline::CompletionType::Circular);
         let builder = match self.edit_mode {
@@ -530,10 +530,10 @@ impl CliSession {
         };
         let config = builder.build();
         let mut editor =
-            rustyline::Editor::<GooseCompleter, rustyline::history::DefaultHistory>::with_config(
+            rustyline::Editor::<LeafCompleter, rustyline::history::DefaultHistory>::with_config(
                 config,
             )?;
-        let completer = GooseCompleter::new(self.completion_cache.clone());
+        let completer = LeafCompleter::new(self.completion_cache.clone());
         editor.set_helper(Some(completer));
         Ok(editor)
     }
@@ -542,7 +542,7 @@ impl CliSession {
         &mut self,
         input: InputResult,
         history: &HistoryManager,
-        editor: &mut rustyline::Editor<GooseCompleter, rustyline::history::DefaultHistory>,
+        editor: &mut rustyline::Editor<LeafCompleter, rustyline::history::DefaultHistory>,
     ) -> Result<()> {
         match input {
             InputResult::Message(content) => {
@@ -625,7 +625,7 @@ impl CliSession {
         &mut self,
         content: &str,
         history: &HistoryManager,
-        editor: &mut rustyline::Editor<GooseCompleter, rustyline::history::DefaultHistory>,
+        editor: &mut rustyline::Editor<LeafCompleter, rustyline::history::DefaultHistory>,
     ) -> Result<()> {
         match self.run_mode {
             RunMode::Normal => {

@@ -41,7 +41,7 @@ fn is_meta_provider(provider: &str) -> bool {
 
 fn map_provider_name(provider: &str) -> &str {
     match provider {
-        // Goose provider names that differ from models.dev names
+        // Leaf provider names that differ from models.dev names
         "xai" => "x-ai",
         // OpenCode provider names - strip the suffix to get base provider
         _ if provider.starts_with("opencode-") => "opencode",
