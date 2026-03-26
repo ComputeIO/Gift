@@ -1,9 +1,11 @@
 use anyhow::Result;
 use futures::future::BoxFuture;
+use std::collections::HashMap;
 use std::path::PathBuf;
 
 use crate::acp::{
     extension_configs_to_mcp_servers, AcpProvider, AcpProviderConfig, PermissionMapping,
+    ACP_CURRENT_MODEL,
 };
 use crate::config::search_path::SearchPaths;
 use crate::config::{Config, LeafMode};
@@ -11,7 +13,6 @@ use crate::model::ModelConfig;
 use crate::providers::base::{ProviderDef, ProviderMetadata};
 
 const CLAUDE_ACP_PROVIDER_NAME: &str = "claude-acp";
-pub const CLAUDE_ACP_DEFAULT_MODEL: &str = "default";
 const CLAUDE_ACP_DOC_URL: &str = "https://github.com/zed-industries/claude-agent-acp";
 const CLAUDE_ACP_BINARY: &str = "claude-agent-acp";
 
@@ -24,12 +25,18 @@ impl ProviderDef for ClaudeAcpProvider {
         ProviderMetadata::new(
             CLAUDE_ACP_PROVIDER_NAME,
             "Claude Code",
-            "ACP wrapper for Anthropic's Claude. Install: npm install -g @zed-industries/claude-agent-acp",
-            CLAUDE_ACP_DEFAULT_MODEL,
+            "Use goose with your Claude Code subscription via the claude-agent-acp adapter.",
+            ACP_CURRENT_MODEL,
             vec![],
             CLAUDE_ACP_DOC_URL,
             vec![],
         )
+        .with_setup_steps(vec![
+            "Install the ACP adapter: `npm install -g @zed-industries/claude-agent-acp`",
+            "Ensure your Claude CLI is authenticated (run `claude` to verify)",
+            "Set in your goose config file (`~/.config/goose/config.yaml` on macOS/Linux):\n  GOOSE_PROVIDER: claude-acp\n  GOOSE_MODEL: current",
+            "Restart goose for changes to take effect",
+        ])
     }
 
     fn from_env(
@@ -38,28 +45,33 @@ impl ProviderDef for ClaudeAcpProvider {
     ) -> BoxFuture<'static, Result<AcpProvider>> {
         Box::pin(async move {
             let config = Config::global();
-            // with_npm() includes npm global bin dir (desktop app PATH may not)
             let resolved_command = SearchPaths::builder()
                 .with_npm()
                 .resolve(CLAUDE_ACP_BINARY)?;
             let leaf_mode = config.get_goose_mode().unwrap_or(LeafMode::Auto);
 
-            // claude-agent-acp permission option_ids
             let permission_mapping = PermissionMapping {
                 allow_option_id: Some("allow".to_string()),
                 reject_option_id: Some("reject".to_string()),
                 rejected_tool_status: sacp::schema::ToolCallStatus::Failed,
             };
 
+            let mode_mapping = HashMap::from([
+                (LeafMode::Auto, "bypassPermissions".to_string()),
+                (LeafMode::Approve, "default".to_string()),
+                (LeafMode::SmartApprove, "acceptEdits".to_string()),
+                (LeafMode::Chat, "plan".to_string()),
+            ]);
+
             let provider_config = AcpProviderConfig {
                 command: resolved_command,
                 args: vec![],
                 env: vec![],
-                // Prevent nested-session detection in claude-agent-acp (wraps Claude Code)
                 env_remove: vec!["CLAUDECODE".to_string()],
                 work_dir: std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
                 mcp_servers: extension_configs_to_mcp_servers(&extensions),
-                session_mode_id: Some(map_leaf_mode(leaf_mode)),
+                session_mode_id: Some(mode_mapping[&leaf_mode].clone()),
+                mode_mapping,
                 permission_mapping,
                 notification_callback: None,
             };
@@ -67,26 +79,5 @@ impl ProviderDef for ClaudeAcpProvider {
             let metadata = Self::metadata();
             AcpProvider::connect(metadata.name, model, leaf_mode, provider_config).await
         })
-    }
-}
-
-fn map_leaf_mode(leaf_mode: LeafMode) -> String {
-    match leaf_mode {
-        LeafMode::Auto => {
-            // Closest to "autonomous": Claude Code's bypassPermissions skips confirmations.
-            "bypassPermissions".to_string()
-        }
-        LeafMode::Approve => {
-            // Claude Code's default matches "ask before risky actions".
-            "default".to_string()
-        }
-        LeafMode::SmartApprove => {
-            // Best-effort: acceptEdits auto-accepts file edits but still prompts for risky ops.
-            "acceptEdits".to_string()
-        }
-        LeafMode::Chat => {
-            // Plan mode disables tool execution, aligning with chat-only intent.
-            "plan".to_string()
-        }
     }
 }

@@ -130,10 +130,19 @@ When contributing to Leaf, keep these CLI-only constraints in mind:
 - ❌ **NO GUI Elements**: No windows, dialogs, or visual interfaces
 - ✅ **Terminal Only**: All interaction through command line and TUI (Terminal UI)
 
+### Naming rules
+- X  **NO Goose/goose**: All Goose/goose must be transformed to Leaf/leaf directly
+
+### Upstream block/goose
+- ✅ **Upstream Synchronization**: An issue will be created to request merge upstream commits that can be fixed in PRs
+- ✅ **Commits Processing**: Each upstream commit can be adopted or ignored(if not CLI related), PR MUST commit each adopted upstream commit independently.
+- ✅ **Functional Focus**: NEVER cherry-pick any commit for simplicity, each upstream commit MUST be evaluated and merged carefully line by line
+
 ### Dependencies
 - ❌ **NO V8/JavaScript**: No JavaScript execution or V8 integration
 - ❌ **NO Web Frameworks**: No web servers for UI (except API endpoints for ACP)
 - ✅ **Minimal Dependencies**: Keep binary size reasonable for CLI tool
+- ✅ **LLM API Oriented**: No cloud deployment/inference implementation is allowed, only keep LLM API integration 
 
 ### Testing
 - ✅ **Unit Tests**: Standard Rust unit tests in `tests/` folders
