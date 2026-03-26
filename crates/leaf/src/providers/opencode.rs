@@ -224,6 +224,7 @@ fn register_providers_from_catalog(
                 base_path: None,
                 env_vars: None,
                 dynamic_models: None,
+                skip_canonical_filtering: false,
             };
 
             register_declarative_provider(registry, config, ProviderType::Preferred);
