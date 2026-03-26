@@ -99,7 +99,7 @@ pub fn get_editor_input(editor_cmd: &str, messages: &[&str]) -> Result<(String, 
     let _cleanup_guard = SymlinkCleanup::new(symlink_path.clone());
 
     let _original_template = {
-        let mut template_content = String::from("# Goose Prompt Editor\n\n");
+        let mut template_content = String::from("# Leaf Prompt Editor\n\n");
         template_content.push_str("# Your prompt:\n\n");
         if !messages.is_empty() {
             template_content.push_str("# Recent conversation for context (newest first):\n\n");
@@ -166,7 +166,7 @@ mod tests {
 
     #[test]
     fn test_extract_user_input_with_editor_output() {
-        let content = r#"# Goose Prompt Editor
+        let content = r#"# Leaf Prompt Editor
 
 # Your prompt:
 This is the hardcoded prompt response
@@ -190,7 +190,7 @@ This is the hardcoded prompt response
 
     #[test]
     fn test_extract_user_input_conversation_history_heading() {
-        let content = r#"# Goose Prompt Editor
+        let content = r#"# Leaf Prompt Editor
 
 # Your prompt:
 This is the user's input
@@ -239,7 +239,7 @@ This is the user's input
 
     #[test]
     fn test_extract_user_input() {
-        let content = r#"# Goose Prompt Editor
+        let content = r#"# Leaf Prompt Editor
 
 # Recent conversation for context:
 

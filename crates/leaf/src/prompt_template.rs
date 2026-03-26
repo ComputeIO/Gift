@@ -25,11 +25,11 @@ static TEMPLATE_REGISTRY: &[(&str, &str)] = &[
     ),
     (
         "apps_create.md",
-        "Prompt for generating new Goose apps based on the user instructions",
+        "Prompt for generating new Leaf apps based on the user instructions",
     ),
     (
         "apps_iterate.md",
-        "Prompt for updating existing Goose apps based on feedback",
+        "Prompt for updating existing Leaf apps based on feedback",
     ),
     (
         "permission_judge.md",

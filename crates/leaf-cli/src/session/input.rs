@@ -1,4 +1,4 @@
-use super::completion::GooseCompleter;
+use super::completion::LeafCompleter;
 use super::{CompletionCache, HintStatus};
 use anyhow::Result;
 use leaf::config::{Config, LeafMode};
@@ -97,7 +97,7 @@ pub fn get_newline_key() -> char {
 }
 
 pub fn get_input(
-    editor: &mut Editor<GooseCompleter, rustyline::history::DefaultHistory>,
+    editor: &mut Editor<LeafCompleter, rustyline::history::DefaultHistory>,
     conversation_messages: Option<&Vec<String>>,
 ) -> Result<InputResult> {
     let config = Config::global();
@@ -183,7 +183,7 @@ pub fn get_input(
 }
 
 fn get_regular_input(
-    editor: &mut Editor<GooseCompleter, rustyline::history::DefaultHistory>,
+    editor: &mut Editor<LeafCompleter, rustyline::history::DefaultHistory>,
 ) -> Result<InputResult> {
     let completion_cache = editor
         .helper()

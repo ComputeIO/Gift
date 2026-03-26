@@ -18,7 +18,7 @@ use crate::server_factory::AcpServer;
 
 pub(crate) struct HttpState {
     server: Arc<AcpServer>,
-    // Keyed by acp_session_id: a connection-scoped UUID serving many Goose sessions.
+    // Keyed by acp_session_id: a connection-scoped UUID serving many Leaf sessions.
     sessions: RwLock<HashMap<String, TransportSession>>,
 }
 
