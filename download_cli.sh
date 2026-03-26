@@ -2,37 +2,37 @@
 set -eu
 
 ##############################################################################
-# goose CLI Install Script
+# leaf CLI Install Script
 #
-# This script downloads the latest stable 'goose' CLI binary from GitHub releases
+# This script downloads the latest stable 'leaf' CLI binary from GitHub releases
 # and installs it to your system.
 #
 # Supported OS: macOS (darwin), Linux, Windows (MSYS2/Git Bash/WSL)
 # Supported Architectures: x86_64, arm64
 #
 # Usage:
-#   curl -fsSL https://github.com/block/goose/releases/download/stable/download_cli.sh | bash
+#   curl -fsSL https://github.com/LeafAI/Leaf/releases/download/stable/download_cli.sh | bash
 #
 # Environment variables:
-#   GOOSE_BIN_DIR  - Directory to which goose will be installed (default: $HOME/.local/bin)
-#   GOOSE_VERSION  - Optional: specific version to install (e.g., "v1.0.25"). Overrides CANARY. Can be in the format vX.Y.Z, vX.Y.Z-suffix, or X.Y.Z
-#   GOOSE_PROVIDER - Optional: provider for goose
-#   GOOSE_MODEL    - Optional: model for goose
+#   LEAF_BIN_DIR  - Directory to which leaf will be installed (default: $HOME/.local/bin)
+#   LEAF_VERSION  - Optional: specific version to install (e.g., "v1.0.25"). Overrides CANARY. Can be in the format vX.Y.Z, vX.Y.Z-suffix, or X.Y.Z
+#   LEAF_PROVIDER - Optional: provider for leaf
+#   LEAF_MODEL    - Optional: model for leaf
 #   CANARY         - Optional: if set to "true", downloads from canary release instead of stable
-#   CONFIGURE      - Optional: if set to "false", disables running goose configure interactively
+#   CONFIGURE      - Optional: if set to "false", disables running leaf configure interactively
 #   ** other provider specific environment variables (eg. DATABRICKS_HOST)
 ##############################################################################
 
 # --- 1) Check for dependencies ---
 # Check for curl
 if ! command -v curl >/dev/null 2>&1; then
-  echo "Error: 'curl' is required to download goose. Please install curl and try again."
+  echo "Error: 'curl' is required to download leaf. Please install curl and try again."
   exit 1
 fi
 
 # Check for tar or unzip (depending on OS)
 if ! command -v tar >/dev/null 2>&1 && ! command -v unzip >/dev/null 2>&1; then
-  echo "Error: Either 'tar' or 'unzip' is required to extract goose. Please install one and try again."
+  echo "Error: Either 'tar' or 'unzip' is required to extract leaf. Please install one and try again."
   exit 1
 fi
 
@@ -52,13 +52,13 @@ fi
 
 
 # --- 2) Variables ---
-REPO="block/goose"
-OUT_FILE="goose"
+REPO="LeafAI/Leaf"
+OUT_FILE="leaf"
 
 # Set default bin directory based on detected OS environment
 if [[ "${WINDIR:-}" ]] || [[ "${windir:-}" ]] || [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]]; then
     # Native Windows environments - use Windows user profile path
-    DEFAULT_BIN_DIR="$USERPROFILE/goose"
+    DEFAULT_BIN_DIR="$USERPROFILE/leaf"
 elif [[ -f "/proc/version" ]] && grep -q "Microsoft\|WSL" /proc/version 2>/dev/null; then
     # WSL - use Linux-style path but make sure it exists
     DEFAULT_BIN_DIR="$HOME/.local/bin"
@@ -70,20 +70,20 @@ else
     DEFAULT_BIN_DIR="$HOME/.local/bin"
 fi
 
-GOOSE_BIN_DIR="${GOOSE_BIN_DIR:-$DEFAULT_BIN_DIR}"
+LEAF_BIN_DIR="${LEAF_BIN_DIR:-$DEFAULT_BIN_DIR}"
 RELEASE="${CANARY:-false}"
 CONFIGURE="${CONFIGURE:-true}"
-if [ -n "${GOOSE_VERSION:-}" ]; then
+if [ -n "${LEAF_VERSION:-}" ]; then
   # Validate the version format
-  if [[ ! "$GOOSE_VERSION" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-.*)?$ ]]; then
-    echo "[error]: invalid version '$GOOSE_VERSION'."
+  if [[ ! "$LEAF_VERSION" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-.*)?$ ]]; then
+    echo "[error]: invalid version '$LEAF_VERSION'."
     echo "  expected: semver format vX.Y.Z, vX.Y.Z-suffix, or X.Y.Z"
     exit 1
   fi
-  GOOSE_VERSION=$(echo "$GOOSE_VERSION" | sed 's/^v\{0,1\}/v/') # Ensure the version string is prefixed with 'v' if not already present
-  RELEASE_TAG="$GOOSE_VERSION"
+  LEAF_VERSION=$(echo "$LEAF_VERSION" | sed 's/^v\{0,1\}/v/') # Ensure the version string is prefixed with 'v' if not already present
+  RELEASE_TAG="$LEAF_VERSION"
 else
-  # If GOOSE_VERSION is not set, fall back to existing behavior for backwards compatibility
+  # If LEAF_VERSION is not set, fall back to existing behavior for backwards compatibility
   RELEASE_TAG="$([[ "$RELEASE" == "true" ]] && echo "canary" || echo "stable")"
 fi
 
@@ -145,7 +145,7 @@ case "$OS" in
     OS="windows"
     ;;
   *)
-    echo "Error: Unsupported OS '$OS'. goose currently supports Linux, macOS, and Windows."
+    echo "Error: Unsupported OS '$OS'. leaf currently supports Linux, macOS, and Windows."
     exit 1
     ;;
 esac
@@ -176,7 +176,7 @@ echo "Detected OS: $OS with ARCH $ARCH"
 
 # Build the filename and URL for the stable release
 if [ "$OS" = "darwin" ]; then
-  FILE="goose-$ARCH-apple-darwin.tar.bz2"
+  FILE="leaf-$ARCH-apple-darwin.tar.bz2"
   EXTRACT_CMD="tar"
 elif [ "$OS" = "windows" ]; then
   # Windows only supports x86_64 currently
@@ -184,22 +184,22 @@ elif [ "$OS" = "windows" ]; then
     echo "Error: Windows currently only supports x86_64 architecture."
     exit 1
   fi
-  FILE="goose-$ARCH-pc-windows-msvc.zip"
+  FILE="leaf-$ARCH-pc-windows-msvc.zip"
   EXTRACT_CMD="unzip"
-  OUT_FILE="goose.exe"
+  OUT_FILE="leaf.exe"
 else
-  FILE="goose-$ARCH-unknown-linux-gnu.tar.bz2"
+  FILE="leaf-$ARCH-unknown-linux-gnu.tar.bz2"
   EXTRACT_CMD="tar"
 fi
 
 DOWNLOAD_URL="https://github.com/$REPO/releases/download/$RELEASE_TAG/$FILE"
 
-# --- 4) Download & extract 'goose' binary ---
+# --- 4) Download & extract 'leaf' binary ---
 echo "Downloading $RELEASE_TAG release: $FILE..."
 if ! curl -sLf "$DOWNLOAD_URL" --output "$FILE"; then
   # If the download fails, only fall back to latest stable when no version was specified and canary was not requested).
-  if ! [ -n "${GOOSE_VERSION:-}" ] && [ "${CANARY:-false}" != "true" ]; then
-    LATEST_TAG=$(curl -s https://api.github.com/repos/block/goose/releases/latest | \
+  if ! [ -n "${LEAF_VERSION:-}" ] && [ "${CANARY:-false}" != "true" ]; then
+    LATEST_TAG=$(curl -s https://api.github.com/repos/LeafAI/Leaf/releases/latest | \
       grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
     if [ -z "$LATEST_TAG" ]; then
       echo "Error: Failed to download $DOWNLOAD_URL and latest tag unavailable"
@@ -221,7 +221,7 @@ if ! curl -sLf "$DOWNLOAD_URL" --output "$FILE"; then
 fi
 
 # Create a temporary directory for extraction
-TMP_DIR="/tmp/goose_install_$RANDOM"
+TMP_DIR="/tmp/leaf_install_$RANDOM"
 if ! mkdir -p "$TMP_DIR"; then
   echo "Error: Could not create temporary extraction directory"
   exit 1
@@ -268,31 +268,59 @@ set -e  # Re-enable immediate exit on error
 rm "$FILE" # clean up the downloaded archive
 
 # Determine the extraction directory (handle subdirectory in Windows packages)
-# Windows releases may contain files in a 'goose-package' subdirectory
+# Windows releases may contain files in a 'leaf-package' subdirectory
 EXTRACT_DIR="$TMP_DIR"
-if [ "$OS" = "windows" ] && [ -d "$TMP_DIR/goose-package" ]; then
-  echo "Found goose-package subdirectory, using that as extraction directory"
-  EXTRACT_DIR="$TMP_DIR/goose-package"
+if [ "$OS" = "windows" ] && [ -d "$TMP_DIR/leaf-package" ]; then
+  echo "Found leaf-package subdirectory, using that as extraction directory"
+  EXTRACT_DIR="$TMP_DIR/leaf-package"
 fi
 
 # Make binary executable
 if [ "$OS" = "windows" ]; then
-  chmod +x "$EXTRACT_DIR/goose.exe"
+  chmod +x "$EXTRACT_DIR/leaf.exe"
 else
-  chmod +x "$EXTRACT_DIR/goose"
+  chmod +x "$EXTRACT_DIR/leaf"
 fi
 
-# --- 5) Install to $GOOSE_BIN_DIR ---
-if [ ! -d "$GOOSE_BIN_DIR" ]; then
-  echo "Creating directory: $GOOSE_BIN_DIR"
-  mkdir -p "$GOOSE_BIN_DIR"
+# --- 5) Install to $LEAF_BIN_DIR ---
+if [ ! -d "$LEAF_BIN_DIR" ]; then
+  echo "Creating directory: $LEAF_BIN_DIR"
+  mkdir -p "$LEAF_BIN_DIR"
 fi
 
-echo "Moving goose to $GOOSE_BIN_DIR/$OUT_FILE"
+echo "Moving leaf to $LEAF_BIN_DIR/$OUT_FILE"
 if [ "$OS" = "windows" ]; then
-  mv "$EXTRACT_DIR/goose.exe" "$GOOSE_BIN_DIR/$OUT_FILE"
+  # On Linux, if the target binary is currently running, writing to it fails
+  # with ETXTBSY ("Text file busy"). Rename the old binary out of the way
+  # first, then move the new one in. If the move fails, restore the old binary
+  # so the user is never left without an executable.
+  if [ -f "$LEAF_BIN_DIR/$OUT_FILE" ]; then
+    mv "$LEAF_BIN_DIR/$OUT_FILE" "$LEAF_BIN_DIR/$OUT_FILE.old"
+    if ! mv "$EXTRACT_DIR/leaf.exe" "$LEAF_BIN_DIR/$OUT_FILE"; then
+      echo "Error: failed to install new binary, restoring previous version"
+      mv "$LEAF_BIN_DIR/$OUT_FILE.old" "$LEAF_BIN_DIR/$OUT_FILE"
+      exit 1
+    fi
+    rm -f "$LEAF_BIN_DIR/$OUT_FILE.old"
+  else
+    mv "$EXTRACT_DIR/leaf.exe" "$LEAF_BIN_DIR/$OUT_FILE"
+  fi
 else
-  mv "$EXTRACT_DIR/goose" "$GOOSE_BIN_DIR/$OUT_FILE"
+  # On Linux, if the target binary is currently running, writing to it fails
+  # with ETXTBSY ("Text file busy"). Rename the old binary out of the way
+  # first, then move the new one in. If the move fails, restore the old binary
+  # so the user is never left without an executable.
+  if [ -f "$LEAF_BIN_DIR/$OUT_FILE" ]; then
+    mv "$LEAF_BIN_DIR/$OUT_FILE" "$LEAF_BIN_DIR/$OUT_FILE.old"
+    if ! mv "$EXTRACT_DIR/leaf" "$LEAF_BIN_DIR/$OUT_FILE"; then
+      echo "Error: failed to install new binary, restoring previous version"
+      mv "$LEAF_BIN_DIR/$OUT_FILE.old" "$LEAF_BIN_DIR/$OUT_FILE"
+      exit 1
+    fi
+    rm -f "$LEAF_BIN_DIR/$OUT_FILE.old"
+  else
+    mv "$EXTRACT_DIR/leaf" "$LEAF_BIN_DIR/$OUT_FILE"
+  fi
 fi
 
 # Copy Windows runtime DLLs if they exist
@@ -300,31 +328,32 @@ if [ "$OS" = "windows" ]; then
   for dll in "$EXTRACT_DIR"/*.dll; do
     if [ -f "$dll" ]; then
       echo "Moving Windows runtime DLL: $(basename "$dll")"
-      mv "$dll" "$GOOSE_BIN_DIR/"
+      mv "$dll" "$LEAF_BIN_DIR/"
     fi
   done
 fi
 
 # skip configuration for non-interactive installs e.g. automation, docker
 if [ "$CONFIGURE" = true ]; then
-  # --- 6) Configure goose (Optional) ---
+  # --- 6) Configure leaf (Optional) ---
   echo ""
-  echo "Configuring goose"
+  echo "Configuring leaf"
   echo ""
-  "$GOOSE_BIN_DIR/$OUT_FILE" configure
+  "$LEAF_BIN_DIR/$OUT_FILE" configure
 else
-  echo "Skipping 'goose configure', you may need to run this manually later"
+  echo "Skipping 'leaf configure', you may need to run this manually later"
 fi
 
 
 
+
 # --- 7) Check PATH and give instructions if needed ---
-if [[ ":$PATH:" != *":$GOOSE_BIN_DIR:"* ]]; then
+if [[ ":$PATH:" != *":$LEAF_BIN_DIR:"* ]]; then
   echo ""
-  echo "Warning: goose installed, but $GOOSE_BIN_DIR is not in your PATH."
+  echo "Warning: leaf installed, but $LEAF_BIN_DIR is not in your PATH."
 
   if [ "$OS" = "windows" ]; then
-    echo "To add goose to your PATH in PowerShell:"
+    echo "To add leaf to your PATH in PowerShell:"
     echo ""
     echo "# Add to your PowerShell profile"
     echo '$profilePath = $PROFILE'
@@ -334,13 +363,13 @@ if [[ ":$PATH:" != *":$GOOSE_BIN_DIR:"* ]]; then
     echo '. $PROFILE'
     echo ""
     echo "Alternatively, you can run:"
-    echo "    goose configure"
+    echo "    leaf configure"
     echo "or rerun this install script after updating your PATH."
   else
     SHELL_NAME=$(basename "$SHELL")
 
     echo ""
-    echo "The \$GOOSE_BIN_DIR is not in your PATH."
+    echo "The \$LEAF_BIN_DIR is not in your PATH."
 
     if [ "$CONFIGURE" = true ]; then
       echo "What would you like to do?"
@@ -362,23 +391,23 @@ if [[ ":$PATH:" != *":$GOOSE_BIN_DIR:"* ]]; then
       case "$choice" in
       1)
         RC_FILE="$HOME/.${SHELL_NAME}rc"
-        echo "Adding \$GOOSE_BIN_DIR to $RC_FILE..."
-        echo "export PATH=\"$GOOSE_BIN_DIR:\$PATH\"" >> "$RC_FILE"
+        echo "Adding \$LEAF_BIN_DIR to $RC_FILE..."
+        echo "export PATH=\"$LEAF_BIN_DIR:\$PATH\"" >> "$RC_FILE"
         echo "Done! Reload your shell or run 'source $RC_FILE' to apply changes."
         ;;
       2)
         echo ""
         echo "Add it to your PATH by editing ~/.${SHELL_NAME}rc or similar:"
-        echo "    export PATH=\"$GOOSE_BIN_DIR:\$PATH\""
+        echo "    export PATH=\"$LEAF_BIN_DIR:\$PATH\""
         echo "Then reload your shell (e.g. 'source ~/.${SHELL_NAME}rc') to apply changes."
         ;;
       *)
-        echo "Invalid choice. Please add \$GOOSE_BIN_DIR to your PATH manually."
+        echo "Invalid choice. Please add \$LEAF_BIN_DIR to your PATH manually."
         ;;
       esac
     else
       echo ""
-      echo "Configure disabled. Please add \$GOOSE_BIN_DIR to your PATH manually."
+      echo "Configure disabled. Please add \$LEAF_BIN_DIR to your PATH manually."
     fi
 
   fi
