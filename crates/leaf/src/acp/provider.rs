@@ -27,6 +27,7 @@ use crate::permission::permission_confirmation::PrincipalType;
 use crate::permission::{Permission, PermissionConfirmation};
 use crate::providers::base::{MessageStream, PermissionRouting, Provider};
 use crate::providers::errors::ProviderError;
+use crate::subprocess::configure_subprocess;
 
 pub struct AcpProviderConfig {
     pub command: PathBuf,
@@ -638,6 +639,7 @@ async fn spawn_acp_process(config: &AcpProviderConfig) -> Result<Child> {
         cmd.env(key, value);
     }
 
+    configure_subprocess(&mut cmd);
     cmd.spawn().context("failed to spawn ACP process")
 }
 
