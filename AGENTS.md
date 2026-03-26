@@ -138,6 +138,68 @@ When contributing to Leaf, keep these CLI-only constraints in mind:
 - ✅ **Commits Processing**: Each upstream commit can be adopted or ignored(if not CLI related), PR MUST commit each adopted upstream commit independently.
 - ✅ **Functional Focus**: NEVER cherry-pick any commit for simplicity, each upstream commit MUST be evaluated and merged carefully line by line
 
+### Upstream Sync Workflow
+
+When syncing from upstream block/goose:
+
+1. **Create tracking issue** with commit range to analyze
+2. **List all commits**: `git log upstream/main --oneline 928f4ac46..59a96c986`
+3. **Analyze each commit**:
+   - Check if CLI-relevant (affects `crates/leaf`, `crates/leaf-cli`, `crates/leaf-server`, `download_cli.sh`)
+   - Skip UI-only, desktop-only, CI-only, docs-only, version bump commits
+   - Mark as "Apply", "Skip", or "Review"
+4. **Update issue with analysis** before making changes
+5. **Apply commits individually** with 1:1 mapping to upstream commits
+6. **Rename goose→leaf** in any adapted code (scripts, env vars, binary names)
+7. **Ask user to review** each commit before proceeding to next
+
+### When to Stop and Ask
+
+Stop and ask user for guidance when:
+- Upstream commit modifies files that have been significantly refactored in Leaf
+- A simple rename would be insufficient (requires redesign)
+- Changes affect multiple crates with complex dependencies
+- There's ambiguity about whether a change is "CLI-relevant"
+- A commit requires additional dependencies that don't exist in Leaf
+
+### Commit Message Format (Upstream Adoptions)
+
+When adopting upstream commits:
+
+```
+<type>: <brief description matching upstream>
+
+Upstream: <full commit hash>
+Backport of upstream commit that explains what was adopted and any
+Leaf-specific changes made during adaptation.
+
+Co-authored-by: Original Author <email>
+```
+
+Example:
+```
+fix: gemini acp without an unexpected terminal window
+
+Upstream: 59a96c986fa4b75335f27e129f405f9164d2f0ed
+Backport of upstream commit that adds configure_subprocess() call
+when spawning ACP processes. Also renamed GOOSED_CERT_FINGERPRINT
+to LEAFD_CERT_FINGERPRINT in tls.rs.
+
+Co-authored-by: Lifei Zhou <lifei@squareup.com>
+Co-authored-by: Rick Hadeed <rick@block.xyz>
+```
+
+### Upstream Sync Verification
+
+After each commit:
+- [ ] `cargo fmt` passes
+- [ ] `cargo check -p leaf -p leaf-cli -p leaf-server` passes
+- [ ] Clippy warnings addressed (note pre-existing issues separately)
+
+For feature flag changes:
+- [ ] Check with `rustls-tls` feature (default)
+- [ ] Check with `native-tls` feature if applicable
+
 ### Dependencies
 - ❌ **NO V8/JavaScript**: No JavaScript execution or V8 integration
 - ❌ **NO Web Frameworks**: No web servers for UI (except API endpoints for ACP)
@@ -158,6 +220,49 @@ When contributing to Leaf, keep these CLI-only constraints in mind:
 - **CLI**: `leaf` (main CLI binary)
 - **Server**: `leafd` (daemon/server binary)
 - **Legacy**: All references to `goose` or `goosed` renamed to `leaf`/`leafd`
+
+### TLS Feature Flags
+
+Leaf server supports two TLS backends:
+- `rustls-tls` (default) - uses aws-lc-rs crypto provider
+- `native-tls` - uses platform OpenSSL (or LibreSSL/BoringSSL)
+
+When adding TLS-related changes:
+- Always gate with `#[cfg(feature = "rustls-tls")]` or `#[cfg(feature = "native-tls")]`
+- Use feature-gated type aliases for TLS config:
+  ```rust
+  #[cfg(feature = "rustls-tls")]
+  pub type TlsConfig = axum_server::tls_rustls::RustlsConfig;
+  #[cfg(feature = "native-tls")]
+  pub type TlsConfig = axum_server::tls_openssl::OpenSSLConfig;
+  ```
+- Add compile_error macros to ensure exactly one backend is enabled:
+  ```rust
+  #[cfg(not(any(feature = "rustls-tls", feature = "native-tls")))]
+  compile_error!("At least one of `rustls-tls` or `native-tls` features must be enabled");
+  #[cfg(all(feature = "rustls-tls", feature = "native-tls"))]
+  compile_error!("Features `rustls-tls` and `native-tls` are mutually exclusive");
+  ```
+
+### Install Script (download_cli.sh)
+
+The `download_cli.sh` script has its own naming conventions:
+
+**Environment variables:**
+- `LEAF_BIN_DIR` (not `GOOSE_BIN_DIR`)
+- `LEAF_VERSION`, `LEAF_PROVIDER`, `LEAF_MODEL`
+- `LEAFD_CERT_FINGERPRINT` for TLS cert fingerprint output
+
+**Repository references:**
+- `https://github.com/LeafAI/Leaf` (not `block/goose`)
+- `LeafAI/Leaf` as the repo identifier
+
+When adapting upstream shell script changes, always rename:
+- `GOOSE_BIN_DIR` → `LEAF_BIN_DIR`
+- `GOOSED_CERT_FINGERPRINT` → `LEAFD_CERT_FINGERPRINT`
+- `block/goose` → `LeafAI/Leaf`
+- `goose` binary → `leaf` binary
+- `goose.exe` → `leaf.exe`
 
 ### When Cherry-Picking from Goose
 
