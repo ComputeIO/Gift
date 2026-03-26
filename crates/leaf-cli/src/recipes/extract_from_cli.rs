@@ -104,7 +104,7 @@ mod tests {
 
         assert!(settings.is_some());
         let settings = settings.unwrap();
-        assert_eq!(settings.goose_provider, Some("test_provider".to_string()));
+        assert_eq!(settings.leaf_provider, Some("test_provider".to_string()));
         assert_eq!(settings.leaf_model, Some("test_model".to_string()));
         assert_eq!(settings.temperature, Some(0.7));
 
@@ -172,7 +172,7 @@ mod tests {
 
         assert!(settings.is_some());
         let settings = settings.unwrap();
-        assert_eq!(settings.goose_provider, Some("test_provider".to_string()));
+        assert_eq!(settings.leaf_provider, Some("test_provider".to_string()));
         assert_eq!(settings.leaf_model, Some("test_model".to_string()));
         assert_eq!(settings.temperature, Some(0.7));
 
@@ -233,7 +233,7 @@ parameters:
   input_type: string
   requirement: required
 settings:
-  goose_provider: test_provider
+  leaf_provider: test_provider
   leaf_model: test_model
   temperature: 0.7
 sub_recipes:

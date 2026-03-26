@@ -44,7 +44,7 @@ impl TaskConfig {
             extensions,
             max_turns: Some(
                 Config::global()
-                    .get_param::<usize>("GOOSE_SUBAGENT_MAX_TURNS")
+                    .get_param::<usize>("LEAF_SUBAGENT_MAX_TURNS")
                     .unwrap_or(DEFAULT_SUBAGENT_MAX_TURNS),
             ),
         }

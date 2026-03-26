@@ -786,13 +786,10 @@ impl LeafAcpAgent {
             .mcp_capabilities(McpCapabilities::new().http(true));
         Ok(InitializeResponse::new(args.protocol_version)
             .agent_capabilities(capabilities)
-            .auth_methods(vec![AuthMethod::new(
-                "goose-provider",
-                "Configure Provider",
-            )
-            .description(
-                "Run `leaf configure` to set up your AI provider and API key",
-            )]))
+            .auth_methods(vec![AuthMethod::new("leaf-provider", "Configure Provider")
+                .description(
+                    "Run `leaf configure` to set up your AI provider and API key",
+                )]))
     }
 
     async fn on_new_session(
@@ -802,7 +799,7 @@ impl LeafAcpAgent {
     ) -> Result<NewSessionResponse, sacp::Error> {
         debug!(?args, "new session request");
 
-        let goose_session = self
+        let leaf_session = self
             .session_manager
             .create_session(
                 args.cwd.clone(),
@@ -815,7 +812,7 @@ impl LeafAcpAgent {
                 sacp::Error::internal_error().data(format!("Failed to create session: {}", e))
             })?;
 
-        let session_id = SessionId::new(goose_session.id.clone());
+        let session_id = SessionId::new(leaf_session.id.clone());
 
         let agent = self
             .create_agent_for_session(Some(cx), Some(&session_id), None)
@@ -824,13 +821,13 @@ impl LeafAcpAgent {
                 sacp::Error::internal_error().data(format!("Failed to create agent: {}", e))
             })?;
         let provider = self
-            .init_provider(&agent, &goose_session)
+            .init_provider(&agent, &leaf_session)
             .await
             .map_err(|e| {
                 sacp::Error::internal_error().data(format!("Failed to set provider: {}", e))
             })?;
 
-        Self::add_mcp_extensions(&agent, args.mcp_servers, &goose_session.id).await?;
+        Self::add_mcp_extensions(&agent, args.mcp_servers, &leaf_session.id).await?;
 
         let session = LeafAcpSession {
             agent,
@@ -840,10 +837,10 @@ impl LeafAcpAgent {
         };
 
         let mut sessions = self.sessions.lock().await;
-        sessions.insert(goose_session.id.clone(), session);
+        sessions.insert(leaf_session.id.clone(), session);
 
         info!(
-            session_id = %goose_session.id,
+            session_id = %leaf_session.id,
             session_type = "acp",
             leaf_mode = %self.leaf_mode,
             "Session started"
@@ -853,7 +850,7 @@ impl LeafAcpAgent {
             build_model_state(&*provider, &provider.get_model_config().model_name).await;
         let mode_state = build_mode_state(self.leaf_mode)?;
 
-        Ok(NewSessionResponse::new(SessionId::new(goose_session.id))
+        Ok(NewSessionResponse::new(SessionId::new(leaf_session.id))
             .models(model_state)
             .modes(mode_state))
     }
@@ -919,7 +916,7 @@ impl LeafAcpAgent {
 
         let session_id = args.session_id.0.to_string();
 
-        let goose_session = self
+        let leaf_session = self
             .session_manager
             .get_session(&session_id, true)
             .await
@@ -928,7 +925,7 @@ impl LeafAcpAgent {
                     .data(format!("Failed to load session {}: {}", session_id, e))
             })?;
 
-        let loaded_mode = goose_session.leaf_mode;
+        let loaded_mode = leaf_session.leaf_mode;
         let acp_session_id = SessionId::new(session_id.clone());
 
         let agent = self
@@ -939,7 +936,7 @@ impl LeafAcpAgent {
             })?;
 
         let provider = self
-            .init_provider(&agent, &goose_session)
+            .init_provider(&agent, &leaf_session)
             .await
             .map_err(|e| {
                 sacp::Error::internal_error().data(format!("Failed to set provider: {}", e))
@@ -947,7 +944,7 @@ impl LeafAcpAgent {
 
         Self::add_mcp_extensions(&agent, args.mcp_servers, &session_id).await?;
 
-        let conversation = goose_session.conversation.ok_or_else(|| {
+        let conversation = leaf_session.conversation.ok_or_else(|| {
             sacp::Error::internal_error()
                 .data(format!("Session {} has no conversation data", session_id))
         })?;
@@ -1441,7 +1438,7 @@ impl JrMessageHandler for LeafAcpHandler {
                 .await
                 // Handle methods not yet in the sacp typed API.
                 // - session/set_model, session/set_mode: typed support pending in sacp
-                // - _<method>: custom requests that will eventually route to goose-server
+                // - _<method>: custom requests that will eventually route to leaf-server
                 .otherwise({
                     let agent = agent.clone();
                     let cx = cx.clone();

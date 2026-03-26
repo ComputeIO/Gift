@@ -337,7 +337,7 @@ impl Agent {
                     "The /{} recipe requires {} parameters: {}.\n\n\
                     Slash command recipes only support 1 parameter.\n\n\
                     **To use this recipe:**\n\
-                    • **CLI:** `goose run --recipe {} {}`\n\
+                    • **CLI:** `leaf run --recipe {} {}`\n\
                     • **Desktop:** Launch from the recipes sidebar to fill in parameters",
                     command,
                     params_without_default,

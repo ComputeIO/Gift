@@ -1489,7 +1489,7 @@ impl SummonClient {
 
         let settings = model.map(|m| Settings {
             leaf_model: Some(m),
-            goose_provider: params.provider.clone(),
+            leaf_provider: params.provider.clone(),
             temperature: params.temperature,
             max_turns: None,
         });
@@ -1555,11 +1555,11 @@ impl SummonClient {
                 recipe
                     .settings
                     .as_ref()
-                    .and_then(|s| s.goose_provider.clone())
+                    .and_then(|s| s.leaf_provider.clone())
             })
             .or_else(|| {
                 Config::global()
-                    .get_param::<String>("GOOSE_SUBAGENT_PROVIDER")
+                    .get_param::<String>("LEAF_SUBAGENT_PROVIDER")
                     .ok()
             })
             .or_else(|| session.provider_name.clone())
@@ -1574,7 +1574,7 @@ impl SummonClient {
             model_config.model_name = model.clone();
         } else if let Some(model) = recipe.settings.as_ref().and_then(|s| s.leaf_model.as_ref()) {
             model_config.model_name = model.clone();
-        } else if let Ok(model) = Config::global().get_param::<String>("GOOSE_SUBAGENT_MODEL") {
+        } else if let Ok(model) = Config::global().get_param::<String>("LEAF_SUBAGENT_MODEL") {
             model_config.model_name = model;
         }
 
@@ -1589,7 +1589,7 @@ impl SummonClient {
 
     fn resolve_max_turns(&self, session: &crate::session::Session) -> usize {
         // Priority: env var > recipe settings > config.yaml > default
-        std::env::var("GOOSE_SUBAGENT_MAX_TURNS")
+        std::env::var("LEAF_SUBAGENT_MAX_TURNS")
             .ok()
             .and_then(|v| v.parse().ok())
             .or_else(|| {
@@ -1601,7 +1601,7 @@ impl SummonClient {
             })
             .or_else(|| {
                 Config::global()
-                    .get_param::<usize>("GOOSE_SUBAGENT_MAX_TURNS")
+                    .get_param::<usize>("LEAF_SUBAGENT_MAX_TURNS")
                     .ok()
             })
             .unwrap_or(DEFAULT_SUBAGENT_MAX_TURNS)

@@ -55,7 +55,7 @@ pub struct ShellOutput {
 /// source the user's profile and recover the full PATH.
 #[cfg(not(windows))]
 fn resolve_login_shell_path() -> Option<String> {
-    let shell = std::env::var("GOOSE_SHELL").unwrap_or_else(|_| {
+    let shell = std::env::var("LEAF_SHELL").unwrap_or_else(|_| {
         if PathBuf::from("/bin/bash").is_file() {
             "/bin/bash".to_string()
         } else {

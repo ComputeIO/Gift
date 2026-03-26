@@ -36,25 +36,25 @@ impl Shell {
 
 static BASH_CONFIG: ShellConfig = ShellConfig {
     script_template: r#"export AGENT_SESSION_ID="{session_id}"
-alias @goose='{goose_bin} term run'
-alias @g='{goose_bin} term run'
+alias @leaf='{leaf_bin} term run'
+alias @g='{leaf_bin} term run'
 
-goose_preexec() {
-    [[ "$1" =~ ^goose\ term ]] && return
-    [[ "$1" =~ ^(@goose|@g)($|[[:space:]]) ]] && return
-    ('{goose_bin}' term log "$1" &) 2>/dev/null
+leaf_preexec() {
+    [[ "$1" =~ ^leaf\ term ]] && return
+    [[ "$1" =~ ^(@leaf|@g)($|[[:space:]]) ]] && return
+    ('{leaf_bin}' term log "$1" &) 2>/dev/null
 }
 
-if [[ -z "$goose_preexec_installed" ]]; then
-    goose_preexec_installed=1
-    trap 'goose_preexec "$BASH_COMMAND"' DEBUG
+if [[ -z "$leaf_preexec_installed" ]]; then
+    leaf_preexec_installed=1
+    trap 'leaf_preexec "$BASH_COMMAND"' DEBUG
 fi{command_not_found_handler}"#,
     command_not_found: Some(
         r#"
 
 command_not_found_handle() {
-    echo "🌿 Command '$1' not found. Asking goose..."
-    '{goose_bin}' term run "$@"
+    echo "🌿 Command '$1' not found. Asking leaf..."
+    '{leaf_bin}' term run "$@"
     return 0
 }"#,
     ),
@@ -62,23 +62,23 @@ command_not_found_handle() {
 
 static ZSH_CONFIG: ShellConfig = ShellConfig {
     script_template: r#"export AGENT_SESSION_ID="{session_id}"
-alias @goose='{goose_bin} term run'
-alias @g='{goose_bin} term run'
+alias @leaf='{leaf_bin} term run'
+alias @g='{leaf_bin} term run'
 
-goose_preexec() {
-    [[ "$1" =~ ^goose\ term ]] && return
-    [[ "$1" =~ ^(@goose|@g)($|[[:space:]]) ]] && return
-    ('{goose_bin}' term log "$1" &) 2>/dev/null
+leaf_preexec() {
+    [[ "$1" =~ ^leaf\ term ]] && return
+    [[ "$1" =~ ^(@leaf|@g)($|[[:space:]]) ]] && return
+    ('{leaf_bin}' term log "$1" &) 2>/dev/null
 }
 
 autoload -Uz add-zsh-hook
-add-zsh-hook preexec goose_preexec{command_not_found_handler}"#,
+add-zsh-hook preexec leaf_preexec{command_not_found_handler}"#,
     command_not_found: Some(
         r#"
 
 command_not_found_handler() {
-    echo "🪿 Command '$1' not found. Asking goose..."
-    '{goose_bin}' term run "$@"
+    echo "🪿 Command '$1' not found. Asking leaf..."
+    '{leaf_bin}' term run "$@"
     return 0
 }"#,
     ),
@@ -86,27 +86,27 @@ command_not_found_handler() {
 
 static FISH_CONFIG: ShellConfig = ShellConfig {
     script_template: r#"set -gx AGENT_SESSION_ID "{session_id}"
-function @goose; {goose_bin} term run $argv; end
-function @g; {goose_bin} term run $argv; end
+function @leaf; {leaf_bin} term run $argv; end
+function @g; {leaf_bin} term run $argv; end
 
-function goose_preexec --on-event fish_preexec
-    string match -q -r '^goose term' -- $argv[1]; and return
-    string match -q -r '^(@goose|@g)($|\s)' -- $argv[1]; and return
-    {goose_bin} term log "$argv[1]" 2>/dev/null &
+function leaf_preexec --on-event fish_preexec
+    string match -q -r '^leaf term' -- $argv[1]; and return
+    string match -q -r '^(@leaf|@g)($|\s)' -- $argv[1]; and return
+    {leaf_bin} term log "$argv[1]" 2>/dev/null &
 end"#,
     command_not_found: None,
 };
 
 static POWERSHELL_CONFIG: ShellConfig = ShellConfig {
     script_template: r#"$env:AGENT_SESSION_ID = "{session_id}"
-function @goose {{ & '{goose_bin}' term run @args }}
-function @g {{ & '{goose_bin}' term run @args }}
+function @leaf {{ & '{leaf_bin}' term run @args }}
+function @g {{ & '{leaf_bin}' term run @args }}
 
 Set-PSReadLineKeyHandler -Chord Enter -ScriptBlock {{
     $line = $null
     [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$null)
-    if ($line -notmatch '^goose term' -and $line -notmatch '^(@goose|@g)($|\s)') {{
-        Start-Job -ScriptBlock {{ & '{goose_bin}' term log $using:line }} | Out-Null
+    if ($line -notmatch '^leaf term' -and $line -notmatch '^(@leaf|@g)($|\s)') {{
+        Start-Job -ScriptBlock {{ & '{leaf_bin}' term log $using:line }} | Out-Null
     }}
     [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
 }}"#,
@@ -155,14 +155,14 @@ pub async fn handle_term_init(
         }
     };
 
-    let goose_bin = std::env::current_exe()
+    let leaf_bin = std::env::current_exe()
         .map(|p| p.to_string_lossy().into_owned())
         .unwrap_or_else(|_| "leaf".to_string());
 
     let command_not_found_handler = if with_command_not_found {
         config
             .command_not_found
-            .map(|s| s.replace("{goose_bin}", &goose_bin))
+            .map(|s| s.replace("{leaf_bin}", &leaf_bin))
             .unwrap_or_default()
     } else {
         String::new()
@@ -171,7 +171,7 @@ pub async fn handle_term_init(
     let script = config
         .script_template
         .replace("{session_id}", &session.id)
-        .replace("{goose_bin}", &goose_bin)
+        .replace("{leaf_bin}", &leaf_bin)
         .replace("{command_not_found_handler}", &command_not_found_handler);
 
     println!("{}", script);
@@ -180,7 +180,7 @@ pub async fn handle_term_init(
 
 pub async fn handle_term_log(command: String) -> Result<()> {
     let session_id = std::env::var("AGENT_SESSION_ID").map_err(|_| {
-        anyhow!("AGENT_SESSION_ID not set. Run 'eval \"$(goose term init <shell>)\"' first.")
+        anyhow!("AGENT_SESSION_ID not set. Run 'eval \"$(leaf term init <shell>)\"' first.")
     })?;
 
     let message = Message::new(
@@ -203,7 +203,7 @@ pub async fn handle_term_run(prompt: Vec<String>) -> Result<()> {
         anyhow!(
             "AGENT_SESSION_ID not set.\n\n\
              Add to your shell config (~/.zshrc or ~/.bashrc):\n    \
-             eval \"$(goose term init zsh)\"\n\n\
+             eval \"$(leaf term init zsh)\"\n\n\
              Then restart your terminal or run: source ~/.zshrc"
         )
     })?;
@@ -265,7 +265,7 @@ pub async fn handle_term_run(prompt: Vec<String>) -> Result<()> {
     Ok(())
 }
 
-/// Handle `goose term info` - print compact session info for prompt integration
+/// Handle `leaf term info` - print compact session info for prompt integration
 pub async fn handle_term_info() -> Result<()> {
     let session_id = match std::env::var("AGENT_SESSION_ID") {
         Ok(id) => id,

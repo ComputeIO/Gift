@@ -289,7 +289,7 @@ async fn start_agent(
         let mut update = manager.update(&session.id).recipe(Some(recipe.clone()));
 
         if let Some(ref settings) = recipe.settings {
-            if let Some(ref provider) = settings.goose_provider {
+            if let Some(ref provider) = settings.leaf_provider {
                 update = update.provider_name(provider);
 
                 if let Some(ref model) = settings.leaf_model {

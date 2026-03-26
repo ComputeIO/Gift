@@ -7,7 +7,7 @@ use rmcp::model::{
     ExtensionCapabilities, Extensions, JsonObject, ListRootsResult, LoggingMessageNotification,
     Meta, Root, SamplingMessageContent,
 };
-/// MCP client implementation for Goose
+/// MCP client implementation for Leaf
 use rmcp::{
     model::{
         CallToolRequestParams, CallToolResult, CancelledNotificationParam, ClientCapabilities,
@@ -253,7 +253,7 @@ impl ClientHandler for LeafClient {
         let system_prompt = params
             .system_prompt
             .as_deref()
-            .unwrap_or("You are a general-purpose AI agent called goose");
+            .unwrap_or("You are a general-purpose AI agent called leaf");
 
         let model_config = provider.get_model_config();
         let (response, usage) = provider
@@ -366,7 +366,7 @@ impl ClientHandler for LeafClient {
                 .build(),
             Implementation::new(
                 self.client_name.clone(),
-                std::env::var("GOOSE_MCP_CLIENT_VERSION")
+                std::env::var("LEAF_MCP_CLIENT_VERSION")
                     .unwrap_or(env!("CARGO_PKG_VERSION").to_owned()),
             ),
         )
@@ -883,7 +883,7 @@ mod tests {
         let mut extensions = Extensions::new();
         extensions.insert(
             serde_json::from_value::<Meta>(json!({
-                "Goose-Session-Id": "old-session-id",
+                "Leaf-Session-Id": "old-session-id",
                 "other-key": "preserve-me"
             }))
             .unwrap(),
