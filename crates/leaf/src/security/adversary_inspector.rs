@@ -33,8 +33,8 @@ struct AdversaryConfig {
 
 /// Adversary inspector that reviews tool calls against user-defined rules.
 ///
-/// Activated by placing an `adversary.md` file in the Goose config directory
-/// (`~/.config/goose/adversary.md`). The file contains optional frontmatter
+/// Activated by placing an `adversary.md` file in the Leaf config directory
+/// (`~/.config/leaf/adversary.md`). The file contains optional frontmatter
 /// to select which tools are reviewed, followed by rules.
 ///
 /// Example `adversary.md`:

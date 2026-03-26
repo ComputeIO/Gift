@@ -26,7 +26,7 @@ impl ProviderDef for CodexAcpProvider {
         ProviderMetadata::new(
             CODEX_ACP_PROVIDER_NAME,
             "Codex CLI",
-            "Use goose with your ChatGPT Plus/Pro subscription via the codex-acp adapter.",
+            "Use leaf with your ChatGPT Plus/Pro subscription via the codex-acp adapter.",
             ACP_CURRENT_MODEL,
             vec![],
             CODEX_ACP_DOC_URL,
@@ -35,8 +35,8 @@ impl ProviderDef for CodexAcpProvider {
         .with_setup_steps(vec![
             "Install the ACP adapter: `npm install -g @zed-industries/codex-acp`",
             "Run `codex` once to authenticate with your OpenAI account",
-            "Set in your goose config file (`~/.config/goose/config.yaml` on macOS/Linux):\n  GOOSE_PROVIDER: codex-acp\n  GOOSE_MODEL: current",
-            "Restart goose for changes to take effect",
+            "Set in your leaf config file (`~/.config/leaf/config.yaml` on macOS/Linux):\n  LEAF_PROVIDER: codex-acp\n  LEAF_MODEL: current",
+            "Restart leaf for changes to take effect",
         ])
     }
 
@@ -107,7 +107,7 @@ impl ProviderDef for CodexAcpProvider {
 
 // Codex sandbox scope determines what needs approval: operations within the
 // sandbox are auto-approved, operations outside it trigger on-request prompts.
-// So Approve uses read-only sandbox to force write approvals through goose.
+// So Approve uses read-only sandbox to force write approvals through leaf.
 fn map_leaf_mode(leaf_mode: LeafMode) -> (&'static str, &'static str) {
     match leaf_mode {
         LeafMode::Auto => ("never", "danger-full-access"),

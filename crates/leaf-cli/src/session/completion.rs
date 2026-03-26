@@ -10,7 +10,7 @@ use strum::VariantNames;
 
 use super::{CompletionCache, HintStatus};
 
-/// Completer for goose CLI commands
+/// Completer for leaf CLI commands
 pub struct GooseCompleter {
     pub completion_cache: Arc<std::sync::RwLock<CompletionCache>>,
     filename_completer: FilenameCompleter,
@@ -480,7 +480,7 @@ impl Hinter for GooseCompleter {
 
         match cache.hint_status {
             HintStatus::Interrupted => {
-                Some("Interrupted, what should goose work on instead?".to_string())
+                Some("Interrupted, what should leaf work on instead?".to_string())
             }
             HintStatus::MaybeExit => {
                 Some("Press Ctrl+C again to exit, or type new instructions to continue".to_string())

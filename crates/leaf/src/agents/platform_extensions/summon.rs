@@ -1033,8 +1033,8 @@ impl SummonClient {
                  Sources are discovered from:\n\
                  • Current recipe's sub_recipes\n\
                  • .leaf/recipes/, .leaf/skills/, .leaf/agents/\n\
-                 • ~/.config/goose/recipes/, skills/, agents/\n\
-                 • GOOSE_RECIPE_PATH directories\n\
+                 • ~/.config/leaf/recipes/, skills/, agents/\n\
+                 • LEAF_RECIPE_PATH directories\n\
                  • Builtin skills",
             )]);
         }

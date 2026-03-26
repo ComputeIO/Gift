@@ -9,10 +9,10 @@ use tempfile::NamedTempFile;
 /// Create temporary markdown file with conversation history
 fn create_temp_file(messages: &[&str]) -> Result<NamedTempFile> {
     let temp_file = Builder::new()
-        .prefix("goose_prompt_")
+        .prefix("leaf_prompt_")
         .suffix(".md")
         .tempfile()?;
-    let mut content = String::from("# Goose Prompt Editor\n\n");
+    let mut content = String::from("# Leaf Prompt Editor\n\n");
 
     content.push_str("# Your prompt:\n\n");
 
@@ -84,7 +84,7 @@ pub fn get_editor_input(editor_cmd: &str, messages: &[&str]) -> Result<(String, 
     let temp_file = create_temp_file(messages)?;
     let temp_path = temp_file.path().to_path_buf();
 
-    let symlink_path = PathBuf::from(".goose_prompt_temp.md");
+    let symlink_path = PathBuf::from(".leaf_prompt_temp.md");
 
     if symlink_path.exists() {
         std::fs::remove_file(&symlink_path)?;
@@ -213,11 +213,11 @@ This is the user's input
         let path = temp_file.path();
 
         assert!(path.exists());
-        assert!(path.to_str().unwrap().contains("goose_prompt_"));
+        assert!(path.to_str().unwrap().contains("leaf_prompt_"));
         assert!(path.to_str().unwrap().ends_with(".md"));
 
         let content = fs::read_to_string(path).unwrap();
-        assert!(content.contains("# Goose Prompt Editor"));
+        assert!(content.contains("# Leaf Prompt Editor"));
         assert!(content.contains("## User: Hello"));
         assert!(content.contains("## Assistant: Hi there!"));
         assert!(content.contains("# Your prompt:"));
@@ -227,13 +227,13 @@ This is the user's input
     #[test]
     fn test_create_temp_file_with_prefix_suffix() {
         let temp_file = Builder::new()
-            .prefix("goose_test_")
+            .prefix("leaf_test_")
             .suffix(".md")
             .tempfile()
             .unwrap();
 
         let name = temp_file.path().file_name().unwrap().to_str().unwrap();
-        assert!(name.starts_with("goose_test_"));
+        assert!(name.starts_with("leaf_test_"));
         assert!(name.ends_with(".md"));
     }
 
@@ -259,7 +259,7 @@ with multiple lines.
     fn test_tempfile_cleanup() {
         let path = {
             let temp_file = Builder::new()
-                .prefix("goose_cleanup_test_")
+                .prefix("leaf_cleanup_test_")
                 .tempfile()
                 .unwrap();
             let path = temp_file.path().to_path_buf();

@@ -16,10 +16,10 @@ static INIT: Once = Once::new();
 
 fn default_env_filter() -> EnvFilter {
     EnvFilter::new("")
-        // Keep goose and MCP logs visible without verbose debug payloads.
+        // Keep leaf and MCP logs visible without verbose debug payloads.
         .add_directive("mcp_client=info".parse().unwrap())
-        .add_directive("goose=info".parse().unwrap())
-        .add_directive("goose_cli=info".parse().unwrap())
+        .add_directive("leaf=info".parse().unwrap())
+        .add_directive("leaf_cli=info".parse().unwrap())
         .add_directive(LevelFilter::WARN.into())
 }
 
@@ -211,9 +211,9 @@ mod tests {
     fn test_default_filter_avoids_debug_by_default() {
         let filter = super::default_env_filter().to_string();
         assert!(!filter.contains("mcp_client=debug"));
-        assert!(!filter.contains("goose=debug"));
+        assert!(!filter.contains("leaf=debug"));
         assert!(filter.contains("mcp_client=info"));
-        assert!(filter.contains("goose=info"));
-        assert!(filter.contains("goose_cli=info"));
+        assert!(filter.contains("leaf=info"));
+        assert!(filter.contains("leaf_cli=info"));
     }
 }

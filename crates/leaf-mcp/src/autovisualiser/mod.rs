@@ -660,7 +660,7 @@ impl ServerHandler for AutoVisualiserRouter {
                 .build(),
         )
         .with_server_info(Implementation::new(
-            "goose-autovisualiser",
+            "leaf-autovisualiser",
             env!("CARGO_PKG_VERSION"),
         ))
         .with_instructions(self.instructions.clone())
@@ -721,8 +721,8 @@ impl ServerHandler for AutoVisualiserRouter {
 impl AutoVisualiserRouter {
     pub fn new() -> Self {
         // choose_app_strategy().cache_dir()
-        // - macOS/Linux: ~/.cache/goose/autovisualiser/
-        // - Windows:     ~\AppData\Local\Block\goose\cache\autovisualiser\
+        // - macOS/Linux: ~/.cache/leaf/autovisualiser/
+        // - Windows:     ~\AppData\Local\Leaf\leaf\cache\autovisualiser\
         let cache_dir = choose_app_strategy(crate::APP_STRATEGY.clone())
             .unwrap()
             .cache_dir()
