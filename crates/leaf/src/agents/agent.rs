@@ -90,16 +90,16 @@ pub struct ExtensionLoadResult {
 }
 
 #[derive(Clone, Debug)]
-pub enum GoosePlatform {
+pub enum LeafPlatform {
     LeafDesktop,
     LeafCli,
 }
 
-impl fmt::Display for GoosePlatform {
+impl fmt::Display for LeafPlatform {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            GoosePlatform::LeafCli => write!(f, "leaf-cli"),
-            GoosePlatform::LeafDesktop => write!(f, "goose-desktop"),
+            LeafPlatform::LeafCli => write!(f, "leaf-cli"),
+            LeafPlatform::LeafDesktop => write!(f, "leaf-desktop"),
         }
     }
 }
@@ -111,7 +111,7 @@ pub struct AgentConfig {
     pub scheduler_service: Option<Arc<dyn SchedulerTrait>>,
     pub leaf_mode: LeafMode,
     pub disable_session_naming: bool,
-    pub goose_platform: GoosePlatform,
+    pub leaf_platform: LeafPlatform,
 }
 
 impl AgentConfig {
@@ -121,7 +121,7 @@ impl AgentConfig {
         scheduler_service: Option<Arc<dyn SchedulerTrait>>,
         leaf_mode: LeafMode,
         disable_session_naming: bool,
-        goose_platform: GoosePlatform,
+        leaf_platform: LeafPlatform,
     ) -> Self {
         Self {
             session_manager,
@@ -129,7 +129,7 @@ impl AgentConfig {
             scheduler_service,
             leaf_mode,
             disable_session_naming,
-            goose_platform,
+            leaf_platform,
         }
     }
 }
@@ -211,7 +211,7 @@ impl Agent {
             None,
             config.get_goose_mode().unwrap_or_default(),
             config.get_goose_disable_session_naming().unwrap_or(false),
-            GoosePlatform::LeafCli,
+            LeafPlatform::LeafCli,
         ))
     }
 
@@ -219,11 +219,11 @@ impl Agent {
         let (tool_tx, tool_rx) = mpsc::channel(32);
         let provider = Arc::new(Mutex::new(None));
 
-        let goose_platform = config.goose_platform.clone();
+        let leaf_platform = config.leaf_platform.clone();
         let initial_mode = config.leaf_mode;
-        let capabilities = match config.goose_platform {
-            GoosePlatform::LeafDesktop => ExtensionManagerCapabilities { mcpui: true },
-            GoosePlatform::LeafCli => ExtensionManagerCapabilities { mcpui: false },
+        let capabilities = match config.leaf_platform {
+            LeafPlatform::LeafDesktop => ExtensionManagerCapabilities { mcpui: true },
+            LeafPlatform::LeafCli => ExtensionManagerCapabilities { mcpui: false },
         };
         let session_manager = Arc::clone(&config.session_manager);
         let permission_manager = Arc::clone(&config.permission_manager);

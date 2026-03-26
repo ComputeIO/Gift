@@ -12,7 +12,7 @@ use tokio_util::sync::CancellationToken;
 
 use leaf::agents::extension::{Envs, ExtensionConfig};
 use leaf::agents::extension_manager::{ExtensionManager, ExtensionManagerCapabilities};
-use leaf::agents::GoosePlatform;
+use leaf::agents::LeafPlatform;
 use leaf::model::ModelConfig;
 
 use test_case::test_case;
@@ -260,7 +260,7 @@ async fn test_replayed_session(
     let extension_manager = Arc::new(ExtensionManager::new(
         provider,
         session_manager,
-        GoosePlatform::LeafDesktop.to_string(),
+        LeafPlatform::LeafDesktop.to_string(),
         ExtensionManagerCapabilities { mcpui: true },
     ));
 

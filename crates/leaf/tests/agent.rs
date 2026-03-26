@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use futures::StreamExt;
-use leaf::agents::{Agent, AgentEvent, GoosePlatform};
+use leaf::agents::{Agent, AgentEvent, LeafPlatform};
 use leaf::config::extensions::{set_extension, ExtensionEntry};
 
 #[cfg(test)]
@@ -129,7 +129,7 @@ mod tests {
                 Some(mock_scheduler),
                 LeafMode::Auto,
                 false,
-                GoosePlatform::LeafCli,
+                LeafPlatform::LeafCli,
             );
             let agent = Agent::with_config(config);
 
@@ -171,7 +171,7 @@ mod tests {
                 Some(mock_scheduler),
                 LeafMode::Auto,
                 false,
-                GoosePlatform::LeafCli,
+                LeafPlatform::LeafCli,
             );
             let agent = Agent::with_config(config);
 
@@ -226,7 +226,7 @@ mod tests {
                 Some(mock_scheduler),
                 LeafMode::Auto,
                 false,
-                GoosePlatform::LeafCli,
+                LeafPlatform::LeafCli,
             );
             let agent = Agent::with_config(config);
 
@@ -762,7 +762,7 @@ mod tests {
                 None,
                 LeafMode::default(),
                 false,
-                GoosePlatform::LeafCli,
+                LeafPlatform::LeafCli,
             );
 
             let agent = Agent::with_config(config);
@@ -959,7 +959,7 @@ mod tests {
                 None,
                 LeafMode::Auto,
                 true, // disable session naming so it doesn't consume a provider call
-                GoosePlatform::LeafCli,
+                LeafPlatform::LeafCli,
             );
             let agent = Agent::with_config(config);
             let provider = Arc::new(MultiStepProvider::new(cancel_token.clone()));
