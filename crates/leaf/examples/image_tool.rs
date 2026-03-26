@@ -24,7 +24,7 @@ async fn main() -> Result<()> {
     ];
     for provider in providers {
         // Read and encode test image
-        let image_data = fs::read("crates/goose/examples/test_assets/test_image.png")?;
+        let image_data = fs::read("crates/leaf/examples/test_assets/test_image.png")?;
         let base64_image = BASE64.encode(image_data);
 
         // Create a message sequence that includes a tool response with both text and image

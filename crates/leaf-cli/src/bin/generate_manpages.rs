@@ -1,20 +1,20 @@
-//! Generate manpages for the goose CLI.
+//! Generate manpages for the leaf CLI.
 //!
 //! This binary generates ROFF-formatted manpages from the clap CLI definitions.
 //! Manpages are an essential part of the Linux/Unix ecosystem, providing users with
-//! offline documentation accessible via the `man` command (e.g., `man goose`).
+//! offline documentation accessible via the `man` command (e.g., `man leaf`).
 //!
-//! When goose is packaged for Linux distributions (deb, rpm, etc.), the generated
+//! When leaf is packaged for Linux distributions (deb, rpm, etc.), the generated
 //! manpages should be installed to `/usr/share/man/man1/` so users can access help
 //! without an internet connection, following Unix conventions that have existed
 //! since the 1970s.
 //!
 //! Usage:
-//!   cargo run -p goose-cli --bin generate_manpages
+//!   cargo run -p leaf-cli --bin generate_manpages
 //!   # or
 //!   just generate-manpages
 //!
-//! Output: target/man/goose.1, target/man/goose-session.1, etc.
+//! Output: target/man/leaf.1, target/man/leaf-session.1, etc.
 
 use clap::CommandFactory;
 use clap_mangen::Man;
@@ -115,7 +115,7 @@ fn generate_see_also(
 ) -> String {
     let mut references: Vec<String> = Vec::new();
 
-    // Always reference the main goose command if we're not it
+    // Always reference the main leaf command if we're not it
     if current_name != "leaf" {
         references.push("leaf".to_string());
     }
@@ -134,7 +134,7 @@ fn generate_see_also(
         for subcmd in cmd.get_subcommands() {
             let subcmd_name = subcmd.get_name();
             if subcmd_name != "help" && !subcmd.is_hide_set() {
-                let full_name = format!("goose-{}", subcmd_name);
+                let full_name = format!("leaf-{}", subcmd_name);
                 if !references.contains(&full_name) {
                     references.push(full_name);
                 }

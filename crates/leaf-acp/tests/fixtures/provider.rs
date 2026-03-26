@@ -185,18 +185,18 @@ impl Connection for ClientToProviderConnection {
         // Tests like run_model_set call new_session() multiple times on the same
         // connection, so each needs a distinct key to avoid returning a cached session.
         self.session_counter += 1;
-        let goose_id = format!("test-session-{}", self.session_counter);
+        let leaf_id = format!("test-session-{}", self.session_counter);
         let response = self
             .provider
             .lock()
             .await
-            .ensure_session(Some(&goose_id))
+            .ensure_session(Some(&leaf_id))
             .await
             .unwrap();
 
         let session = ClientToProviderSession {
             provider: Arc::clone(&self.provider),
-            session_id: sacp::schema::SessionId::new(goose_id),
+            session_id: sacp::schema::SessionId::new(leaf_id),
             notification_sink: self.notification_sink.clone(),
         };
         SessionResult {

@@ -1960,11 +1960,11 @@ You review code."#;
     async fn test_source_discovery_and_priority() {
         let temp_dir = TempDir::new().unwrap();
 
-        let goose_skill = temp_dir.path().join(".leaf/skills/my-skill");
-        fs::create_dir_all(&goose_skill).unwrap();
+        let leaf_skill = temp_dir.path().join(".leaf/skills/my-skill");
+        fs::create_dir_all(&leaf_skill).unwrap();
         fs::write(
-            goose_skill.join("SKILL.md"),
-            "---\nname: my-skill\ndescription: goose version\n---\nContent",
+            leaf_skill.join("SKILL.md"),
+            "---\nname: my-skill\ndescription: leaf version\n---\nContent",
         )
         .unwrap();
 
@@ -1988,7 +1988,7 @@ You review code."#;
         let sources = client.discover_filesystem_sources(temp_dir.path());
 
         let skill = sources.iter().find(|s| s.name == "my-skill").unwrap();
-        assert_eq!(skill.description, "goose version");
+        assert_eq!(skill.description, "leaf version");
 
         assert!(sources
             .iter()

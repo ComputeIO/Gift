@@ -333,7 +333,7 @@ impl ClaudeCodeProvider {
     fn build_stream_json_command(&self) -> Command {
         let mut cmd = Command::new(&self.command);
         configure_subprocess(&mut cmd);
-        // Allow goose to run inside a Claude Code session.
+        // Allow leaf to run inside a Claude Code session.
         cmd.env_remove("CLAUDECODE");
         cmd.arg("--input-format")
             .arg("stream-json")

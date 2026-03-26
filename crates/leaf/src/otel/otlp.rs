@@ -80,7 +80,7 @@ pub fn signal_exporter(signal: &str) -> Option<ExporterType> {
     }
 }
 
-/// Promotes goose config-file OTel settings to env vars before exporter build.
+/// Promotes leaf config-file OTel settings to env vars before exporter build.
 pub fn promote_config_to_env(config: &crate::config::Config) {
     if env::var("OTEL_EXPORTER_OTLP_ENDPOINT").is_err() {
         if let Ok(endpoint) = config.get_param::<String>("otel_exporter_otlp_endpoint") {
@@ -453,7 +453,7 @@ mod tests {
             .with_attributes([KeyValue::new("service.name", "leaf"), KeyValue::new("service.version", env!("CARGO_PKG_VERSION")), KeyValue::new("service.namespace", "leaf")])
             .with_detector(Box::new(TelemetryResourceDetector))
             .build();
-        "no env vars uses goose defaults"
+        "no env vars uses leaf defaults"
     )]
     #[test_case(
         &[("OTEL_SERVICE_NAME", "custom")],
@@ -492,8 +492,8 @@ mod tests {
     #[test_case(&[("RUST_LOG", "debug")], Level::DEBUG; "RUST_LOG takes precedence")]
     #[test_case(&[("RUST_LOG", ""), ("OTEL_LOG_LEVEL", "error")], Level::ERROR; "OTEL_LOG_LEVEL fallback")]
     #[test_case(&[("RUST_LOG", "warn"), ("OTEL_LOG_LEVEL", "error")], Level::WARN; "RUST_LOG wins over OTEL_LOG_LEVEL")]
-    #[test_case(&[("RUST_LOG", "goose=debug"), ("OTEL_LOG_LEVEL", "trace")], Level::TRACE; "directive RUST_LOG falls through to OTEL_LOG_LEVEL")]
-    #[test_case(&[("RUST_LOG", "goose=debug")], Level::INFO; "directive RUST_LOG falls through to default")]
+    #[test_case(&[("RUST_LOG", "leaf=debug"), ("OTEL_LOG_LEVEL", "trace")], Level::TRACE; "directive RUST_LOG falls through to OTEL_LOG_LEVEL")]
+    #[test_case(&[("RUST_LOG", "leaf=debug")], Level::INFO; "directive RUST_LOG falls through to default")]
     #[test_case(&[("RUST_LOG", ""), ("OTEL_LOG_LEVEL", "INFO")], Level::INFO; "case insensitive")]
     #[test_case(&[("RUST_LOG", ""), ("OTEL_LOG_LEVEL", "bogus")], Level::INFO; "unknown defaults to info")]
     fn otel_logs_level_from_env(env: &[(&'static str, &'static str)], expected: Level) {

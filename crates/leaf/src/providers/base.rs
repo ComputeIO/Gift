@@ -640,7 +640,7 @@ pub trait Provider: Send + Sync {
     }
 
     /// Whether the provider manages its own conversation context (e.g. CLI
-    /// wrappers like Claude Code or Gemini CLI). When true, goose-side
+    /// wrappers like Claude Code or Gemini CLI). When true, leaf-side
     /// context management such as tool-pair summarization is skipped because
     /// the provider's internal state is the source of truth.
     fn manages_own_context(&self) -> bool {
