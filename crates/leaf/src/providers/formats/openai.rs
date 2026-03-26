@@ -489,6 +489,11 @@ pub fn response_to_message(response: &Value) -> anyhow::Result<Message> {
 }
 
 pub fn get_usage(usage: &Value) -> Usage {
+    let usage = usage
+        .get("usage")
+        .filter(|nested| nested.is_object())
+        .unwrap_or(usage);
+
     let input_tokens = usage
         .get("prompt_tokens")
         .and_then(|v| v.as_i64())
@@ -499,16 +504,27 @@ pub fn get_usage(usage: &Value) -> Usage {
         .and_then(|v| v.as_i64())
         .map(|v| v as i32);
 
+    let cache_read_input_tokens = usage
+        .get("cache_read_input_tokens")
+        .and_then(|v| v.as_i64())
+        .map(|v| v as i32);
+
+    let cache_write_input_tokens = usage
+        .get("cache_creation_input_tokens")
+        .and_then(|v| v.as_i64())
+        .map(|v| v as i32);
+
     let total_tokens = usage
         .get("total_tokens")
         .and_then(|v| v.as_i64())
         .map(|v| v as i32)
         .or_else(|| match (input_tokens, output_tokens) {
-            (Some(input), Some(output)) => Some(input + output),
+            (Some(input), Some(output)) => Some(input.saturating_add(output)),
             _ => None,
         });
 
     Usage::new(input_tokens, output_tokens, total_tokens)
+        .with_cache_tokens(cache_read_input_tokens, cache_write_input_tokens)
 }
 
 fn extract_usage_with_output_tokens(chunk: &StreamingChunk) -> Option<ProviderUsage> {
