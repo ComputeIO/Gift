@@ -739,7 +739,7 @@ impl CliSession {
             }
         };
         config.set_leaf_mode(mode)?;
-        output::leaf_mode_message(&format!("Goose mode set to '{mode}'"));
+        output::leaf_mode_message(&format!("Leaf mode set to '{mode}'"));
         Ok(())
     }
 
@@ -1678,7 +1678,7 @@ fn prompt_tool_confirmation(security_prompt: &Option<String>) -> Result<Permissi
         println!("\n{}", security_message);
         "Do you allow this tool call?".to_string()
     } else {
-        "Goose would like to call the above tool, do you allow?".to_string()
+        "Leaf would like to call the above tool, do you allow?".to_string()
     };
 
     let permission_result = if security_prompt.is_none() {

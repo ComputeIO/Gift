@@ -175,11 +175,11 @@ impl ModelConfig {
     }
 
     fn parse_max_tokens() -> Result<Option<i32>, ConfigError> {
-        match crate::config::Config::global().get_param::<i32>("GOOSE_MAX_TOKENS") {
+        match crate::config::Config::global().get_param::<i32>("LEAF_MAX_TOKENS") {
             Ok(tokens) => {
                 if tokens <= 0 {
                     return Err(ConfigError::InvalidRange(
-                        "goose_max_tokens".to_string(),
+                        "leaf_max_tokens".to_string(),
                         "must be greater than 0".to_string(),
                     ));
                 }
@@ -187,7 +187,7 @@ impl ModelConfig {
             }
             Err(crate::config::ConfigError::NotFound(_)) => Ok(None),
             Err(e) => Err(ConfigError::InvalidValue(
-                "goose_max_tokens".to_string(),
+                "leaf_max_tokens".to_string(),
                 String::new(),
                 e.to_string(),
             )),
@@ -325,21 +325,21 @@ mod tests {
 
     #[test]
     fn test_parse_max_tokens_valid() {
-        let _guard = env_lock::lock_env([("GOOSE_MAX_TOKENS", Some("4096"))]);
+        let _guard = env_lock::lock_env([("LEAF_MAX_TOKENS", Some("4096"))]);
         let result = ModelConfig::parse_max_tokens().unwrap();
         assert_eq!(result, Some(4096));
     }
 
     #[test]
     fn test_parse_max_tokens_not_set() {
-        let _guard = env_lock::lock_env([("GOOSE_MAX_TOKENS", None::<&str>)]);
+        let _guard = env_lock::lock_env([("LEAF_MAX_TOKENS", None::<&str>)]);
         let result = ModelConfig::parse_max_tokens().unwrap();
         assert_eq!(result, None);
     }
 
     #[test]
     fn test_parse_max_tokens_invalid_string() {
-        let _guard = env_lock::lock_env([("GOOSE_MAX_TOKENS", Some("not_a_number"))]);
+        let _guard = env_lock::lock_env([("LEAF_MAX_TOKENS", Some("not_a_number"))]);
         let result = ModelConfig::parse_max_tokens();
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), ConfigError::InvalidValue(..)));
@@ -347,7 +347,7 @@ mod tests {
 
     #[test]
     fn test_parse_max_tokens_zero() {
-        let _guard = env_lock::lock_env([("GOOSE_MAX_TOKENS", Some("0"))]);
+        let _guard = env_lock::lock_env([("LEAF_MAX_TOKENS", Some("0"))]);
         let result = ModelConfig::parse_max_tokens();
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), ConfigError::InvalidRange(..)));
@@ -355,7 +355,7 @@ mod tests {
 
     #[test]
     fn test_parse_max_tokens_negative() {
-        let _guard = env_lock::lock_env([("GOOSE_MAX_TOKENS", Some("-100"))]);
+        let _guard = env_lock::lock_env([("LEAF_MAX_TOKENS", Some("-100"))]);
         let result = ModelConfig::parse_max_tokens();
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), ConfigError::InvalidRange(..)));
@@ -364,7 +364,7 @@ mod tests {
     #[test]
     fn test_model_config_with_max_tokens_env() {
         let _guard = env_lock::lock_env([
-            ("GOOSE_MAX_TOKENS", Some("8192")),
+            ("LEAF_MAX_TOKENS", Some("8192")),
             ("GOOSE_TEMPERATURE", None::<&str>),
             ("GOOSE_CONTEXT_LIMIT", None::<&str>),
             ("GOOSE_TOOLSHIM", None::<&str>),
@@ -377,7 +377,7 @@ mod tests {
     #[test]
     fn test_model_config_without_max_tokens_env() {
         let _guard = env_lock::lock_env([
-            ("GOOSE_MAX_TOKENS", None::<&str>),
+            ("LEAF_MAX_TOKENS", None::<&str>),
             ("GOOSE_TEMPERATURE", None::<&str>),
             ("GOOSE_CONTEXT_LIMIT", None::<&str>),
             ("GOOSE_TOOLSHIM", None::<&str>),
@@ -429,7 +429,7 @@ mod tests {
         #[test]
         fn sets_limits_from_canonical_model() {
             let _guard = env_lock::lock_env([
-                ("GOOSE_MAX_TOKENS", None::<&str>),
+                ("LEAF_MAX_TOKENS", None::<&str>),
                 ("GOOSE_CONTEXT_LIMIT", None::<&str>),
             ]);
             let config = ModelConfig::new_or_fail("gpt-4o").with_canonical_limits("openai");
@@ -442,7 +442,7 @@ mod tests {
         #[test]
         fn does_not_override_existing_context_limit() {
             let _guard = env_lock::lock_env([
-                ("GOOSE_MAX_TOKENS", None::<&str>),
+                ("LEAF_MAX_TOKENS", None::<&str>),
                 ("GOOSE_CONTEXT_LIMIT", None::<&str>),
             ]);
             let mut config = ModelConfig::new_or_fail("gpt-4o");
@@ -455,7 +455,7 @@ mod tests {
         #[test]
         fn does_not_override_existing_max_tokens() {
             let _guard = env_lock::lock_env([
-                ("GOOSE_MAX_TOKENS", None::<&str>),
+                ("LEAF_MAX_TOKENS", None::<&str>),
                 ("GOOSE_CONTEXT_LIMIT", None::<&str>),
             ]);
             let mut config = ModelConfig::new_or_fail("gpt-4o");
@@ -468,7 +468,7 @@ mod tests {
         #[test]
         fn unknown_model_leaves_fields_none() {
             let _guard = env_lock::lock_env([
-                ("GOOSE_MAX_TOKENS", None::<&str>),
+                ("LEAF_MAX_TOKENS", None::<&str>),
                 ("GOOSE_CONTEXT_LIMIT", None::<&str>),
             ]);
             let config =
@@ -484,7 +484,7 @@ mod tests {
         use super::*;
 
         const ENV_LOCK_KEYS: [(&str, Option<&str>); 5] = [
-            ("GOOSE_MAX_TOKENS", None),
+            ("LEAF_MAX_TOKENS", None),
             ("GOOSE_TEMPERATURE", None),
             ("GOOSE_CONTEXT_LIMIT", None),
             ("GOOSE_TOOLSHIM", None),

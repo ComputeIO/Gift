@@ -330,7 +330,7 @@ async fn fetch_models_dev() -> Result<Value> {
     let client = reqwest::Client::new();
     let response = client
         .get(MODELS_DEV_API_URL)
-        .header("User-Agent", "goose/canonical-builder")
+        .header("User-Agent", "leaf/canonical-builder")
         .send()
         .await
         .context("Failed to fetch from models.dev API")?;

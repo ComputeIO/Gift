@@ -117,7 +117,7 @@ impl MemoryServer {
                 - Inquire about any specific tags they want to apply for easier lookup.
                 - Confirm the desired storage location:
                   - Local storage (.leaf/memory) for project-specific details.
-                  - Global storage (~/.config/goose/memory) for user-wide data.
+                  - Global storage (~/.config/leaf/memory) for user-wide data.
                 - Use the remember_memory tool to store the information.
                   - `remember_memory(category, data, tags, is_global)`
              Keywords that trigger memory tools:
@@ -193,7 +193,7 @@ impl MemoryServer {
 
         let global_memory_dir = choose_app_strategy(crate::APP_STRATEGY.clone())
             .map(|strategy| strategy.in_config_dir("memory"))
-            .unwrap_or_else(|_| PathBuf::from(".config/goose/memory"));
+            .unwrap_or_else(|_| PathBuf::from(".config/leaf/memory"));
 
         let mut memory_router = Self {
             tool_router: Self::tool_router(),
@@ -255,7 +255,7 @@ impl MemoryServer {
                 .cloned()
                 .or_else(|| std::env::current_dir().ok())
                 .unwrap_or_else(|| PathBuf::from("."));
-            local_base.join(".goose").join("memory")
+            local_base.join(".leaf").join("memory")
         };
         base_dir.join(format!("{}.txt", category))
     }
@@ -272,7 +272,7 @@ impl MemoryServer {
                 .cloned()
                 .or_else(|| std::env::current_dir().ok())
                 .unwrap_or_else(|| PathBuf::from("."));
-            local_base.join(".goose").join("memory")
+            local_base.join(".leaf").join("memory")
         };
         let mut memories = HashMap::new();
         if base_dir.exists() {
@@ -412,7 +412,7 @@ impl MemoryServer {
                 .cloned()
                 .or_else(|| std::env::current_dir().ok())
                 .unwrap_or_else(|| PathBuf::from("."));
-            local_base.join(".goose").join("memory")
+            local_base.join(".leaf").join("memory")
         };
         if base_dir.exists() {
             fs::remove_dir_all(&base_dir)?;
@@ -546,7 +546,7 @@ impl ServerHandler for MemoryServer {
     fn get_info(&self) -> ServerInfo {
         InitializeResult::new(ServerCapabilities::builder().enable_tools().build())
             .with_server_info(Implementation::new(
-                "goose-memory",
+                "leaf-memory",
                 env!("CARGO_PKG_VERSION"),
             ))
             .with_instructions(self.instructions.clone())
@@ -572,7 +572,7 @@ mod tests {
             global_memory_dir: memory_base.join("global"),
         };
 
-        let local_memory_dir = working_dir.join(".goose").join("memory");
+        let local_memory_dir = working_dir.join(".leaf").join("memory");
 
         assert!(!router.global_memory_dir.exists());
         assert!(!local_memory_dir.exists());
@@ -681,7 +681,7 @@ mod tests {
             global_memory_dir: memory_base.join("global"),
         };
 
-        let local_memory_dir = working_dir.join(".goose").join("memory");
+        let local_memory_dir = working_dir.join(".leaf").join("memory");
         assert!(!local_memory_dir.exists());
 
         router

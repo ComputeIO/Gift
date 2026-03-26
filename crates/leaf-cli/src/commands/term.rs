@@ -137,7 +137,7 @@ pub async fn handle_term_init(
             let session = session_manager
                 .create_session(
                     working_dir,
-                    "Goose Term Session".to_string(),
+                    "Leaf Term Session".to_string(),
                     SessionType::Terminal,
                     Config::global().get_leaf_mode().unwrap_or_default(),
                 )
@@ -282,7 +282,7 @@ pub async fn handle_term_info() -> Result<()> {
         .ok()
         .map(|name| {
             let short = name.rsplit('/').next().unwrap_or(&name);
-            if let Some(stripped) = short.strip_prefix("goose-") {
+            if let Some(stripped) = short.strip_prefix("leaf-") {
                 stripped.to_string()
             } else {
                 short.to_string()

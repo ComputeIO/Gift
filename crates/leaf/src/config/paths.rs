@@ -18,7 +18,7 @@ impl Paths {
                 author: "Block".to_string(),
                 app_name: "leaf".to_string(),
             })
-            .expect("goose requires a home dir");
+            .expect("leaf requires a home dir");
 
             match dir_type {
                 DirType::Config => strategy.config_dir(),

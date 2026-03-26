@@ -25,7 +25,7 @@ impl ProviderDef for ClaudeAcpProvider {
         ProviderMetadata::new(
             CLAUDE_ACP_PROVIDER_NAME,
             "Claude Code",
-            "Use goose with your Claude Code subscription via the claude-agent-acp adapter.",
+            "Use leaf with your Claude Code subscription via the claude-agent-acp adapter.",
             ACP_CURRENT_MODEL,
             vec![],
             CLAUDE_ACP_DOC_URL,
@@ -34,8 +34,8 @@ impl ProviderDef for ClaudeAcpProvider {
         .with_setup_steps(vec![
             "Install the ACP adapter: `npm install -g @zed-industries/claude-agent-acp`",
             "Ensure your Claude CLI is authenticated (run `claude` to verify)",
-            "Set in your goose config file (`~/.config/goose/config.yaml` on macOS/Linux):\n  GOOSE_PROVIDER: claude-acp\n  GOOSE_MODEL: current",
-            "Restart goose for changes to take effect",
+            "Set in your leaf config file (`~/.config/leaf/config.yaml` on macOS/Linux):\n  LEAF_PROVIDER: claude-acp\n  LEAF_MODEL: current",
+            "Restart leaf for changes to take effect",
         ])
     }
 

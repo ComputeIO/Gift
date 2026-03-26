@@ -71,7 +71,7 @@ fn parse_cli_flag_extensions(
     extensions_to_load
 }
 
-/// Configuration for building a new Goose session
+/// Configuration for building a new Leaf session
 ///
 /// This struct contains all the parameters needed to create a new session,
 /// including session identification, extension configuration, and debug settings.
@@ -641,7 +641,7 @@ pub async fn build_session(session_config: SessionBuilderConfig) -> CliSession {
                 "Error {}.\n\
                 Please check your system keychain and run 'leaf configure' again.\n\
                 If your system is unable to use the keyring, please try setting secret key(s) via environment variables.\n\
-                For more info, see: https://block.github.io/goose/docs/troubleshooting/#keychainkeyring-errors",
+                For more info, see: https://leafai.github.io/leaf/docs/troubleshooting/#keychainkeyring-errors",
                 e
             ));
             process::exit(1);

@@ -9,23 +9,23 @@ use std::process::Command;
 fn asset_name() -> &'static str {
     #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
     {
-        "goose-aarch64-apple-darwin.tar.bz2"
+        "leaf-aarch64-apple-darwin.tar.bz2"
     }
     #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
     {
-        "goose-x86_64-apple-darwin.tar.bz2"
+        "leaf-x86_64-apple-darwin.tar.bz2"
     }
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     {
-        "goose-x86_64-unknown-linux-gnu.tar.bz2"
+        "leaf-x86_64-unknown-linux-gnu.tar.bz2"
     }
     #[cfg(all(target_os = "linux", target_arch = "aarch64"))]
     {
-        "goose-aarch64-unknown-linux-gnu.tar.bz2"
+        "leaf-aarch64-unknown-linux-gnu.tar.bz2"
     }
     #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
     {
-        "goose-x86_64-pc-windows-msvc.zip"
+        "leaf-x86_64-pc-windows-msvc.zip"
     }
 }
 
@@ -33,7 +33,7 @@ fn asset_name() -> &'static str {
 fn binary_name() -> &'static str {
     #[cfg(target_os = "windows")]
     {
-        "goose.exe"
+        "leaf.exe"
     }
     #[cfg(not(target_os = "windows"))]
     {
@@ -70,7 +70,7 @@ const GITHUB_ACTIONS_ISSUER: &str = "https://token.actions.githubusercontent.com
 
 async fn fetch_attestations(digest: &str, token: Option<&str>) -> Result<Vec<serde_json::Value>> {
     let url = format!(
-        "https://api.github.com/repos/block/goose/attestations/sha256:{digest}\
+        "https://api.github.com/repos/LeafAI/Leaf/attestations/sha256:{digest}\
          ?per_page=30&predicate_type=https://slsa.dev/provenance/v1"
     );
 
@@ -79,7 +79,7 @@ async fn fetch_attestations(digest: &str, token: Option<&str>) -> Result<Vec<ser
         .get(&url)
         .header("Accept", "application/vnd.github+json")
         .header("X-GitHub-Api-Version", "2022-11-28")
-        .header("User-Agent", "goose-cli");
+        .header("User-Agent", "leaf-cli");
 
     if let Some(tok) = token {
         req = req.header("Authorization", format!("Bearer {tok}"));
@@ -196,7 +196,7 @@ async fn verify_provenance(archive_data: &[u8], tag: &str) -> Result<bool> {
     }
 }
 
-/// Update the goose binary to the latest release.
+/// Update the leaf binary to the latest release.
 ///
 /// Downloads the platform-appropriate archive from GitHub releases, verifies
 /// its SLSA provenance via Sigstore, extracts it with path-traversal
@@ -211,7 +211,7 @@ pub async fn update(canary: bool, reconfigure: bool) -> Result<()> {
     {
         let tag = if canary { "canary" } else { "stable" };
         let asset = asset_name();
-        let url = format!("https://github.com/block/goose/releases/download/{tag}/{asset}");
+        let url = format!("https://github.com/LeafAI/Leaf/releases/download/{tag}/{asset}");
 
         println!("Downloading {asset} from {tag} release...");
 
@@ -264,9 +264,9 @@ pub async fn update(canary: bool, reconfigure: bool) -> Result<()> {
         copy_dlls(&extracted_binary, &current_exe)?;
 
         if provenance_verified {
-            println!("goose updated successfully (verified with Sigstore SLSA provenance).");
+            println!("leaf updated successfully (verified with Sigstore SLSA provenance).");
         } else {
-            println!("goose updated successfully.");
+            println!("leaf updated successfully.");
         }
 
         // --- Reconfigure if requested -------------------------------------------
@@ -387,12 +387,12 @@ fn extract_tar_bz2(data: &[u8], dest: &Path) -> Result<()> {
 /// Find the binary inside the extracted archive.
 ///
 /// The archive may place it in:
-///   1. A `goose-package/` subdirectory (Windows releases)
+///   1. A `leaf-package/` subdirectory (Windows releases)
 ///   2. Directly at the top level
 ///   3. In some other single subdirectory
 fn find_binary(extract_dir: &Path, binary_name: &str) -> Option<PathBuf> {
-    // 1. Check goose-package subdir (matches download_cli.sh / download_cli.ps1)
-    let package_dir = extract_dir.join("goose-package");
+    // 1. Check leaf-package subdir (matches download_cli.sh / download_cli.ps1)
+    let package_dir = extract_dir.join("leaf-package");
     if package_dir.is_dir() {
         let p = package_dir.join(binary_name);
         if p.exists() {
@@ -440,7 +440,7 @@ fn replace_binary(new_binary: &Path, current_exe: &Path) -> Result<()> {
         if old_exe.exists() {
             fs::remove_file(&old_exe).with_context(|| {
                 format!(
-                    "Failed to remove old backup {}. Is another goose process running?",
+                    "Failed to remove old backup {}. Is another leaf process running?",
                     old_exe.display()
                 )
             })?;
@@ -449,7 +449,7 @@ fn replace_binary(new_binary: &Path, current_exe: &Path) -> Result<()> {
         // Rename the running binary out of the way
         fs::rename(current_exe, &old_exe).with_context(|| {
             format!(
-                "Failed to rename running binary to {}. Try closing Goose Desktop if it's open.",
+                "Failed to rename running binary to {}. Try closing Leaf Desktop if it's open.",
                 old_exe.display()
             )
         })?;
@@ -532,7 +532,7 @@ mod tests {
     fn test_asset_name_valid() {
         let name = asset_name();
         assert!(!name.is_empty());
-        assert!(name.starts_with("goose-"));
+        assert!(name.starts_with("leaf-"));
         #[cfg(target_os = "windows")]
         assert!(name.ends_with(".zip"));
         #[cfg(not(target_os = "windows"))]
@@ -543,7 +543,7 @@ mod tests {
     fn test_binary_name() {
         let name = binary_name();
         #[cfg(target_os = "windows")]
-        assert_eq!(name, "goose.exe");
+        assert_eq!(name, "leaf.exe");
         #[cfg(not(target_os = "windows"))]
         assert_eq!(name, "leaf");
     }
@@ -551,7 +551,7 @@ mod tests {
     #[test]
     fn test_find_binary_in_package_subdir() {
         let tmp = tempdir().unwrap();
-        let pkg = tmp.path().join("goose-package");
+        let pkg = tmp.path().join("leaf-package");
         fs::create_dir_all(&pkg).unwrap();
         fs::write(pkg.join(binary_name()), b"fake").unwrap();
 
@@ -591,8 +591,8 @@ mod tests {
     #[test]
     fn test_replace_binary_basic() {
         let tmp = tempdir().unwrap();
-        let new_bin = tmp.path().join("new_goose");
-        let current = tmp.path().join("current_goose");
+        let new_bin = tmp.path().join("new_leaf");
+        let current = tmp.path().join("current_leaf");
 
         fs::write(&new_bin, b"new version").unwrap();
         fs::write(&current, b"old version").unwrap();
@@ -607,8 +607,8 @@ mod tests {
     #[test]
     fn test_replace_binary_windows_rename_away() {
         let tmp = tempdir().unwrap();
-        let current = tmp.path().join("goose.exe");
-        let new_bin = tmp.path().join("new_goose.exe");
+        let current = tmp.path().join("leaf.exe");
+        let new_bin = tmp.path().join("new_leaf.exe");
 
         fs::write(&current, b"old version").unwrap();
         fs::write(&new_bin, b"new version").unwrap();
@@ -630,9 +630,9 @@ mod tests {
     #[test]
     fn test_replace_binary_windows_cleanup_old() {
         let tmp = tempdir().unwrap();
-        let current = tmp.path().join("goose.exe");
+        let current = tmp.path().join("leaf.exe");
         let old = current.with_extension("exe.old");
-        let new_bin = tmp.path().join("new_goose.exe");
+        let new_bin = tmp.path().join("new_leaf.exe");
 
         // Simulate a previous update left .old behind
         fs::write(&current, b"version 2").unwrap();
@@ -657,7 +657,7 @@ mod tests {
 
         let tmp = tempdir().unwrap();
 
-        // Create a zip in memory with goose-package/ structure
+        // Create a zip in memory with leaf-package/ structure
         let mut buf = Vec::new();
         {
             let cursor = Cursor::new(&mut buf);
@@ -665,13 +665,11 @@ mod tests {
             let options = zip::write::SimpleFileOptions::default()
                 .compression_method(zip::CompressionMethod::Stored);
 
-            writer.add_directory("goose-package/", options).unwrap();
+            writer.add_directory("leaf-package/", options).unwrap();
+            writer.start_file("leaf-package/leaf.exe", options).unwrap();
+            writer.write_all(b"fake leaf binary").unwrap();
             writer
-                .start_file("goose-package/goose.exe", options)
-                .unwrap();
-            writer.write_all(b"fake goose binary").unwrap();
-            writer
-                .start_file("goose-package/libtest.dll", options)
+                .start_file("leaf-package/libtest.dll", options)
                 .unwrap();
             writer.write_all(b"fake dll").unwrap();
             writer.finish().unwrap();
@@ -679,14 +677,14 @@ mod tests {
 
         extract_zip(&buf, tmp.path()).unwrap();
 
-        let binary = find_binary(tmp.path(), "goose.exe");
+        let binary = find_binary(tmp.path(), "leaf.exe");
         assert!(binary.is_some());
 
         let content = fs::read_to_string(binary.unwrap()).unwrap();
-        assert_eq!(content, "fake goose binary");
+        assert_eq!(content, "fake leaf binary");
 
-        // DLL should be in goose-package too
-        assert!(tmp.path().join("goose-package/libtest.dll").exists());
+        // DLL should be in leaf-package too
+        assert!(tmp.path().join("leaf-package/libtest.dll").exists());
     }
 
     // -----------------------------------------------------------------------
@@ -717,8 +715,8 @@ mod tests {
 
     #[test]
     fn test_validate_entry_path_accepts_safe_paths() {
-        assert!(validate_entry_path(Path::new("goose")).is_ok());
-        assert!(validate_entry_path(Path::new("goose-package/goose")).is_ok());
+        assert!(validate_entry_path(Path::new("leaf")).is_ok());
+        assert!(validate_entry_path(Path::new("leaf-package/leaf")).is_ok());
         assert!(validate_entry_path(Path::new("subdir/nested/file.txt")).is_ok());
     }
 
@@ -756,24 +754,24 @@ mod tests {
             let encoder = BzEncoder::new(&mut builder_buf, Compression::default());
             let mut builder = tar::Builder::new(encoder);
 
-            let data = b"goose binary content";
+            let data = b"leaf binary content";
             let mut header = tar::Header::new_gnu();
             header.set_size(data.len() as u64);
             header.set_mode(0o755);
             header.set_cksum();
             builder
-                .append_data(&mut header, "goose-package/goose", &data[..])
+                .append_data(&mut header, "leaf-package/leaf", &data[..])
                 .unwrap();
             builder.into_inner().unwrap().finish().unwrap();
         }
 
         extract_tar_bz2(&builder_buf, tmp.path()).unwrap();
 
-        let extracted = tmp.path().join("goose-package/goose");
+        let extracted = tmp.path().join("leaf-package/leaf");
         assert!(extracted.exists());
         assert_eq!(
             fs::read_to_string(extracted).unwrap(),
-            "goose binary content"
+            "leaf binary content"
         );
     }
 
