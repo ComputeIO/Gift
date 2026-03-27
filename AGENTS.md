@@ -200,6 +200,44 @@ For feature flag changes:
 - [ ] Check with `rustls-tls` feature (default)
 - [ ] Check with `native-tls` feature if applicable
 
+### External Interface References That MUST Remain as "goose"
+
+When renaming goose→leaf, certain references MUST be preserved because they represent **external interfaces** that Leaf must remain compatible with:
+
+| Category | Examples | Why Must Be Kept |
+|----------|----------|------------------|
+| **Databricks model names** | `goose-o3-mini`, `kgoose-gpt-4o`, `headless-goose-o3-mini` | Registered with Databricks API - renaming would cause API failures |
+| **ACP protocol method prefixes** | `_goose/session/get`, `_goose/session/list`, `_goose/acp-aware` | Wire protocol defined by upstream - clients/servers expect exact names |
+| **Upstream binary name** | `goose-acp-server` | Belongs to upstream project - cannot rename a binary that isn't ours |
+| **GitHub repository references** | `github.com/block/goose` | Upstream project's actual repository URL |
+
+**How to identify MUST-KEEP references:**
+```bash
+# These patterns represent external interfaces - verify before renaming:
+grep -r "goose-o3\|kgoose-\|_goose/\|goose-acp-server\|github.com/block/goose" --include="*.rs"
+```
+
+### Dependency Version Pinning
+
+When adding dependencies, be aware that `cargo install` may resolve semver ranges to the latest version:
+
+```toml
+# ❌ BAD: Allows cargo install to pull 1.3.0
+rmcp = { version = "1.2.0", features = ["auth"] }
+
+# ✅ GOOD: Pins exact version - cargo install cannot go higher
+rmcp = { version = "=1.2.0", features = ["auth"] }
+```
+
+### Patch Sections and Optional Features
+
+The `[patch.crates-io]` section in `Cargo.toml` causes Cargo to fetch git repositories **even when the patched dependency is not used**. This significantly slows down `cargo install` for users who don't need the optional feature.
+
+**Before adding `[patch.crates-io]`:**
+- Verify the dependency is only used by optional features (e.g., `telemetry`)
+- If only used by optional features, consider removing the patch and using the crates.io version
+- The `[patch]` section is inherited workspace-wide - moves to feature-specific Cargo.toml if possible
+
 ### Dependencies
 - ❌ **NO V8/JavaScript**: No JavaScript execution or V8 integration
 - ❌ **NO Web Frameworks**: No web servers for UI (except API endpoints for ACP)
