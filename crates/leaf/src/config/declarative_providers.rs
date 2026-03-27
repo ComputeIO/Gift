@@ -36,6 +36,7 @@ pub struct EnvVarConfig {
     pub secret: bool,
     pub description: Option<String>,
     pub default: Option<String>,
+    pub primary: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -453,7 +454,7 @@ mod tests {
         let config: DeclarativeProviderConfig =
             serde_json::from_str(json).expect("tanzu.json should parse");
         assert_eq!(config.name, "tanzu_ai");
-        assert_eq!(config.display_name, "Tanzu AI Services");
+        assert_eq!(config.display_name, "VMware Tanzu Platform");
         assert!(matches!(config.engine, ProviderEngine::OpenAI));
         assert_eq!(config.api_key_env, "TANZU_AI_API_KEY");
         assert_eq!(
@@ -461,13 +462,16 @@ mod tests {
             "${TANZU_AI_ENDPOINT}/openai/v1/chat/completions"
         );
         assert_eq!(config.dynamic_models, Some(true));
-        assert_eq!(config.supports_streaming, Some(false));
+        assert_eq!(config.supports_streaming, Some(true));
 
         let env_vars = config.env_vars.as_ref().expect("env_vars should be set");
-        assert_eq!(env_vars.len(), 1);
+        assert_eq!(env_vars.len(), 2);
         assert_eq!(env_vars[0].name, "TANZU_AI_ENDPOINT");
         assert!(env_vars[0].required);
         assert!(!env_vars[0].secret);
+        assert_eq!(env_vars[1].name, "TANZU_AI_STREAMING");
+        assert!(!env_vars[1].required);
+        assert_eq!(env_vars[1].default, Some("true".to_string()));
 
         assert_eq!(config.models.len(), 1);
         assert_eq!(config.models[0].name, "openai/gpt-oss-120b");
@@ -492,6 +496,7 @@ mod tests {
             secret: false,
             description: None,
             default: None,
+            primary: None,
         }];
 
         let result = expand_env_vars("${TEST_EXPAND_HOST}/v1/chat/completions", &env_vars).unwrap();
@@ -508,6 +513,7 @@ mod tests {
             secret: false,
             description: None,
             default: None,
+            primary: None,
         }];
 
         let result = expand_env_vars("${TEST_EXPAND_MISSING}/path", &env_vars);
@@ -528,6 +534,7 @@ mod tests {
             secret: false,
             description: None,
             default: Some("https://fallback.example.com".to_string()),
+            primary: None,
         }];
 
         let result =
@@ -543,6 +550,7 @@ mod tests {
             secret: false,
             description: None,
             default: None,
+            primary: None,
         }];
 
         let result =
@@ -566,6 +574,7 @@ mod tests {
             secret: false,
             description: None,
             default: Some("https://from-default.com".to_string()),
+            primary: None,
         }];
 
         let result = expand_env_vars("${TEST_EXPAND_OVERRIDE}/path", &env_vars).unwrap();
