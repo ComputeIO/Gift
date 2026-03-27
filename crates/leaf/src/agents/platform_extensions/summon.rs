@@ -110,6 +110,7 @@ pub struct DelegateParams {
     pub provider: Option<String>,
     pub model: Option<String>,
     pub temperature: Option<f32>,
+    pub max_turns: Option<usize>,
     #[serde(default)]
     pub r#async: bool,
 }
@@ -624,6 +625,11 @@ impl SummonClient {
                 "temperature": {
                     "type": "number",
                     "description": "Override temperature."
+                },
+                "max_turns": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Maximum turns for this delegate. Overrides recipe settings.max_turns and LEAF_SUBAGENT_MAX_TURNS."
                 },
                 "async": {
                     "type": "boolean",
@@ -1202,16 +1208,7 @@ impl SummonClient {
             .map(|args| serde_json::from_value(serde_json::Value::Object(args)))
             .transpose()
             .map_err(|e| format!("Invalid parameters: {}", e))?
-            .unwrap_or(DelegateParams {
-                instructions: None,
-                source: None,
-                parameters: None,
-                extensions: None,
-                provider: None,
-                model: None,
-                temperature: None,
-                r#async: false,
-            });
+            .unwrap_or_default();
 
         self.validate_delegate_params(&params)?;
 
@@ -1294,6 +1291,12 @@ impl SummonClient {
 
         if params.parameters.is_some() && params.source.is_none() {
             return Err("'parameters' can only be used with 'source'".to_string());
+        }
+
+        if let Some(max) = params.max_turns {
+            if max < 1 {
+                return Err("'max_turns' must be at least 1".to_string());
+            }
         }
 
         Ok(())
@@ -1534,7 +1537,18 @@ impl SummonClient {
             }
         }
 
-        let max_turns = self.resolve_max_turns(session);
+        let max_turns = params
+            .max_turns
+            .or_else(|| recipe.settings.as_ref().and_then(|s| s.max_turns))
+            .unwrap_or_else(|| self.resolve_max_turns(session));
+
+        if max_turns == 0 || max_turns > u32::MAX as usize {
+            anyhow::bail!(
+                "max_turns must be between 1 and {} (got {})",
+                u32::MAX,
+                max_turns
+            );
+        }
 
         let task_config = TaskConfig::new(provider, &session.id, &session.working_dir, extensions)
             .with_max_turns(Some(max_turns));
@@ -1588,16 +1602,15 @@ impl SummonClient {
     }
 
     fn resolve_max_turns(&self, session: &crate::session::Session) -> usize {
-        // Priority: env var > recipe settings > config.yaml > default
-        std::env::var("LEAF_SUBAGENT_MAX_TURNS")
-            .ok()
-            .and_then(|v| v.parse().ok())
+        session
+            .recipe
+            .as_ref()
+            .and_then(|r| r.settings.as_ref())
+            .and_then(|s| s.max_turns)
             .or_else(|| {
-                session
-                    .recipe
-                    .as_ref()
-                    .and_then(|r| r.settings.as_ref())
-                    .and_then(|s| s.max_turns)
+                std::env::var("LEAF_SUBAGENT_MAX_TURNS")
+                    .ok()
+                    .and_then(|v| v.parse().ok())
             })
             .or_else(|| {
                 Config::global()
@@ -2282,12 +2295,7 @@ You review code."#;
         let make_params = |source: Option<&str>, instructions: Option<&str>| DelegateParams {
             source: source.map(String::from),
             instructions: instructions.map(String::from),
-            parameters: None,
-            extensions: None,
-            provider: None,
-            model: None,
-            temperature: None,
-            r#async: false,
+            ..Default::default()
         };
 
         assert_eq!(
