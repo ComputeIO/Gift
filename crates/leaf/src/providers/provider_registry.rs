@@ -44,7 +44,7 @@ impl ProviderEntry {
             metadata,
             constructor: self.constructor.clone(),
             cleanup: self.cleanup.clone(),
-            provider_type: self.provider_type.clone(),
+            provider_type: self.provider_type,
         }
     }
 }

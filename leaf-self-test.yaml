@@ -1,8 +1,8 @@
 version: 1.0.0
-title: Goose Self-Testing Integration Suite
-description: A comprehensive meta-testing recipe where goose tests its own capabilities using its own tools - true first-person integration testing
+title: Leaf Self-Testing Integration Suite
+description: A comprehensive meta-testing recipe where leaf tests its own capabilities using its own tools - true first-person integration testing
 author:
-  contact: goose-self-test
+  contact: leaf-self-test
 
 activities:
   - Initialize test workspace and logging infrastructure
@@ -31,7 +31,7 @@ parameters:
   - key: workspace_dir
     input_type: string
     requirement: optional
-    default: "./gooseselftest"
+    default: "./leafselftest"
     description: "Directory for test artifacts and results"
 
   - key: parallel_tests
@@ -47,11 +47,11 @@ parameters:
     description: "Clean up test artifacts after completion"
 
 instructions: |
-  You are testing yourself - a running goose instance validating its own capabilities through meta-testing.
+  You are testing yourself - a running leaf instance validating its own capabilities through meta-testing.
   This is true first-person integration testing where you use your own tools to test your own functionality.
 
   ## Understanding First-Person Integration Testing
-  This is a crucial distinction - as a running goose instance, you are testing yourself using your own capabilities.
+  This is a crucial distinction - as a running leaf instance, you are testing yourself using your own capabilities.
   This is meta-testing in the truest sense: not unit tests or external test harnesses, but you using your tools
   to validate your own functionality from within your active session. You can only test what you can observe and
   control from inside your running instance - your tools, your behaviors, your error handling, your consistency.
@@ -116,7 +116,7 @@ extensions:
     description: Core tool for file operations, shell commands, and code analysis
 
 prompt: |
-  Execute the Goose Self-Testing Integration Suite in {{ workspace_dir }}.
+  Execute the Leaf Self-Testing Integration Suite in {{ workspace_dir }}.
   Test phases: {{ test_phases }}, Depth: {{ test_depth }}, Parallel: {{ parallel_tests }}
 
   ## 🚀 INITIALIZATION
@@ -182,9 +182,9 @@ prompt: |
   This tests the discovery mechanism that lists everything available for loading or delegation.
 
   ### Load Tool - Builtin Skill Test
-  Test loading the builtin `goose-doc-guide` skill:
+  Test loading the builtin `leaf-doc-guide` skill:
   ```
-  load(source: "goose-doc-guide")
+  load(source: "leaf-doc-guide")
   ```
   Verify the skill content is returned and can be read. This confirms builtin skills are accessible.
 
@@ -357,7 +357,7 @@ prompt: |
 
   ```
   ========================================
-  GOOSE SELF-TEST SUMMARY
+  LEAF SELF-TEST SUMMARY
   ========================================
 
   ✅ OVERALL RESULT: [PASS/FAIL]
@@ -413,7 +413,7 @@ prompt: |
   - Success means your tools work as expected
   - Failure reveals areas needing attention
   - The ability to complete this test IS itself a test
-  - Document everything - your future self (or another goose) will thank you
+  - Document everything - your future self (or another leaf) will thank you
 
   Use your todo extension to track progress throughout.
   Handle errors gracefully - a failed test shouldn't crash the suite.
