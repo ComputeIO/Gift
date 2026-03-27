@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-BACKUP_DIR="${HOME}/.local/share/goose/goose-db-backups"
+BACKUP_DIR="${HOME}/.local/share/leaf/leaf-db-backups"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -15,8 +15,8 @@ DRY_RUN=false
 SKIP_CONFIRM=false
 CLEAN_GENERATE=false
 
-MIGRATIONS_DIR="${HOME}/.local/share/goose/migrations"
-RUST_SESSION_MANAGER="crates/goose/src/session/session_manager.rs"
+MIGRATIONS_DIR="${HOME}/.local/share/leaf/migrations"
+RUST_SESSION_MANAGER="crates/leaf/src/session/session_manager.rs"
 
 get_latest_version() {
     if [[ ! -d "${MIGRATIONS_DIR}" ]]; then
@@ -96,13 +96,13 @@ list_available_migrations() {
     done
 }
 
-get_goose_db_path() {
-    if [[ -n "${GOOSE_PATH_ROOT:-}" ]]; then
-        echo "${GOOSE_PATH_ROOT}/data/sessions/sessions.db"
+get_leaf_db_path() {
+    if [[ -n "${LEAF_PATH_ROOT:-}" ]]; then
+        echo "${LEAF_PATH_ROOT}/data/sessions/sessions.db"
     else
         local possible_paths=(
-            "${HOME}/.local/share/goose/sessions/sessions.db"
-            "${HOME}/Library/Application Support/Block/goose/data/sessions/sessions.db"
+            "${HOME}/.local/share/leaf/sessions/sessions.db"
+            "${HOME}/Library/Application Support/Block/leaf/data/sessions/sessions.db"
         )
 
         for path in "${possible_paths[@]}"; do
@@ -116,7 +116,7 @@ get_goose_db_path() {
     fi
 }
 
-DB_PATH=$(get_goose_db_path)
+DB_PATH=$(get_leaf_db_path)
 
 confirm_action() {
     local action="$1"
@@ -573,7 +573,7 @@ EOF
 generate_migrations() {
     if [[ ! -f "${RUST_SESSION_MANAGER}" ]]; then
         echo -e "${RED}ERROR: Rust source file not found: ${RUST_SESSION_MANAGER}${NC}" >&2
-        echo "Make sure you're running this from the goose repository root."
+        echo "Make sure you're running this from the leaf repository root."
         exit 1
     fi
 
@@ -769,7 +769,7 @@ show_help() {
     echo "    $0 generate-migrations --clean"
     echo ""
     echo "    # Or manually remove specific migrations"
-    echo "    rm -rf ~/.local/share/goose/migrations/004_*"
+    echo "    rm -rf ~/.local/share/leaf/migrations/004_*"
     echo "    $0 generate-migrations"
     echo ""
     echo -e "${CYAN}Configuration:${NC}"

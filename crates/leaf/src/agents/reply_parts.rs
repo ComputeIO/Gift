@@ -413,6 +413,40 @@ impl Agent {
     }
 }
 
+/// Check whether a tool should be visible to the app based on MCP Apps visibility metadata.
+pub fn is_tool_visible_to_app(tool: &Tool) -> bool {
+    let Some(meta) = &tool.meta else {
+        return true;
+    };
+    let Some(ui) = meta.0.get("ui") else {
+        return true;
+    };
+    let Some(visibility) = ui.get("visibility") else {
+        return true;
+    };
+    let Some(arr) = visibility.as_array() else {
+        return true;
+    };
+    arr.iter().any(|v| v.as_str() == Some("app"))
+}
+
+/// Check whether a tool should be visible to the model based on MCP Apps visibility metadata.
+pub fn is_tool_visible_to_model(tool: &Tool) -> bool {
+    let Some(meta) = &tool.meta else {
+        return true;
+    };
+    let Some(ui) = meta.0.get("ui") else {
+        return true;
+    };
+    let Some(visibility) = ui.get("visibility") else {
+        return true;
+    };
+    let Some(arr) = visibility.as_array() else {
+        return true;
+    };
+    arr.iter().any(|v| v.as_str() == Some("model"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -473,7 +507,6 @@ mod tests {
         let provider = std::sync::Arc::new(MockProvider { model_config });
         agent.update_provider(provider, &session.id).await?;
 
-        // Add unsorted frontend tools
         let frontend_tools = vec![
             Tool::new(
                 "frontend__z_tool".to_string(),
@@ -510,7 +543,6 @@ mod tests {
         assert!(names.iter().any(|n| n == "frontend__a_tool"));
         assert!(names.iter().any(|n| n == "frontend__z_tool"));
 
-        // Verify the names are sorted ascending
         let mut sorted = names.clone();
         sorted.sort();
         assert_eq!(names, sorted);
@@ -557,38 +589,4 @@ mod tests {
             "Error should have been propagated, not silently ignored"
         );
     }
-}
-
-/// Check whether a tool should be visible to the app based on MCP Apps visibility metadata.
-pub fn is_tool_visible_to_app(tool: &Tool) -> bool {
-    let Some(meta) = &tool.meta else {
-        return true;
-    };
-    let Some(ui) = meta.0.get("ui") else {
-        return true;
-    };
-    let Some(visibility) = ui.get("visibility") else {
-        return true;
-    };
-    let Some(arr) = visibility.as_array() else {
-        return true;
-    };
-    arr.iter().any(|v| v.as_str() == Some("app"))
-}
-
-/// Check whether a tool should be visible to the model based on MCP Apps visibility metadata.
-pub fn is_tool_visible_to_model(tool: &Tool) -> bool {
-    let Some(meta) = &tool.meta else {
-        return true;
-    };
-    let Some(ui) = meta.0.get("ui") else {
-        return true;
-    };
-    let Some(visibility) = ui.get("visibility") else {
-        return true;
-    };
-    let Some(arr) = visibility.as_array() else {
-        return true;
-    };
-    arr.iter().any(|v| v.as_str() == Some("model"))
 }

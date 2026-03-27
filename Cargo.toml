@@ -17,7 +17,7 @@ uninlined_format_args = "allow"
 string_slice = "warn"
 
 [workspace.dependencies]
-rmcp = { version = "1.2.0", features = ["schemars", "auth"] }
+rmcp = { version = "=1.2.0", features = ["schemars", "auth"] }
 sacp = "10.1.0"
 anyhow = "1.0"
 async-stream = "0.3"
@@ -86,11 +86,3 @@ tree-sitter-rust = "0.24"
 tree-sitter-swift = "0.7"
 tree-sitter-typescript = "0.23"
 
-[patch.crates-io]
-# TODO: switch to released version in opentelemetry 0.32.0
-# https://github.com/open-telemetry/opentelemetry-rust/issues/3408
-opentelemetry = { git = "https://github.com/open-telemetry/opentelemetry-rust", rev = "345cd74a" }
-opentelemetry_sdk = { git = "https://github.com/open-telemetry/opentelemetry-rust", rev = "345cd74a" }
-opentelemetry-appender-tracing = { git = "https://github.com/open-telemetry/opentelemetry-rust", rev = "345cd74a" }
-opentelemetry-otlp = { git = "https://github.com/open-telemetry/opentelemetry-rust", rev = "345cd74a" }
-opentelemetry-stdout = { git = "https://github.com/open-telemetry/opentelemetry-rust", rev = "345cd74a" }
