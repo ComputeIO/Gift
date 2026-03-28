@@ -1,4 +1,5 @@
 pub mod mcp;
+#[cfg(feature = "telemetry")]
 pub mod otel;
 pub mod session;
 
