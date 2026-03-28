@@ -69,7 +69,7 @@ url = "2.5.8"
 opentelemetry = "0.31"
 opentelemetry_sdk = { version = "0.31", features = ["metrics"] }
 opentelemetry-otlp = "0.31"
-opentelemetry-appender-tracing = { version = "0.31", features = ["experimental_span_attributes"] }
+opentelemetry-appender-tracing = { version = "0.31" }
 opentelemetry-stdout = { version = "0.31", features = ["trace", "metrics", "logs"] }
 tracing-futures = { version = "0.2", features = ["futures-03"] }
 tracing-opentelemetry = "0.32"
