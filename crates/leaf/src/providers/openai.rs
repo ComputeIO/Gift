@@ -67,6 +67,7 @@ pub struct OpenAiProvider {
     name: String,
     #[serde(skip)]
     pub preloaded_models: Option<Vec<String>>,
+    pub skip_canonical_filtering: bool,
 }
 
 impl OpenAiProvider {
@@ -129,6 +130,7 @@ impl OpenAiProvider {
             supports_streaming: true,
             name: OPEN_AI_PROVIDER_NAME.to_string(),
             preloaded_models: None,
+            skip_canonical_filtering: false,
         })
     }
 
@@ -144,6 +146,7 @@ impl OpenAiProvider {
             supports_streaming: true,
             name: OPEN_AI_PROVIDER_NAME.to_string(),
             preloaded_models: None,
+            skip_canonical_filtering: false,
         }
     }
 
@@ -239,6 +242,7 @@ impl OpenAiProvider {
             } else {
                 Some(config.models.iter().map(|m| m.name.clone()).collect())
             },
+            skip_canonical_filtering: config.skip_canonical_filtering,
         })
     }
 
@@ -394,6 +398,10 @@ impl Provider for OpenAiProvider {
 
     fn get_model_config(&self) -> ModelConfig {
         self.model.clone()
+    }
+
+    fn skip_canonical_filtering(&self) -> bool {
+        self.skip_canonical_filtering
     }
 
     async fn fetch_supported_models(&self) -> Result<Vec<String>, ProviderError> {

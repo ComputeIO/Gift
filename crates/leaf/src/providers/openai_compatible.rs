@@ -27,6 +27,7 @@ pub struct OpenAiCompatibleProvider {
     completions_prefix: String,
     /// Models preloaded from a catalog (e.g. models.dev). When present, skip /models API call.
     preloaded_models: Option<Vec<String>>,
+    pub skip_canonical_filtering: bool,
 }
 
 impl OpenAiCompatibleProvider {
@@ -42,11 +43,13 @@ impl OpenAiCompatibleProvider {
             model,
             completions_prefix,
             preloaded_models: None,
+            skip_canonical_filtering: false,
         }
     }
 
-    pub fn with_preloaded_models(mut self, models: Vec<String>) -> Self {
+    pub fn with_preloaded_models(mut self, models: Vec<String>, skip_filtering: bool) -> Self {
         self.preloaded_models = Some(models);
+        self.skip_canonical_filtering = skip_filtering;
         self
     }
 
@@ -78,6 +81,10 @@ impl Provider for OpenAiCompatibleProvider {
 
     fn get_model_config(&self) -> ModelConfig {
         self.model.clone()
+    }
+
+    fn skip_canonical_filtering(&self) -> bool {
+        self.skip_canonical_filtering
     }
 
     async fn fetch_supported_models(&self) -> Result<Vec<String>, ProviderError> {

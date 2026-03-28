@@ -88,7 +88,7 @@ async fn fetch_catalog_from_network() -> Result<ProviderCatalog> {
 
 fn get_cache_path() -> std::path::PathBuf {
     let home = dirs::config_dir().unwrap_or_else(|| std::path::PathBuf::from("."));
-    home.join(CACHE_DIR).join("models_dev_catalog.json")
+    home.join(CACHE_DIR).join("api.json")
 }
 
 async fn get_cached_catalog() -> Option<ProviderCatalog> {
@@ -240,7 +240,7 @@ fn register_providers_from_catalog(
                 base_path: None,
                 env_vars: None,
                 dynamic_models: None,
-                skip_canonical_filtering: false,
+                skip_canonical_filtering: true,
             };
 
             register_declarative_provider(registry, config, ProviderType::Preferred);
