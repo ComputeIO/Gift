@@ -13,6 +13,16 @@ use crate::providers::provider_registry::ProviderRegistry;
 const MODELS_DEV_URL: &str = "https://models.dev/api.json";
 const CACHE_DIR: &str = "leaf/opencode";
 
+/// Default API URLs for npm packages that don't have an `api` field in models.dev.
+/// These match the hardcoded defaults in each @ai-sdk/* package.
+fn default_url_for_npm(npm: Option<&str>) -> Option<&'static str> {
+    match npm {
+        Some("@ai-sdk/openai") => Some("https://api.openai.com/v1"),
+        Some("@ai-sdk/anthropic") => Some("https://api.anthropic.com/v1"),
+        _ => None,
+    }
+}
+
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct ProviderCatalog {
     #[serde(flatten)]
@@ -157,15 +167,21 @@ fn register_providers_from_catalog(
             continue;
         }
 
+        let provider_npm = provider_info.npm.as_deref();
+
         let base_url = match &provider_info.api {
             Some(url) if !url.is_empty() => url.clone(),
-            _ => {
-                warn!("Skipping provider {} without API URL", provider_id);
-                continue;
-            }
+            _ => match default_url_for_npm(provider_npm) {
+                Some(url) => url.to_string(),
+                None => {
+                    warn!(
+                        "Skipping provider {} with no API URL and no default for npm {:?}",
+                        provider_id, provider_npm
+                    );
+                    continue;
+                }
+            },
         };
-
-        let provider_npm = provider_info.npm.as_deref();
 
         let mut groups: HashMap<String, (ProviderEngine, String, Vec<ModelInfo>)> = HashMap::new();
 

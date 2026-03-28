@@ -403,7 +403,20 @@ impl Provider for OpenAiProvider {
             self.preloaded_models.as_ref().map(|m| m.len())
         );
 
-        // For OpenCode providers, try API first since catalog may be inaccurate
+        // OpenCode providers don't expose /models - their model list comes from models.dev
+        if self.name.starts_with("opencode-") {
+            if let Some(ref models) = self.preloaded_models {
+                if !models.is_empty() {
+                    tracing::debug!(
+                        "Returning {} preloaded models for OpenCode provider {}",
+                        models.len(),
+                        self.name
+                    );
+                    return Ok(models.clone());
+                }
+            }
+        }
+
         let models_path =
             Self::map_base_path(&self.base_path, "models", OPEN_AI_DEFAULT_MODELS_PATH);
         let response = self

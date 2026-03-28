@@ -504,3 +504,47 @@ This error occurs when the API receives a tool_use.input that is not an object. 
 3. Provider selection mismatch for models with provider override
 
 The fix requires ensuring that when using Anthropic format, `tool_use.input` is always a proper JSON object, not a string.
+
+### Model Listing Behavior
+
+OpenCode **does NOT provide a `/models` endpoint** on provider backends. Model data comes exclusively from `models.dev/api.json`.
+
+#### How OpenCode Gets Models
+
+1. **Primary source**: `https://models.dev/api.json` (or bundled snapshot at build time)
+2. **Priority chain** (in `packages/opencode/src/provider/models.ts`):
+   - Cache file (`~/.cache/opencode/models.json`)
+   - Bundled snapshot (compiled at build time)
+   - Remote fetch from `models.dev/api.json`
+3. **No `/models` API calls to provider backends**
+
+#### OpenCode Server Endpoints
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /provider` | Lists providers + models (from models.dev data) |
+| No `/models` on provider backends | Models are embedded in provider response |
+
+#### How Leaf Handles This
+
+Leaf's `opencode.rs` fetches models from `models.dev/api.json` and registers them as preloaded models. In `OpenAiProvider::fetch_supported_models()`:
+
+1. **For OpenCode providers** (name starts with `opencode-`): Skip `/models` API call, return preloaded models directly
+2. **For other providers**: Try `/models` API first, fall back to preloaded models
+
+This avoids unnecessary 404 errors when Leaf tries to call a non-existent `/models` endpoint on OpenCode provider backends.
+
+#### Adding New OpenCode Providers
+
+When adding providers from OpenCode's models.dev:
+
+1. Provider data is automatically fetched from `models.dev/api.json` in `opencode.rs`
+2. Models are grouped by engine (OpenAI or Anthropic) based on the `npm` field
+3. Provider names follow the pattern: `opencode-{provider_id}-{engine}`
+4. The `base_url` comes from the provider's `api` field in models.dev
+
+#### Key Files
+
+- `crates/leaf/src/providers/opencode.rs` - Fetches and registers OpenCode providers
+- `crates/leaf/src/providers/openai.rs:399-420` - Skips `/models` for OpenCode providers
+- `crates/leaf/src/config/declarative_providers.rs:422-428` - Maps `ProviderEngine::OpenAI` to `OpenAiProvider`

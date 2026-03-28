@@ -25,6 +25,8 @@ pub struct OpenAiCompatibleProvider {
     model: ModelConfig,
     /// Path prefix prepended to `chat/completions` (e.g. `"deployments/{name}/"` for Azure).
     completions_prefix: String,
+    /// Models preloaded from a catalog (e.g. models.dev). When present, skip /models API call.
+    preloaded_models: Option<Vec<String>>,
 }
 
 impl OpenAiCompatibleProvider {
@@ -39,7 +41,13 @@ impl OpenAiCompatibleProvider {
             api_client,
             model,
             completions_prefix,
+            preloaded_models: None,
         }
+    }
+
+    pub fn with_preloaded_models(mut self, models: Vec<String>) -> Self {
+        self.preloaded_models = Some(models);
+        self
     }
 
     fn build_request(
@@ -73,6 +81,12 @@ impl Provider for OpenAiCompatibleProvider {
     }
 
     async fn fetch_supported_models(&self) -> Result<Vec<String>, ProviderError> {
+        if let Some(ref models) = self.preloaded_models {
+            if !models.is_empty() {
+                return Ok(models.clone());
+            }
+        }
+
         let response = self
             .api_client
             .response_get(None, "models")
