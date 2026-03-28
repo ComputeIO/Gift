@@ -12,6 +12,7 @@
     "program": "$ZED_WORKTREE_ROOT/target/debug/leaf",
     // sourceLanguages is required for CodeLLDB (not GDB) when using Rust
     "sourceLanguages": ["rust"],
+    "args": ["configure"],
     "request": "launch",
     "adapter": "CodeLLDB",
   },
