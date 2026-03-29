@@ -1,4 +1,5 @@
 use crate::recipes::github_recipe::GOOSE_RECIPE_GITHUB_REPO_CONFIG_KEY;
+use crate::session::split_quoted;
 use cliclack::spinner;
 use console::style;
 use leaf::agents::extension::{ToolInfo, PLATFORM_EXTENSIONS};
@@ -1123,9 +1124,9 @@ fn configure_stdio_extension() -> anyhow::Result<()> {
 
     let timeout = prompt_extension_timeout()?;
 
-    let mut parts = command_str.split_whitespace();
-    let cmd = parts.next().unwrap_or("").to_string();
-    let args: Vec<String> = parts.map(String::from).collect();
+    let mut parts = split_quoted(&command_str)?;
+    let cmd = parts.remove(0);
+    let args = parts;
 
     let description = prompt_extension_description()?;
     let (envs, env_keys) = collect_env_vars()?;
