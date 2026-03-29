@@ -1,6 +1,7 @@
-use crate::conversation::message::{Message, MessageContent};
+use crate::conversation::message::{Message, MessageContent, ProviderMetadata};
 use crate::model::ModelConfig;
 use crate::providers::formats::anthropic::{thinking_effort, thinking_type, ThinkingType};
+use crate::providers::formats::util::complete_tool_params;
 use crate::providers::utils::{
     convert_image, detect_image_path, is_valid_function_name, load_image_file, safely_parse_json,
     sanitize_function_name, ImageFormat,
@@ -412,15 +413,43 @@ pub fn response_to_message(response: &Value) -> anyhow::Result<Message> {
                             ));
                         }
                         Err(e) => {
-                            let error = ErrorData {
-                                code: ErrorCode::INVALID_PARAMS,
-                                message: Cow::from(format!(
-                                    "Could not interpret tool use parameters for id {}: {}. Raw arguments: '{}'",
-                                    id, e, arguments_str
-                                )),
-                                data: None,
+                            tracing::warn!(
+                                "Tool {} arguments parsing failed ({} bytes), attempting auto-fix: {}",
+                                function_name,
+                                arguments_str.len(),
+                                e
+                            );
+                            let fix_result = complete_tool_params(&function_name, &arguments_str);
+
+                            let (params, warning_metadata) = match fix_result {
+                                Some(fix) => (
+                                    fix.params,
+                                    fix.warning.map(|w| {
+                                        let mut m = ProviderMetadata::new();
+                                        m.insert("warning".to_string(), json!(w));
+                                        m
+                                    }),
+                                ),
+                                None => {
+                                    let error = ErrorData {
+                                        code: ErrorCode::INVALID_PARAMS,
+                                        message: Cow::from(format!(
+                                            "Could not interpret tool use parameters for id {}: {}",
+                                            id, e
+                                        )),
+                                        data: None,
+                                    };
+                                    content.push(MessageContent::tool_request(id, Err(error)));
+                                    continue;
+                                }
                             };
-                            content.push(MessageContent::tool_request(id, Err(error)));
+
+                            content.push(MessageContent::tool_request_with_metadata(
+                                id,
+                                Ok(CallToolRequestParams::new(function_name)
+                                    .with_arguments(object(params))),
+                                warning_metadata.as_ref(),
+                            ));
                         }
                     }
                 }

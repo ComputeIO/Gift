@@ -3,6 +3,7 @@ use crate::mcp_utils::extract_text_from_resource;
 use crate::model::ModelConfig;
 use crate::providers::base::{ProviderUsage, Usage};
 use crate::providers::errors::ProviderError;
+use crate::providers::formats::util::complete_tool_params;
 use crate::providers::utils::{
     convert_image, detect_image_path, extract_reasoning_effort, is_valid_function_name,
     load_image_file, safely_parse_json, sanitize_function_name, ImageFormat,
@@ -772,15 +773,48 @@ where
                                 )
                             },
                             Err(e) => {
-                                let error = ErrorData {
-                                    code: ErrorCode::INVALID_PARAMS,
-                                    message: Cow::from(format!(
-                                        "Could not interpret tool use parameters for id {}: {}",
-                                        id, e
-                                    )),
-                                    data: None,
+                                tracing::warn!(
+                                    "Tool {} arguments parsing failed ({} bytes), attempting auto-fix: {}",
+                                    function_name,
+                                    arguments.len(),
+                                    e
+                                );
+                                let fix_result = complete_tool_params(function_name, arguments);
+
+                                let (params, final_metadata) = match fix_result {
+                                    Some(fix) => {
+                                        let meta = if let Some(warn_msg) = fix.warning {
+                                            let mut m = metadata.clone().unwrap_or_default();
+                                            m.insert("warning".to_string(), json!(warn_msg));
+                                            Some(m)
+                                        } else {
+                                            metadata.clone()
+                                        };
+                                        (fix.params, meta)
+                                    }
+                                    None => {
+                                        let error = ErrorData {
+                                            code: ErrorCode::INVALID_PARAMS,
+                                            message: Cow::from(format!(
+                                                "Could not interpret tool use parameters for id {}: {}",
+                                                id, e
+                                            )),
+                                            data: None,
+                                        };
+                                        contents.push(MessageContent::tool_request_with_metadata(
+                                            id.clone(),
+                                            Err(error),
+                                            metadata.as_ref(),
+                                        ));
+                                        continue;
+                                    }
                                 };
-                                MessageContent::tool_request_with_metadata(id.clone(), Err(error), metadata.as_ref())
+
+                                MessageContent::tool_request_with_metadata(
+                                    id.clone(),
+                                    Ok(CallToolRequestParams::new(function_name.clone()).with_arguments(object(params))),
+                                    final_metadata.as_ref(),
+                                )
                             }
                         };
                         contents.push(content);

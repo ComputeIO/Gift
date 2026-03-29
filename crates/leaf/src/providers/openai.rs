@@ -702,6 +702,7 @@ mod tests {
             supports_streaming: true,
             name: name.to_string(),
             preloaded_models: None,
+            skip_canonical_filtering: false,
         }
     }
 

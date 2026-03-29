@@ -1,11 +1,12 @@
-use crate::conversation::message::{Message, MessageContent};
+use crate::conversation::message::{Message, MessageContent, ProviderMetadata};
 use crate::mcp_utils::extract_text_from_resource;
 use crate::model::ModelConfig;
 use crate::providers::base::Usage;
 use crate::providers::errors::ProviderError;
+use crate::providers::formats::util::complete_tool_params;
 use crate::providers::utils::{convert_image, ImageFormat};
 use anyhow::{anyhow, Result};
-use rmcp::model::{object, CallToolRequestParams, ErrorCode, ErrorData, JsonObject, Role, Tool};
+use rmcp::model::{object, CallToolRequestParams, JsonObject, Role, Tool};
 use rmcp::object as json_object;
 use serde_json::{json, Value};
 use std::collections::HashSet;
@@ -456,7 +457,7 @@ pub fn get_usage(data: &Value) -> Result<Usage> {
             let total_tokens_i32 =
                 (total_input_i32 as i64 + output_tokens_i32 as i64).min(i32::MAX as i64) as i32;
 
-            tracing::debug!("🔍 Anthropic ACTUAL token counts from direct object: input={}, output={}, total={}", 
+            tracing::debug!("🔍 Anthropic ACTUAL token counts from direct object: input={}, output={}, total={}",
                     total_input_i32, output_tokens_i32, total_tokens_i32);
 
             Ok(Usage::new(
@@ -728,36 +729,50 @@ where
                     if let Some(tool_id) = current_tool_id.take() {
                         // Tool call finished, yield complete tool call
                         if let Some((name, args)) = accumulated_tool_calls.remove(&tool_id) {
-                            let parsed_args = if args.is_empty() {
-                                json!({})
+                            let (parsed_args, warning_metadata) = if args.is_empty() {
+                                (json!({}), None)
                             } else {
                                 match serde_json::from_str::<Value>(&args) {
-                                    Ok(parsed) => parsed,
+                                    Ok(parsed) => (parsed, None),
                                     Err(_) => {
-                                        // If parsing fails, create an error tool request
-                                        let error = ErrorData::new(
-                                            ErrorCode::INVALID_PARAMS,
-                                            format!("Could not parse tool arguments: {}", args),
-                                            None,
+                                        tracing::warn!(
+                                            "Tool {} arguments parsing failed ({} bytes), attempting auto-fix",
+                                            name,
+                                            args.len()
                                         );
-                                        let mut message = Message::new(
-                                            Role::Assistant,
-                                            chrono::Utc::now().timestamp(),
-                                            vec![MessageContent::tool_request(tool_id, Err(error))],
-                                        );
-                                        message.id = message_id.clone();
-                                        yield (Some(message), None);
-                                        continue;
+                                        match complete_tool_params(&name, &args) {
+                                            Some(fix) => {
+                                                let meta = fix.warning.map(|w| {
+                                                    let mut m = ProviderMetadata::new();
+                                                    m.insert("warning".to_string(), json!(w));
+                                                    m
+                                                });
+                                                (fix.params, meta)
+                                            }
+                                            None => {
+                                                tracing::warn!(
+                                                    "Failed to auto-fix JSON for tool {}, using empty params",
+                                                    name
+                                                );
+                                                (json!({}), None)
+                                            }
+                                        }
                                     }
                                 }
                             };
 
                             let tool_call = CallToolRequestParams::new(name).with_arguments(object(parsed_args));
 
+                            let content = MessageContent::tool_request_with_metadata(
+                                tool_id,
+                                Ok(tool_call),
+                                warning_metadata.as_ref(),
+                            );
+
                             let mut message = Message::new(
                                 rmcp::model::Role::Assistant,
                                 chrono::Utc::now().timestamp(),
-                                vec![MessageContent::tool_request(tool_id, Ok(tool_call))],
+                                vec![content],
                             );
                             message.id = message_id.clone();
                             yield (Some(message), None);

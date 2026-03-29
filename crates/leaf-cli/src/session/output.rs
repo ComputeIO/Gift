@@ -479,6 +479,15 @@ fn render_thinking_streaming(
 }
 
 fn render_tool_request(req: &ToolRequest, theme: Theme, debug: bool) {
+    if let Some(warning) = req
+        .metadata
+        .as_ref()
+        .and_then(|m| m.get("warning"))
+        .and_then(|v| v.as_str())
+    {
+        eprintln!("{}", style(format!("⚠️  {}", warning)).yellow().bold());
+    }
+
     match &req.tool_call {
         Ok(call) => match call.name.to_string().as_str() {
             name if is_shell_tool_name(name) => render_shell_request(call, debug),
