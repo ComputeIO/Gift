@@ -376,8 +376,8 @@ crates/leaf-acp
 "@block/goose-acp-server-darwin-arm64"
 
 // New (Leaf)
-"@block/leaf-acp-server-linux-x64"
-"@block/leaf-acp-server-darwin-arm64"
+"@block/leaf-binary-linux-x64"
+"@block/leaf-binary-darwin-arm64"
 ```
 
 **Binary Names:**

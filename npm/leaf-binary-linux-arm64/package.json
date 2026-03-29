@@ -1,0 +1,25 @@
+{
+  "name": "@block/leaf-binary-linux-arm64",
+  "version": "0.1.0",
+  "description": "Leaf CLI binary for Linux ARM64",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LeafAI/Leaf.git"
+  },
+  "keywords": [
+    "leaf",
+    "ai",
+    "agent",
+    "binary"
+  ],
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "files": [
+    "bin/leaf"
+  ]
+}
