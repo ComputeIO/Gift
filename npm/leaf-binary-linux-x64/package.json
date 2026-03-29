@@ -1,0 +1,25 @@
+{
+  "name": "@block/leaf-binary-linux-x64",
+  "version": "0.1.0",
+  "description": "Leaf CLI binary for Linux x64",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LeafAI/Leaf.git"
+  },
+  "keywords": [
+    "leaf",
+    "ai",
+    "agent",
+    "binary"
+  ],
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "files": [
+    "bin/leaf"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "@block/leaf-binary-win32-x64",
+  "version": "0.1.0",
+  "description": "Leaf CLI binary for Windows x64",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LeafAI/Leaf.git"
+  },
+  "keywords": [
+    "leaf",
+    "ai",
+    "agent",
+    "binary"
+  ],
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "files": [
+    "bin/leaf.exe"
+  ]
+}

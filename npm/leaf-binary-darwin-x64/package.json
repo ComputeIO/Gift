@@ -1,0 +1,25 @@
+{
+  "name": "@block/leaf-binary-darwin-x64",
+  "version": "0.1.0",
+  "description": "Leaf CLI binary for macOS x64",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LeafAI/Leaf.git"
+  },
+  "keywords": [
+    "leaf",
+    "ai",
+    "agent",
+    "binary"
+  ],
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "files": [
+    "bin/leaf"
+  ]
+}

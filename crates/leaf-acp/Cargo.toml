@@ -8,10 +8,6 @@ repository.workspace = true
 description.workspace = true
 
 [[bin]]
-name = "leaf-acp-server"
-path = "src/bin/server.rs"
-
-[[bin]]
 name = "generate-acp-schema"
 path = "src/bin/generate_acp_schema.rs"
 
