@@ -31,6 +31,8 @@ dotenvy = { workspace = true }
 bat = { version = "0.26.1", default-features = false, features = ["regex-onig"] }
 anyhow = { workspace = true }
 serde_json = { workspace = true }
+resvg = "0.42"
+image = "0.25"
 tokio = { workspace = true }
 futures = { workspace = true }
 serde = { workspace = true }

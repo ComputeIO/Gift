@@ -126,7 +126,6 @@ fn setup_logging_internal(name: Option<&str>, force: bool, verbose: bool) -> Res
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::env;
     use tempfile::TempDir;
 

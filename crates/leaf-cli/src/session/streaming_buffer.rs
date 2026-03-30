@@ -24,10 +24,57 @@ use regex::Regex;
 use std::io::Write;
 use std::sync::LazyLock;
 
+/// Kroki-supported diagram types that should not be truncated.
+const KROKI_DIAGRAM_TYPES: &[&str] = &[
+    "mermaid",
+    "plantuml",
+    "dot",
+    "graphviz",
+    "d2",
+    "excalidraw",
+    "bytefield",
+    "wavedrom",
+    "nomnoml",
+    "pikchr",
+    "structurizr",
+    "vega",
+    "vegalite",
+    "erd",
+    "svgbob",
+];
+
 const MAX_CODE_BLOCK_LINES: usize = 50;
 const TRUNCATED_SHOW_LINES: usize = 20;
 
+/// Check if content starts with a Kroki-supported diagram code block.
+fn is_kroki_diagram_block(content: &str) -> bool {
+    let trimmed = content.trim_start();
+
+    // Check for ```lang\n pattern
+    if let Some(rest) = trimmed.strip_prefix("```") {
+        if let Some(nl_pos) = rest.find('\n') {
+            let lang = rest[..nl_pos].trim();
+            return KROKI_DIAGRAM_TYPES.contains(&lang);
+        }
+    }
+
+    // Check for ~~~lang\n pattern
+    if let Some(rest) = trimmed.strip_prefix("~~~") {
+        if let Some(nl_pos) = rest.find('\n') {
+            let lang = rest[..nl_pos].trim();
+            return KROKI_DIAGRAM_TYPES.contains(&lang);
+        }
+    }
+
+    false
+}
+
 fn truncate_code_blocks(content: &str) -> String {
+    // Kroki diagram blocks should not be truncated - they need to be rendered as-is
+    if is_kroki_diagram_block(content) {
+        return content.to_string();
+    }
+
     let (open_pos, fence) = match (content.find("```"), content.find("~~~")) {
         (Some(a), Some(b)) if a <= b => (a, "```"),
         (Some(a), None) => (a, "```"),
@@ -130,6 +177,15 @@ static INLINE_TOKEN_RE: LazyLock<Regex> = LazyLock::new(|| {
 #[derive(Default)]
 pub struct MarkdownBuffer {
     buffer: String,
+    /// True when currently inside a code block (updated on each push)
+    in_code_block: bool,
+}
+
+impl MarkdownBuffer {
+    /// Returns true if the buffer is currently inside a code block.
+    pub fn is_in_code_block(&self) -> bool {
+        self.in_code_block
+    }
 }
 
 /// Tracks the current parsing state for markdown constructs.
@@ -138,6 +194,8 @@ struct ParseState {
     in_code_block: bool,
     code_fence_char: char,
     code_fence_len: usize,
+    /// True when inside a Kroki-supported diagram code block (mermaid, plantuml, etc.)
+    in_kroki_diagram: bool,
     in_table: bool,
     pending_heading: bool,
     in_inline_code: bool,
@@ -163,6 +221,7 @@ impl ParseState {
             && !self.in_link_text
             && !self.in_link_url
             && !self.in_image_alt
+            && !self.in_kroki_diagram
     }
 }
 
@@ -183,14 +242,37 @@ impl MarkdownBuffer {
     /// contains only incomplete constructs. Large code blocks are automatically
     /// truncated with full content saved to a temp file.
     pub fn push(&mut self, chunk: &str) -> Option<String> {
+        let has_fence = chunk.contains("```") || chunk.contains("~~~");
+
+        // State machine for code blocks
+        if self.in_code_block {
+            // Currently inside a code block
+            if has_fence {
+                // Closing fence found - append chunk, flush buffer, and return
+                self.buffer.push_str(chunk);
+                self.in_code_block = false;
+                let result = self.buffer.clone();
+                self.buffer.clear();
+                return Some(truncate_code_blocks(&result));
+            }
+            // Still inside code block - buffer content
+            self.buffer.push_str(chunk);
+            return None;
+        }
+
+        // Not inside a code block
+        if has_fence {
+            // Opening fence found - enter code block mode
+            self.in_code_block = true;
+            self.buffer.push_str(chunk);
+            return None;
+        }
+
+        // Normal text - use existing logic
         self.buffer.push_str(chunk);
         let safe_end = self.find_safe_end();
 
         if safe_end > 0 {
-            // SAFETY: safe_end is always at a valid UTF-8 char boundary because:
-            // - We only set it after processing complete regex tokens (which match
-            //   valid UTF-8 sequences) or at newline positions (ASCII, single byte)
-            // - The regex tokenizer operates on &str which guarantees UTF-8
             let to_render = self.buffer[..safe_end].to_string();
             self.buffer = self.buffer[safe_end..].to_string();
             Some(truncate_code_blocks(&to_render))
@@ -343,6 +425,7 @@ impl MarkdownBuffer {
                 state.in_code_block = false;
                 state.code_fence_char = '\0';
                 state.code_fence_len = 0;
+                state.in_kroki_diagram = false;
 
                 if let Some(newline_pos) = line.find('\n') {
                     return Some(newline_pos + 1);
@@ -354,6 +437,14 @@ impl MarkdownBuffer {
             state.in_code_block = true;
             state.code_fence_char = fence_char;
             state.code_fence_len = fence_len;
+
+            // Check if this is a Kroki diagram block
+            if KROKI_DIAGRAM_TYPES
+                .iter()
+                .any(|&lang| after_fence.starts_with(lang))
+            {
+                state.in_kroki_diagram = true;
+            }
 
             if let Some(newline_pos) = line.find('\n') {
                 return Some(newline_pos + 1);

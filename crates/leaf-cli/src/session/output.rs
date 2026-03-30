@@ -12,6 +12,7 @@ use leaf::providers::canonical::maybe_get_canonical_model;
 use leaf::subprocess::SubprocessExt;
 use leaf::utils::safe_truncate;
 use rmcp::model::{CallToolRequestParams, JsonObject, PromptArgument};
+use serde::Deserialize;
 use serde_json::Value;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -969,6 +970,20 @@ pub fn env_no_color() -> bool {
 
 fn print_markdown(content: &str, theme: Theme) {
     if std::io::stdout().is_terminal() {
+        if let Some(_) = get_kroki_url() {
+            if let Some((before, diagram_src, diagram_type, after)) = extract_diagram_block(content)
+            {
+                if !before.is_empty() {
+                    print_markdown(&before, theme);
+                }
+                print_diagram(&diagram_src, diagram_type);
+                if !after.is_empty() {
+                    print_markdown(&after, theme);
+                }
+                return;
+            }
+        }
+
         if let Some((before, table, after)) = extract_markdown_table(content) {
             if !before.is_empty() {
                 print_markdown_raw(&before, theme);
@@ -995,6 +1010,191 @@ fn print_markdown_raw(content: &str, theme: Theme) {
         .wrapping_mode(WrappingMode::NoWrapping(true))
         .print()
         .unwrap();
+}
+
+/// Diagram languages Kroki can render as SVG.
+const KROKI_DIAGRAM_TYPES: &[&str] = &[
+    "mermaid",
+    "plantuml",
+    "dot",
+    "graphviz",
+    "d2",
+    "excalidraw",
+    "bytefield",
+    "wavedrom",
+    "nomnoml",
+    "pikchr",
+    "structurizr",
+    "vega",
+    "vegalite",
+    "erd",
+    "svgbob",
+    "umlet",
+    "wireviz",
+    "blockdiag",
+    "seqdiag",
+    "actdiag",
+    "nwdiag",
+    "packetdiag",
+    "rackdiag",
+    "c4plantuml",
+];
+
+fn get_kroki_url() -> Option<String> {
+    Config::global()
+        .get_param::<KrokiConfig>("kroki")
+        .ok()
+        .and_then(|c| c.url)
+        .filter(|s| !s.is_empty())
+}
+
+#[derive(Deserialize)]
+struct KrokiConfig {
+    url: Option<String>,
+    proxy: Option<String>,
+}
+
+fn get_kroki_proxy() -> Option<String> {
+    Config::global()
+        .get_param::<KrokiConfig>("kroki")
+        .ok()
+        .and_then(|c| c.proxy)
+        .filter(|s| !s.is_empty())
+}
+
+fn terminal_size() -> (u16, u16) {
+    Term::stdout().size()
+}
+
+/// Extracts the first supported diagram code block from markdown.
+///
+/// Returns `(before_text, diagram_source, diagram_type, after_text)`.
+fn extract_diagram_block(content: &str) -> Option<(String, String, &str, String)> {
+    let lines: Vec<&str> = content.lines().collect();
+    let mut in_code_block = false;
+    let mut fence_char = '\0';
+    let mut fence_len = 0;
+    let mut code_start = None;
+    let mut code_lang = None;
+    let mut code_end = None;
+
+    for line in &lines {
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        if !in_code_block {
+            let ch = trimmed.chars().next()?;
+            if ch != '`' && ch != '~' {
+                continue;
+            }
+            let len = trimmed.chars().take_while(|&c| c == ch).count();
+            if len < 3 {
+                continue;
+            }
+            let lang: Option<&str> = trimmed
+                .char_indices()
+                .nth(len)
+                .and_then(|(idx, _)| trimmed.get(idx..));
+            if KROKI_DIAGRAM_TYPES.contains(&lang.unwrap_or("").trim()) {
+                in_code_block = true;
+                fence_char = ch;
+                fence_len = len;
+                code_start = Some(lines.iter().position(|l| l.as_ptr() == line.as_ptr())?);
+                code_lang = Some(lang.unwrap_or("").trim());
+            }
+        } else {
+            let ch = trimmed.chars().next()?;
+            if ch == fence_char {
+                let len = trimmed.chars().take_while(|&c| c == fence_char).count();
+                if len >= fence_len {
+                    code_end = Some(lines.iter().position(|l| l.as_ptr() == line.as_ptr())?);
+                    break;
+                }
+            }
+        }
+    }
+
+    let start = code_start?;
+    let end = code_end?;
+    let lang = code_lang?;
+
+    let diagram_source = lines[start + 1..end].join("\n");
+    if diagram_source.trim().is_empty() {
+        return None;
+    }
+
+    let before = if start > 0 {
+        lines[..start].join("\n") + "\n"
+    } else {
+        String::new()
+    };
+    let after = if end + 1 < lines.len() {
+        "\n".to_string() + &lines[end + 1..].join("\n")
+    } else {
+        String::new()
+    };
+
+    Some((before, diagram_source, lang, after))
+}
+
+/// Renders a diagram via Kroki SVG endpoint and pipes to chafa.
+fn print_diagram(source: &str, diagram_type: &str) {
+    let kroki_url = match get_kroki_url() {
+        Some(url) => url,
+        None => return,
+    };
+
+    let endpoint = format!("{}/{}/svg", kroki_url.trim_end_matches('/'), diagram_type);
+
+    // Build client with optional proxy from config
+    let client = match get_kroki_proxy() {
+        Some(proxy_url) => {
+            let proxy = reqwest::Proxy::https(&proxy_url)
+                .or_else(|_| reqwest::Proxy::http(&proxy_url))
+                .unwrap_or_else(|_| panic!("Failed to parse proxy URL"));
+            reqwest::blocking::Client::builder()
+                .proxy(proxy)
+                .timeout(Duration::from_secs(15))
+                .build()
+                .unwrap_or_else(|_| reqwest::blocking::Client::new())
+        }
+        None => reqwest::blocking::Client::new(),
+    };
+
+    let response = client
+        .post(&endpoint)
+        .header("Content-Type", "text/plain")
+        .body(source.to_string())
+        .send();
+
+    let svg = match response {
+        Ok(resp) if resp.status().is_success() => resp.text().unwrap_or_default(),
+        Ok(resp) => {
+            eprintln!(
+                "  {} Kroki returned {} for {} diagram",
+                style("⚠").yellow(),
+                resp.status(),
+                diagram_type
+            );
+            println!("```{}\n{}\n```", diagram_type, source);
+            return;
+        }
+        Err(e) => {
+            eprintln!("  {} Failed to fetch diagram: {}", style("⚠").yellow(), e);
+            println!("```{}\n{}\n```", diagram_type, source);
+            return;
+        }
+    };
+
+    // Try Sixel rendering
+    let (cols, rows) = terminal_size();
+    let width = cols as u32 * 6;
+    let height = rows as u32 * 12;
+    match crate::sixel::render_svg_to_sixel(&svg, width, height) {
+        Ok(sixel) => print!("{}", sixel),
+        Err(_) => println!("```{}\n{}\n```", diagram_type, source),
+    }
 }
 
 fn extract_markdown_table(content: &str) -> Option<(String, Vec<&str>, &str)> {
@@ -1601,5 +1801,57 @@ mod tests {
             json!({"top_up_url": "https://router.tetrate.ai/billing"}),
         );
         assert_eq!(get_credits_top_up_url(&message), None);
+    }
+
+    #[test]
+    fn test_extract_diagram_block_mermaid() {
+        let content = "Here's a diagram:
+
+```mermaid
+flowchart TD
+    A --> B --> C
+```
+
+That's the diagram!";
+        let result = extract_diagram_block(content);
+        eprintln!("DEBUG: result = {:?}", result);
+        assert!(result.is_some(), "Should extract mermaid diagram");
+
+        let (before, source, diagram_type, after) = result.unwrap();
+        assert_eq!(diagram_type, "mermaid");
+        assert!(before.contains("Here's a diagram"));
+        assert!(after.contains("That's the diagram"));
+        assert!(source.contains("flowchart TD"));
+    }
+
+    #[test]
+    fn test_extract_diagram_block_graphviz() {
+        let content = "```graphviz
+digraph G { A -> B }
+```";
+        let result = extract_diagram_block(content);
+        assert!(result.is_some());
+        let (_, _, diagram_type, _) = result.unwrap();
+        assert_eq!(diagram_type, "graphviz");
+    }
+
+    #[test]
+    fn test_extract_diagram_block_no_diagram() {
+        let content = "```python
+print('hello')
+```";
+        let result = extract_diagram_block(content);
+        assert!(
+            result.is_none(),
+            "Non-diagram code blocks should not be extracted"
+        );
+    }
+
+    #[test]
+    fn test_extract_diagram_block_empty_source() {
+        let content = "```mermaid
+```";
+        let result = extract_diagram_block(content);
+        assert!(result.is_none(), "Empty diagram source should return None");
     }
 }
