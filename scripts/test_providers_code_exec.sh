@@ -9,7 +9,7 @@ echo ""
 
 # --- Setup ---
 
-LEAF_BIN=$(build_goose)
+LEAF_BIN=$(build_leaf)
 BUILTINS="memory,code_execution"
 
 # --- Test case ---
@@ -20,7 +20,7 @@ run_test() {
 
   local prompt="Store a memory with category 'test' and data 'hello world', then retrieve all memories from category 'test'."
 
-  # Run goose
+  # Run leaf
   (
     export LEAF_PROVIDER="$provider"
     export LEAF_MODEL="$model"

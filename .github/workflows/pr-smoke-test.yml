@@ -67,19 +67,19 @@ jobs:
 
       - name: Build Binary for Smoke Tests
         run: |
-          cargo build --bin leaf --bin goosed
+          cargo build --bin leaf --bin leafd
 
-      - name: Upload goose binary
+      - name: Upload leaf binary
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
         with:
           name: leaf-binary
           path: target/debug/leaf
           retention-days: 1
 
-      - name: Upload goosed binary
+      - name: Upload leafd binary
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
         with:
-          name: goosed-binary
+          name: leafd-binary
           path: target/debug/leafd
           retention-days: 1
 
@@ -122,14 +122,14 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           TETRATE_API_KEY: ${{ secrets.TETRATE_API_KEY }}
-          HOME: /tmp/goose-home
+          HOME: /tmp/leaf-home
           LEAF_DISABLE_KEYRING: 1
           SKIP_BUILD: 1
           SKIP_PROVIDERS: ${{ vars.SKIP_PROVIDERS || '' }}
         run: |
           # Ensure the HOME directory structure exists
-          mkdir -p $HOME/.local/share/goose/sessions
-          mkdir -p $HOME/.config/goose
+          mkdir -p $HOME/.local/share/leaf/sessions
+          mkdir -p $HOME/.config/leaf
 
           # Run the provider test script (binary already built and downloaded)
           bash scripts/test_providers.sh
@@ -152,7 +152,7 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           TETRATE_API_KEY: ${{ secrets.TETRATE_API_KEY }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
-          HOME: /tmp/goose-home
+          HOME: /tmp/leaf-home
           LEAF_DISABLE_KEYRING: 1
           SKIP_BUILD: 1
         run: |
@@ -163,7 +163,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           LEAF_PROVIDER: anthropic
           LEAF_MODEL: claude-sonnet-4-5-20250929
-          HOME: /tmp/goose-home
+          HOME: /tmp/leaf-home
           LEAF_DISABLE_KEYRING: 1
           SKIP_BUILD: 1
         run: |
@@ -198,13 +198,13 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           TETRATE_API_KEY: ${{ secrets.TETRATE_API_KEY }}
-          HOME: /tmp/goose-home
+          HOME: /tmp/leaf-home
           LEAF_DISABLE_KEYRING: 1
           SKIP_BUILD: 1
           SKIP_PROVIDERS: ${{ vars.SKIP_PROVIDERS || '' }}
         run: |
-          mkdir -p $HOME/.local/share/goose/sessions
-          mkdir -p $HOME/.config/goose
+          mkdir -p $HOME/.local/share/leaf/sessions
+          mkdir -p $HOME/.config/leaf
           bash scripts/test_providers_code_exec.sh
 
   compaction-tests:
@@ -239,10 +239,10 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           LEAF_PROVIDER: anthropic
           LEAF_MODEL: claude-sonnet-4-5-20250929
-          HOME: /tmp/goose-home
+          HOME: /tmp/leaf-home
           LEAF_DISABLE_KEYRING: 1
           SKIP_BUILD: 1
         run: |
-          mkdir -p $HOME/.local/share/goose/sessions
-          mkdir -p $HOME/.config/goose
+          mkdir -p $HOME/.local/share/leaf/sessions
+          mkdir -p $HOME/.config/leaf
           bash scripts/test_compaction.sh

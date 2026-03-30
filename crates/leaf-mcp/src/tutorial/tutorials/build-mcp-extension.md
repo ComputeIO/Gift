@@ -220,45 +220,45 @@ Help users test their MCP extension using these steps:
 
 ### 1. Initial Testing
 
-Instruct users to start a goose session with their extension.
+Instruct users to start a leaf session with their extension.
 
-**Important**: You cannot start the goose session for them, as it is interactive. You will have to let them
+**Important**: You cannot start the leaf session for them, as it is interactive. You will have to let them
 know to start it in a terminal. Make sure you include instructions on how to set up the environment
 
 ```bash
 # Python example
-goose session --with-extension "python server.py"
+leaf session --with-extension "python server.py"
 
 # TypeScript example
-goose session --with-extension "node server.js"
+leaf session --with-extension "node server.js"
 
 # Kotlin example
-goose session --with-extension "java -jar build/libs/extension.jar"
+leaf session --with-extension "java -jar build/libs/extension.jar"
 ```
 
 Tell users to watch for startup errors. If the session fails to start, they should share the error message with you for debugging.
 
 Note:
-You can run a feedback loop using a headless goose session, however if the process hangs you get into a stuck action.
+You can run a feedback loop using a headless leaf session, however if the process hangs you get into a stuck action.
 Ask the user if they want you to do that, and let them know they will manually need to kill any stuck processes.
 
 ```bash
 # Python example
-goose run --with-extension "python server.py" --text "EXAMPLE PROMPT HERE"
+leaf run --with-extension "python server.py" --text "EXAMPLE PROMPT HERE"
 
 # TypeScript example
-goose run --with-extension "node server.js" --text "EXAMPLE PROMPT HERE"
+leaf run --with-extension "node server.js" --text "EXAMPLE PROMPT HERE"
 
 # Kotlin example
-goose run --with-extension "java -jar build/libs/extension.jar" --text "EXAMPLE PROMPT HERE"
+leaf run --with-extension "java -jar build/libs/extension.jar" --text "EXAMPLE PROMPT HERE"
 ```
 
 ### 2. Testing Tools and Resources
 
 Once the session starts successfully, guide users to test their implementation:
 
-- For tools, they should ask goose to use the tool directly
-- For resources, they should ask goose to access the relevant data
+- For tools, they should ask leaf to use the tool directly
+- For resources, they should ask leaf to access the relevant data
 
 Example prompts they can use:
 
@@ -359,7 +359,7 @@ server.addTool(
 
 When users encounter issues:
 
-1. First, check if there are any immediate error messages in the goose session
+1. First, check if there are any immediate error messages in the leaf session
 
 2. If the error isn't clear, guide them to:
 

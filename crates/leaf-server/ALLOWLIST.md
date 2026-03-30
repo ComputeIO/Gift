@@ -1,13 +1,13 @@
-IMPORTANT: currently LEAF_ALLOWLIST is used in main.ts in ui/desktop, and not in goose-server. The following is for reference when it is used on the server side for launch time enforcement.
+IMPORTANT: currently LEAF_ALLOWLIST is used in main.ts in ui/desktop, and not in leaf-server. The following is for reference when it is used on the server side for launch time enforcement.
 
-# goose Extension Allowlist
+# leaf Extension Allowlist
 
-The allowlist feature provides a security mechanism for controlling which MCP commands can be used by goose. 
-By default, goose will let you run any MCP via any command, which isn't always desired.
+The allowlist feature provides a security mechanism for controlling which MCP commands can be used by leaf. 
+By default, leaf will let you run any MCP via any command, which isn't always desired.
 
 ## How It Works
 
-1. When enabled, goose will only allow execution of commands that match entries in the allowlist
+1. When enabled, leaf will only allow execution of commands that match entries in the allowlist
 2. Commands not in the allowlist will be rejected with an error message
 3. The allowlist is fetched from a URL specified by the `LEAF_ALLOWLIST` environment variable and cached while running.
 
@@ -16,7 +16,7 @@ By default, goose will let you run any MCP via any command, which isn't always d
 Set the `LEAF_ALLOWLIST` environment variable to the URL of your allowlist YAML file:
 
 ```bash
-export LEAF_ALLOWLIST=https://example.com/goose-allowlist.yaml
+export LEAF_ALLOWLIST=https://example.com/leaf-allowlist.yaml
 ```
 
 If this environment variable is not set, no allowlist restrictions will be applied (all commands will be allowed).
@@ -57,4 +57,4 @@ extensions:
     command: uvx mcp_jira
 ```
 
-Note that the command should be the full command to launch the MCP (environment variables are provided for context by goose). Additional arguments will be rejected (to avoid injection attacks)
+Note that the command should be the full command to launch the MCP (environment variables are provided for context by leaf). Additional arguments will be rejected (to avoid injection attacks)

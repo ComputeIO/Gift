@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# run-benchmarks.sh - Script to run goose benchmarks across multiple provider:model pairs
+# run-benchmarks.sh - Script to run leaf benchmarks across multiple provider:model pairs
 
 set -e
 
@@ -101,20 +101,20 @@ fi
 echo "" >> "$SUMMARY_FILE"
 
 # Determine which binary to use
-LEAF_CMD="goose"
+LEAF_CMD="leaf"
 if [ "$DEBUG_MODE" = true ]; then
-  if [ -f "./target/debug/goose" ]; then
-    LEAF_CMD="./target/debug/goose"
+  if [ -f "./target/debug/leaf" ]; then
+    LEAF_CMD="./target/debug/leaf"
     echo "Using debug binary: $LEAF_CMD"
   else
-    echo "Warning: Debug binary not found at ./target/debug/goose. Falling back to system-installed goose."
+    echo "Warning: Debug binary not found at ./target/debug/leaf. Falling back to system-installed leaf."
   fi
 else
-  if [ -f "./target/release/goose" ]; then
-    LEAF_CMD="./target/release/goose"
+  if [ -f "./target/release/leaf" ]; then
+    LEAF_CMD="./target/release/leaf"
     echo "Using release binary: $LEAF_CMD"
   else
-    echo "Warning: Release binary not found at ./target/release/goose. Falling back to system-installed goose."
+    echo "Warning: Release binary not found at ./target/release/leaf. Falling back to system-installed leaf."
   fi
 fi
 

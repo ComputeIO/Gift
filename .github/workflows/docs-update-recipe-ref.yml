@@ -65,27 +65,27 @@ jobs:
         with:
           node-version: '20'
       
-      - name: Install goose CLI
+      - name: Install leaf CLI
         run: |
           mkdir -p /home/runner/.local/bin
           curl -fsSL https://github.com/block/leaf/releases/download/stable/download_cli.sh \
             | CONFIGURE=false LEAF_BIN_DIR=/home/runner/.local/bin bash
           echo "/home/runner/.local/bin" >> $GITHUB_PATH
-          goose --version
+          leaf --version
       
-      - name: Configure goose for CI
+      - name: Configure leaf for CI
         env:
           LEAF_PROVIDER: ${{ vars.LEAF_PROVIDER || 'openai' }}
           LEAF_MODEL: ${{ vars.LEAF_MODEL || 'gpt-4o' }}
         run: |
-          mkdir -p ~/.config/goose
-          cat <<EOF > ~/.config/goose/config.yaml
+          mkdir -p ~/.config/leaf
+          cat <<EOF > ~/.config/leaf/config.yaml
           LEAF_PROVIDER: $LEAF_PROVIDER
           LEAF_MODEL: $LEAF_MODEL
           keyring: false
           EOF
-          echo "✅ Created goose config:"
-          cat ~/.config/goose/config.yaml
+          echo "✅ Created leaf config:"
+          cat ~/.config/leaf/config.yaml
       
       - name: Determine versions to compare
         id: versions
@@ -162,19 +162,19 @@ jobs:
           echo "  HOME: $HOME"
           echo "  PATH: $PATH"
           echo ""
-          echo "📁 Goose config file:"
-          cat ~/.config/goose/config.yaml || echo "Config file not found!"
+          echo "📁 Leaf config file:"
+          cat ~/.config/leaf/config.yaml || echo "Config file not found!"
           echo ""
           echo "📁 Current directory:"
           pwd
           ls -la
           echo ""
           echo "🤖 Step 1: Running validation changes synthesis..."
-          goose run --recipe ../recipes/synthesize-validation-changes.yaml
+          leaf run --recipe ../recipes/synthesize-validation-changes.yaml
           
           echo ""
           echo "🤖 Step 2: Applying changes to recipe-reference.md..."
-          goose run --recipe ../recipes/update-recipe-reference.yaml
+          leaf run --recipe ../recipes/update-recipe-reference.yaml
       
       - name: Upload automation outputs
         if: always()

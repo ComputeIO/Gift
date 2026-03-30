@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate a release risk assessment report for a Goose release PR.
+Generate a release risk assessment report for a Leaf release PR.
 
 Usage:
     .release_risk_report.py --version 1.27.0
@@ -15,7 +15,7 @@ import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-REPO = "block/goose"
+REPO = "block/leaf"
 
 # Paths considered documentation-only
 DOC_PATTERNS = [
@@ -24,12 +24,12 @@ DOC_PATTERNS = [
 
 # Paths considered high-risk core code
 CORE_PATHS = [
-    "crates/goose/src/agents/",
-    "crates/goose/src/providers/",
-    "crates/goose-server/",
-    "crates/goose-cli/",
-    "crates/goose/src/session",
-    "crates/goose/src/permission",
+    "crates/leaf/src/agents/",
+    "crates/leaf/src/providers/",
+    "crates/leaf-server/",
+    "crates/leaf-cli/",
+    "crates/leaf/src/session",
+    "crates/leaf/src/permission",
 ]
 
 # Dependency lock files (safe to skip — lock files only, not manifests)

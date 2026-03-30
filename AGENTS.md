@@ -4,11 +4,11 @@
 
 ## Project Origin & Transformation
 
-Leaf is a **fork of the block/goose project** with the following key transformations:
+Leaf is a **fork of the block/leaf project** with the following key transformations:
 
 - **UI components removed**: All desktop/Electron UI code has been stripped
 - **V8 dependencies removed**: No JavaScript/V8 integration
-- **Naming changed**: All `goose`/`Goose` references renamed to `leaf`/`Leaf`
+- **Naming changed**: All `leaf`/`Leaf` references renamed to `leaf`/`Leaf`
 - **CLI-only focus**: Terminal-based interface only, no GUI
 
 ### What Was Removed
@@ -131,16 +131,16 @@ When contributing to Leaf, keep these CLI-only constraints in mind:
 - ✅ **Terminal Only**: All interaction through command line and TUI (Terminal UI)
 
 ### Naming rules
-- X  **NO Goose/goose**: All Goose/goose must be transformed to Leaf/leaf directly
+- X  **NO Leaf/leaf**: All Leaf/leaf must be transformed to Leaf/leaf directly
 
-### Upstream block/goose
+### Upstream block/leaf
 - ✅ **Upstream Synchronization**: An issue will be created to request merge upstream commits that can be fixed in PRs
 - ✅ **Commits Processing**: Each upstream commit can be adopted or ignored(if not CLI related), PR MUST commit each adopted upstream commit independently.
 - ✅ **Functional Focus**: NEVER cherry-pick any commit for simplicity, each upstream commit MUST be evaluated and merged carefully line by line
 
 ### Upstream Sync Workflow
 
-When syncing from upstream block/goose:
+When syncing from upstream block/leaf:
 
 1. **Create tracking issue** with commit range to analyze
 2. **List all commits**: `git log upstream/main --oneline 928f4ac46..59a96c986`
@@ -150,7 +150,7 @@ When syncing from upstream block/goose:
    - Mark as "Apply", "Skip", or "Review"
 4. **Update issue with analysis** before making changes
 5. **Apply commits individually** with 1:1 mapping to upstream commits
-6. **Rename goose→leaf** in any adapted code (scripts, env vars, binary names)
+6. **Rename leaf→leaf** in any adapted code (scripts, env vars, binary names)
 7. **Ask user to review** each commit before proceeding to next
 
 ### When to Stop and Ask
@@ -200,21 +200,21 @@ For feature flag changes:
 - [ ] Check with `rustls-tls` feature (default)
 - [ ] Check with `native-tls` feature if applicable
 
-### External Interface References That MUST Remain as "goose"
+### External Interface References That MUST Remain as "leaf"
 
-When renaming goose→leaf, certain references MUST be preserved because they represent **external interfaces** that Leaf must remain compatible with:
+When renaming leaf→leaf, certain references MUST be preserved because they represent **external interfaces** that Leaf must remain compatible with:
 
 | Category | Examples | Why Must Be Kept |
 |----------|----------|------------------|
-| **Databricks model names** | `goose-o3-mini`, `kgoose-gpt-4o`, `headless-goose-o3-mini` | Registered with Databricks API - renaming would cause API failures |
-| **ACP protocol method prefixes** | `_goose/session/get`, `_goose/session/list`, `_goose/acp-aware` | Wire protocol defined by upstream - clients/servers expect exact names |
-| **Upstream binary name** | `goose-acp-server` | Belongs to upstream project - cannot rename a binary that isn't ours |
-| **GitHub repository references** | `github.com/block/goose` | Upstream project's actual repository URL |
+| **Databricks model names** | `leaf_o3_placeholder-mini`, `kleaf_gpt_placeholder-4o`, `headless-leaf_o3_placeholder-mini` | Registered with Databricks API - renaming would cause API failures |
+| **ACP protocol method prefixes** | `_leaf_placeholder/session/get`, `_leaf_placeholder/session/list`, `_leaf_placeholder/acp-aware` | Wire protocol defined by upstream - clients/servers expect exact names |
+| **Upstream binary name** | `leaf_acp_server_placeholder` | Belongs to upstream project - cannot rename a binary that isn't ours |
+| **GitHub repository references** | `github_com_block_leaf_placeholder` | Upstream project's actual repository URL |
 
 **How to identify MUST-KEEP references:**
 ```bash
 # These patterns represent external interfaces - verify before renaming:
-grep -r "goose-o3\|kgoose-\|_goose/\|goose-acp-server\|github.com/block/goose" --include="*.rs"
+grep -r "leaf_o3_placeholder\|kleaf_placeholder\|_leaf_placeholder/\|leaf_acp_server_placeholder\|github_com_block_leaf_placeholder" --include="*.rs"
 ```
 
 ### Dependency Version Pinning
@@ -257,7 +257,7 @@ The `[patch.crates-io]` section in `Cargo.toml` causes Cargo to fetch git reposi
 ### Binary Names
 - **CLI**: `leaf` (main CLI binary)
 - **Server**: `leafd` (daemon/server binary)
-- **Legacy**: All references to `goose` or `goosed` renamed to `leaf`/`leafd`
+- **Legacy**: All references to `leaf` or `leafd` renamed to `leaf`/`leafd`
 
 ### TLS Feature Flags
 
@@ -292,36 +292,36 @@ The `download_cli.sh` script has its own naming conventions:
 - `LEAFD_CERT_FINGERPRINT` for TLS cert fingerprint output
 
 **Repository references:**
-- `https://github.com/LeafAI/Leaf` (not `block/goose`)
+- `https://github.com/LeafAI/Leaf` (not `block/leaf`)
 - `LeafAI/Leaf` as the repo identifier
 
 When adapting upstream shell script changes, always rename:
 - `LEAF_BIN_DIR` → `LEAF_BIN_DIR`
 - `GOOSED_CERT_FINGERPRINT` → `LEAFD_CERT_FINGERPRINT`
-- `block/goose` → `LeafAI/Leaf`
-- `goose` binary → `leaf` binary
-- `goose.exe` → `leaf.exe`
+- `block/leaf` → `LeafAI/Leaf`
+- `leaf` binary → `leaf` binary
+- `leaf.exe` → `leaf.exe`
 
-### When Cherry-Picking from Goose
+### When Cherry-Picking from Leaf
 
-When adapting commits from the upstream Goose project:
+When adapting commits from the upstream Leaf project:
 
 1. **Skip UI commits**: Any commit touching `ui/desktop/` or `ui/text/` can be skipped
 2. **Skip V8/code-mode**: Remove any code-mode or V8-related changes
-3. **Rename imports**: Change `goose::` to `leaf::` throughout
-4. **Update binary names**: Change `goose` to `leaf`, `goosed` to `leafd`
+3. **Rename imports**: Change `leaf::` to `leaf::` throughout
+4. **Update binary names**: Change `leaf` to `leaf`, `leafd` to `leafd`
 5. **Adapt provider changes**: Provider updates are usually safe to cherry-pick
 6. **Review agent changes**: Core agent logic is usually applicable
 
 ### File and Folder Naming Constraints
 
-**CRITICAL: NO files or folders should contain "goose" in their names.**
+**CRITICAL: NO files or folders should contain "leaf" in their names.**
 
-❌ **NEVER allow files/directories with "goose" in the name:**
-- Directories like: `goose_apps/`, `goose_tools/`, `goose_data/`
-- Files like: `goose_config.rs`, `goose_utils.py`, `.goosehints`
-- Configuration files: `goose-self-test.yaml`, `goose-config.json`
-- Scripts: `goose-db-helper.sh`, `goose_setup.py`
+❌ **NEVER allow files/directories with "leaf" in the name:**
+- Directories like: `leaf_apps/`, `leaf_tools/`, `leaf_data/`
+- Files like: `leaf_config.rs`, `leaf_utils.py`, `.leafhints`
+- Configuration files: `leaf-self-test.yaml`, `leaf-config.json`
+- Scripts: `leaf-db-helper.sh`, `leaf_setup.py`
 
 ✅ **ALWAYS use "leaf" instead:**
 - Directories: `leaf_apps/`, `leaf_tools/`, `leaf_data/`
@@ -329,38 +329,38 @@ When adapting commits from the upstream Goose project:
 - Configuration files: `leaf-self-test.yaml`, `leaf-config.json`
 - Scripts: `leaf-db-helper.sh`, `leaf_setup.py`
 
-**When you find files/folders with "goose" in the name:**
+**When you find files/folders with "leaf" in the name:**
 1. **Rename immediately** - Use `mv oldname newname` or `git mv`
 2. **Update all references** - Search for code references to the old name
-3. **Update imports** - Change `crate::goose_apps` to `crate::leaf_apps`
-4. **Update include_str!** - Change `include_str!("../goose_apps/...")` to `include_str!("../leaf_apps/...")`
+3. **Update imports** - Change `crate::leaf_apps` to `crate::leaf_apps`
+4. **Update include_str!** - Change `include_str!("../leaf_apps/...")` to `include_str!("../leaf_apps/...")`
 5. **Test compilation** - Run `cargo check` to ensure nothing broke
 6. **Commit the rename** - Make it a separate commit for clarity
 
 **Common patterns to watch for:**
 ```bash
-# Find files with goose in the name
-find . -type f -name "*goose*" | grep -v ".git"
-find . -type d -name "*goose*" | grep -v ".git"
+# Find files with leaf in the name
+find . -type f -name "*leaf*" | grep -v ".git"
+find . -type d -name "*leaf*" | grep -v ".git"
 
-# Common files that often have goose names
-*.snap files: goose__agents__*.snap → leaf__agents__*.snap
-Docs: goose_doc_guide.md → leaf_doc_guide.md
-Scripts: goose-*.sh → leaf-*.sh
-Config: .goose* → .leaf*, goose-*.yaml → leaf-*.yaml
+# Common files that often have leaf names
+*.snap files: leaf__agents__*.snap → leaf__agents__*.snap
+Docs: leaf_doc_guide.md → leaf_doc_guide.md
+Scripts: leaf-*.sh → leaf-*.sh
+Config: .leaf* → .leaf*, leaf-*.yaml → leaf-*.yaml
 ```
 
 ### Package and File Naming Conventions
 
-All package names and references must be changed from `goose` to `leaf`:
+All package names and references must be changed from `leaf` to `leaf`:
 
 **Rust Crate Names:**
 ```toml
-# Old (Goose)
-crates/goose
-crates/goose-cli
-crates/goose-server
-crates/goose-acp
+# Old (Leaf)
+crates/leaf
+crates/leaf-cli
+crates/leaf-server
+crates/leaf-acp
 
 # New (Leaf)
 crates/leaf
@@ -371,9 +371,9 @@ crates/leaf-acp
 
 **NPM Packages (npm/ directory):**
 ```json
-// Old (Goose)
-"@block/goose-acp-server-linux-x64"
-"@block/goose-acp-server-darwin-arm64"
+// Old (Leaf)
+"@block/leaf_acp_server_placeholder-linux-x64"
+"@block/leaf_acp_server_placeholder-darwin-arm64"
 
 // New (Leaf)
 "@block/leaf-binary-linux-x64"
@@ -382,10 +382,10 @@ crates/leaf-acp
 
 **Binary Names:**
 ```
-# Old (Goose)
-bin/goose           # CLI binary
-bin/goose.exe       # Windows CLI
-goosed              # Server binary
+# Old (Leaf)
+bin/leaf           # CLI binary
+bin/leaf.exe       # Windows CLI
+leafd              # Server binary
 
 # New (Leaf)
 bin/leaf            # CLI binary
@@ -395,10 +395,10 @@ leafd               # Server binary
 
 **Configuration Files:**
 ```yaml
-# Old (Goose)
-.goose/
-.goose/config.yaml
-goose-self-test.yaml
+# Old (Leaf)
+.leaf/
+.leaf/config.yaml
+leaf-self-test.yaml
 
 # New (Leaf)
 .leaf/
@@ -408,10 +408,10 @@ leaf-self-test.yaml
 
 **Import Statements:**
 ```rust
-// Old (Goose)
-use goose::config::GooseMode;
-use goose::providers::create;
-use goose::agents::Agent;
+// Old (Leaf)
+use leaf::config::LeafMode;
+use leaf::providers::create;
+use leaf::agents::Agent;
 
 // New (Leaf)
 use leaf::config::LeafMode;
@@ -421,8 +421,8 @@ use leaf::agents::Agent;
 
 **GitHub Repository References:**
 ```
-# Old (Goose)
-https://github.com/block/goose
+# Old (Leaf)
+https://github_com_block_leaf_placeholder
 
 # New (Leaf)
 https://github.com/LeafAI/Leaf

@@ -40,11 +40,11 @@
 ## Project-Specific Context
 
 - This is a Rust project using cargo workspaces
-- Core crates: `goose` (agent logic), `goose-cli` (CLI), `goose-server` (backend), `goose-mcp` (MCP servers)
+- Core crates: `leaf` (agent logic), `leaf-cli` (CLI), `leaf-server` (backend), `leaf-mcp` (MCP servers)
 - Error handling: Use `anyhow::Result`, not `unwrap()` in production code
 - Async runtime: tokio
 - MCP protocol implementations require extra scrutiny
-- Naming convention: In `documentation/docs` and `documentation/blog`, always refer to the project as "goose" (lowercase), never "Goose" (even at the start of sentences)
+- Naming convention: In `documentation/docs` and `documentation/blog`, always refer to the project as "leaf" (lowercase), never "Leaf" (even at the start of sentences)
 
 ## CI Pipeline Context
 

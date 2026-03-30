@@ -6,7 +6,7 @@ source "$LIB_DIR/test_providers_lib.sh"
 echo "Mode: normal (direct tool calls)"
 echo ""
 
-LEAF_BIN=$(build_goose)
+LEAF_BIN=$(build_leaf)
 BUILTINS="developer"
 
 mkdir -p target

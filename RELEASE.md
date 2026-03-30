@@ -2,21 +2,21 @@
 
 You'll generally create one of two release types: a regular feature release (minor version bump like 1.20) or a bug-fixing patch release (patch version bump like 1.20.1). 
 
-Regular releases start on main, while patch releases start with an existing release tag. goose uses GitHub actions to automate the creation of release branches. The actual releases are triggered by tags.
+Regular releases start on main, while patch releases start with an existing release tag. leaf uses GitHub actions to automate the creation of release branches. The actual releases are triggered by tags.
 For bug-fixing releases, you will cherry-pick fixes into that branch, test, and then release from it. 
 
 ## Minor version releases
 
-These are typically done once per week. There is an [action](https://github.com/block/goose/actions/workflows/minor-release.yaml) that cuts the branch every Tuesday, but it can also be triggered manually. Commits from main can be cherry-picked into this branch as needed before release.
+These are typically done once per week. There is an [action](https://github_com_block_leaf_placeholder/actions/workflows/minor-release.yaml) that cuts the branch every Tuesday, but it can also be triggered manually. Commits from main can be cherry-picked into this branch as needed before release.
 
-To trigger the release, find [the corresponding PR](https://github.com/block/goose/pulls?q=is%3Apr+%22chore%28release%29%22+%22%28minor%29%22+author%3Aapp%2Fgithub-actions+) and follow the instructions in the PR description.
+To trigger the release, find [the corresponding PR](https://github_com_block_leaf_placeholder/pulls?q=is%3Apr+%22chore%28release%29%22+%22%28minor%29%22+author%3Aapp%2Fgithub-actions+) and follow the instructions in the PR description.
 
 ## Patch version releases
 
 Minor and patch releases both trigger the creation of a branch for a follow-on patch release. These branches can be used to create patch releases, or can be safely ignored/closed.
 You can cherry pick fixes into this branch. 
 
-To trigger the release, find [the corresponding PR](https://github.com/block/goose/pulls?q=is%3Apr+%22chore%28release%29%22+%22%28patch%29%22+author%3Aapp%2Fgithub-actions+) and follow the instructions in the PR description.
+To trigger the release, find [the corresponding PR](https://github_com_block_leaf_placeholder/pulls?q=is%3Apr+%22chore%28release%29%22+%22%28patch%29%22+author%3Aapp%2Fgithub-actions+) and follow the instructions in the PR description.
 
 
 ## High level release flow:

@@ -5,8 +5,8 @@ export interface AgentConfig {
   extensions?: string[];
   /** Stdio extension commands (for custom MCP servers) */
   stdio?: string[];
-  /** Path to goose binary (default: "goose") */
-  "goose-bin"?: string;
+  /** Path to leaf binary (default: "leaf") */
+  "leaf-bin"?: string;
   temperature?: number;
   maxTokens?: number;
 }

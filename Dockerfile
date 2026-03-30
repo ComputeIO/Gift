@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-# goose CLI and Server Docker Image
+# leaf CLI and Server Docker Image
 # Multi-stage build for minimal final image size
 
 # Build stage
@@ -31,7 +31,7 @@ ENV CARGO_PROFILE_RELEASE_LTO=true
 ENV CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1
 ENV CARGO_PROFILE_RELEASE_OPT_LEVEL=z
 ENV CARGO_PROFILE_RELEASE_STRIP=true
-RUN cargo build --release --package goose-cli
+RUN cargo build --release --package leaf-cli
 
 # Runtime stage - minimal Debian
 FROM debian:bookworm-slim@sha256:b1a741487078b369e78119849663d7f1a5341ef2768798f7b7406c4240f86aef
@@ -50,27 +50,27 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy binary from builder
-COPY --from=builder /build/target/release/goose /usr/local/bin/goose
+COPY --from=builder /build/target/release/leaf /usr/local/bin/leaf
 
 # Create non-root user
-RUN useradd -m -u 1000 -s /bin/bash goose && \
-    mkdir -p /home/goose/.config/goose && \
-    chown -R goose:goose /home/goose
+RUN useradd -m -u 1000 -s /bin/bash leaf && \
+    mkdir -p /home/leaf/.config/leaf && \
+    chown -R leaf:leaf /home/leaf
 
 # Set up environment
 ENV PATH="/usr/local/bin:${PATH}"
-ENV HOME="/home/goose"
+ENV HOME="/home/leaf"
 
 # Switch to non-root user
-USER goose
-WORKDIR /home/goose
+USER leaf
+WORKDIR /home/leaf
 
-# Default to goose CLI
-ENTRYPOINT ["/usr/local/bin/goose"]
+# Default to leaf CLI
+ENTRYPOINT ["/usr/local/bin/leaf"]
 CMD ["--help"]
 
 # Labels for metadata
-LABEL org.opencontainers.image.title="goose"
-LABEL org.opencontainers.image.description="goose CLI"
+LABEL org.opencontainers.image.title="leaf"
+LABEL org.opencontainers.image.description="leaf CLI"
 LABEL org.opencontainers.image.vendor="Block"
-LABEL org.opencontainers.image.source="https://github.com/block/goose"
+LABEL org.opencontainers.image.source="https://github_com_block_leaf_placeholder"

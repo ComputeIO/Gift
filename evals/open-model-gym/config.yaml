@@ -41,16 +41,16 @@ models:
 # =============================================================================
 # Each runner has its own binary, extensions/config, and isolated config directory
 runners:
-  # - name: goose
-  #   type: goose
-  #   bin: goose
+  # - name: leaf
+  #   type: leaf
+  #   bin: leaf
   #   extensions: [developer]
   #   stdio:
   #     - node mcp-harness/dist/index.js
 
-  - name: goose-full
-    type: goose
-    bin: goose
+  - name: leaf-full
+    type: leaf
+    bin: leaf
     extensions: [developer, todo, skills, code_execution, extensionmanager]
     stdio:
       - node mcp-harness/dist/index.js
@@ -80,6 +80,6 @@ matrix:
   - scenario: everyday-app-automation
   - scenario: file-editing
 
-  # Multi-turn: goose and pi only (opencode doesn't support session continuation)
+  # Multi-turn: leaf and pi only (opencode doesn't support session continuation)
   - scenario: multi-turn-edit
-    runners: [goose-full]
+    runners: [leaf-full]
