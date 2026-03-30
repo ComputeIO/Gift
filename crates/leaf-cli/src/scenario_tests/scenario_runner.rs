@@ -54,7 +54,7 @@ pub async fn run_scenario<F>(
 where
     F: Fn(&ScenarioResult) -> Result<()> + Send + Sync + 'static,
 {
-    if let Ok(only_provider) = std::env::var("GOOSE_TEST_PROVIDER") {
+    if let Ok(only_provider) = std::env::var("LEAF_TEST_PROVIDER") {
         let active_providers = get_provider_configs();
         let config = active_providers
             .iter()

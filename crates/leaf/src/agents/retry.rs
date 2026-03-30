@@ -31,10 +31,10 @@ pub enum RetryResult {
 }
 
 /// Environment variable for configuring retry timeout globally
-const GOOSE_RECIPE_RETRY_TIMEOUT_SECONDS: &str = "GOOSE_RECIPE_RETRY_TIMEOUT_SECONDS";
+const LEAF_RECIPE_RETRY_TIMEOUT_SECONDS: &str = "LEAF_RECIPE_RETRY_TIMEOUT_SECONDS";
 
 /// Environment variable for configuring on_failure timeout globally
-const GOOSE_RECIPE_ON_FAILURE_TIMEOUT_SECONDS: &str = "GOOSE_RECIPE_ON_FAILURE_TIMEOUT_SECONDS";
+const LEAF_RECIPE_ON_FAILURE_TIMEOUT_SECONDS: &str = "LEAF_RECIPE_ON_FAILURE_TIMEOUT_SECONDS";
 
 /// Manages retry state and operations for agent execution
 #[derive(Debug)]
@@ -168,7 +168,7 @@ fn get_retry_timeout(retry_config: &RetryConfig) -> Duration {
         .timeout_seconds
         .or_else(|| {
             let config = Config::global();
-            config.get_param(GOOSE_RECIPE_RETRY_TIMEOUT_SECONDS).ok()
+            config.get_param(LEAF_RECIPE_RETRY_TIMEOUT_SECONDS).ok()
         })
         .unwrap_or(DEFAULT_RETRY_TIMEOUT_SECONDS);
 
@@ -183,7 +183,7 @@ fn get_on_failure_timeout(retry_config: &RetryConfig) -> Duration {
         .or_else(|| {
             let config = Config::global();
             config
-                .get_param(GOOSE_RECIPE_ON_FAILURE_TIMEOUT_SECONDS)
+                .get_param(LEAF_RECIPE_ON_FAILURE_TIMEOUT_SECONDS)
                 .ok()
         })
         .unwrap_or(DEFAULT_ON_FAILURE_TIMEOUT_SECONDS);
@@ -235,13 +235,13 @@ pub async fn execute_shell_command(
         let mut cmd = if cfg!(target_os = "windows") {
             let mut cmd = Command::new("cmd");
             cmd.args(["/C", command]);
-            cmd.env("GOOSE_TERMINAL", "1");
+            cmd.env("LEAF_TERMINAL", "1");
             cmd.env("AGENT", "leaf");
             cmd
         } else {
             let mut cmd = Command::new("sh");
             cmd.args(["-c", command]);
-            cmd.env("GOOSE_TERMINAL", "1");
+            cmd.env("LEAF_TERMINAL", "1");
             cmd.env("AGENT", "leaf");
             cmd
         };

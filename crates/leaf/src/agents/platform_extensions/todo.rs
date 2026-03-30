@@ -69,7 +69,7 @@ impl TodoClient {
             .to_string();
 
         let char_count = content.chars().count();
-        let max_chars = std::env::var("GOOSE_TODO_MAX_CHARS")
+        let max_chars = std::env::var("LEAF_TODO_MAX_CHARS")
             .ok()
             .and_then(|s| s.parse().ok())
             .unwrap_or(50_000);

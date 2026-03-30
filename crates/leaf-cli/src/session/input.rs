@@ -89,7 +89,7 @@ impl rustyline::ConditionalEventHandler for CtrlCHandler {
 
 pub fn get_newline_key() -> char {
     Config::global()
-        .get_param::<String>("GOOSE_CLI_NEWLINE_KEY")
+        .get_param::<String>("LEAF_CLI_NEWLINE_KEY")
         .ok()
         .and_then(|s| s.chars().next())
         .map(|c| c.to_ascii_lowercase())
@@ -497,7 +497,7 @@ Inline Shell:
 
 Navigation:
 Ctrl+C - Clear current line if text is entered, otherwise exit the session
-Ctrl+{newline_key} - Add a newline (configurable via GOOSE_CLI_NEWLINE_KEY)
+Ctrl+{newline_key} - Add a newline (configurable via LEAF_CLI_NEWLINE_KEY)
 Up/Down arrows - Navigate through command history"
     );
 }

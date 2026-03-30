@@ -1,4 +1,4 @@
-IMPORTANT: currently GOOSE_ALLOWLIST is used in main.ts in ui/desktop, and not in goose-server. The following is for reference when it is used on the server side for launch time enforcement.
+IMPORTANT: currently LEAF_ALLOWLIST is used in main.ts in ui/desktop, and not in goose-server. The following is for reference when it is used on the server side for launch time enforcement.
 
 # goose Extension Allowlist
 
@@ -9,29 +9,29 @@ By default, goose will let you run any MCP via any command, which isn't always d
 
 1. When enabled, goose will only allow execution of commands that match entries in the allowlist
 2. Commands not in the allowlist will be rejected with an error message
-3. The allowlist is fetched from a URL specified by the `GOOSE_ALLOWLIST` environment variable and cached while running.
+3. The allowlist is fetched from a URL specified by the `LEAF_ALLOWLIST` environment variable and cached while running.
 
 ## Setup
 
-Set the `GOOSE_ALLOWLIST` environment variable to the URL of your allowlist YAML file:
+Set the `LEAF_ALLOWLIST` environment variable to the URL of your allowlist YAML file:
 
 ```bash
-export GOOSE_ALLOWLIST=https://example.com/goose-allowlist.yaml
+export LEAF_ALLOWLIST=https://example.com/goose-allowlist.yaml
 ```
 
 If this environment variable is not set, no allowlist restrictions will be applied (all commands will be allowed).
 
 ## Bypassing the Allowlist
 
-In certain development or testing scenarios, you may need to bypass the allowlist restrictions. You can do this by setting the `GOOSE_ALLOWLIST_BYPASS` environment variable to `true`:
+In certain development or testing scenarios, you may need to bypass the allowlist restrictions. You can do this by setting the `LEAF_ALLOWLIST_BYPASS` environment variable to `true`:
 
 ```bash
 # For the GUI, you can have it show a warning instead of blocking (but it will always show a warning):
-export GOOSE_ALLOWLIST_WARNING=true
+export LEAF_ALLOWLIST_WARNING=true
 ```
 
 
-When this environment variable is set to `true` (case-insensitive), the allowlist check will be bypassed and all commands will be allowed, even if the `GOOSE_ALLOWLIST` environment variable is set.
+When this environment variable is set to `true` (case-insensitive), the allowlist check will be bypassed and all commands will be allowed, even if the `LEAF_ALLOWLIST` environment variable is set.
 
 ## Allowlist File Format
 

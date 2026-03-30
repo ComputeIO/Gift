@@ -108,7 +108,7 @@ impl CodexProvider {
         std::fs::create_dir_all(&image_dir).ok();
         let (prompt, temp_files) = prepare_input(system, messages, &image_dir)?;
 
-        if std::env::var("GOOSE_CODEX_DEBUG").is_ok() {
+        if std::env::var("LEAF_CODEX_DEBUG").is_ok() {
             println!("=== CODEX PROVIDER DEBUG ===");
             println!("Command: {:?}", self.command);
             println!("Model: {}", self.model.model_name);
@@ -134,7 +134,7 @@ impl CodexProvider {
         cmd.arg("exec");
 
         // Only pass model parameter if it's in the known models list
-        // This allows users to set GOOSE_PROVIDER=codex without needing to specify a model
+        // This allows users to set LEAF_PROVIDER=codex without needing to specify a model
         if CODEX_KNOWN_MODELS.contains(&self.model.model_name.as_str()) {
             cmd.arg("-m").arg(&self.model.model_name);
         }

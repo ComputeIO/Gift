@@ -69,19 +69,19 @@ jobs:
         run: |
           mkdir -p /home/runner/.local/bin
           curl -fsSL https://github.com/block/leaf/releases/download/stable/download_cli.sh \
-            | CONFIGURE=false GOOSE_BIN_DIR=/home/runner/.local/bin bash
+            | CONFIGURE=false LEAF_BIN_DIR=/home/runner/.local/bin bash
           echo "/home/runner/.local/bin" >> $GITHUB_PATH
           goose --version
       
       - name: Configure goose for CI
         env:
-          GOOSE_PROVIDER: ${{ vars.GOOSE_PROVIDER || 'openai' }}
-          GOOSE_MODEL: ${{ vars.GOOSE_MODEL || 'gpt-4o' }}
+          LEAF_PROVIDER: ${{ vars.LEAF_PROVIDER || 'openai' }}
+          LEAF_MODEL: ${{ vars.LEAF_MODEL || 'gpt-4o' }}
         run: |
           mkdir -p ~/.config/goose
           cat <<EOF > ~/.config/goose/config.yaml
-          GOOSE_PROVIDER: $GOOSE_PROVIDER
-          GOOSE_MODEL: $GOOSE_MODEL
+          LEAF_PROVIDER: $LEAF_PROVIDER
+          LEAF_MODEL: $LEAF_MODEL
           keyring: false
           EOF
           echo "✅ Created goose config:"
@@ -131,7 +131,7 @@ jobs:
         timeout-minutes: 15
         working-directory: documentation/automation/recipe-schema-tracking
         env:
-          GOOSE_REPO: ${{ github.workspace }}
+          LEAF_REPO: ${{ github.workspace }}
         run: |
           set -o pipefail  # Ensure pipeline failures are caught
           
@@ -155,8 +155,8 @@ jobs:
           RECIPE_REF_PATH: ${{ github.workspace }}/documentation/docs/guides/recipes/recipe-reference.md
         run: |
           echo "🔍 Environment diagnostics:"
-          echo "  GOOSE_PROVIDER: $GOOSE_PROVIDER"
-          echo "  GOOSE_MODEL: $GOOSE_MODEL"
+          echo "  LEAF_PROVIDER: $LEAF_PROVIDER"
+          echo "  LEAF_MODEL: $LEAF_MODEL"
           echo "  OPENAI_API_KEY: ${OPENAI_API_KEY:0:8}..." # Show first 8 chars only
           echo "  RECIPE_REF_PATH: $RECIPE_REF_PATH"
           echo "  HOME: $HOME"

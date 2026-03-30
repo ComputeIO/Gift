@@ -1,4 +1,4 @@
-use crate::recipes::github_recipe::GOOSE_RECIPE_GITHUB_REPO_CONFIG_KEY;
+use crate::recipes::github_recipe::LEAF_RECIPE_GITHUB_REPO_CONFIG_KEY;
 use crate::session::split_quoted;
 use cliclack::spinner;
 use console::style;
@@ -553,7 +553,7 @@ fn try_store_secret(config: &Config, key_name: &str, value: String) -> anyhow::R
         Err(ConfigError::FallbackToFileStorage) => Ok(true),
         Err(e) => {
             cliclack::outro(style(format!(
-                "Failed to store {} securely: {}. Please ensure your system's secure storage is accessible. Alternatively you can run with GOOSE_DISABLE_KEYRING=true or set the key in your environment variables",
+                "Failed to store {} securely: {}. Please ensure your system's secure storage is accessible. Alternatively you can run with LEAF_DISABLE_KEYRING=true or set the key in your environment variables",
                 key_name, e
             )).on_red().white())?;
             Ok(false)
@@ -769,7 +769,7 @@ pub async fn configure_provider_dialog() -> anyhow::Result<bool> {
         Ok(models) if !models.is_empty() => select_model_from_list(&models, provider_meta)?,
         Ok(_) => {
             let default_model =
-                std::env::var("GOOSE_MODEL").unwrap_or(provider_meta.default_model.clone());
+                std::env::var("LEAF_MODEL").unwrap_or(provider_meta.default_model.clone());
             cliclack::input("Enter a model from that provider:")
                 .default_input(&default_model)
                 .interact()?
@@ -855,10 +855,10 @@ pub async fn configure_provider_dialog() -> anyhow::Result<bool> {
     let spin = spinner();
     spin.start("Checking your configuration...");
 
-    let toolshim_enabled = std::env::var("GOOSE_TOOLSHIM")
+    let toolshim_enabled = std::env::var("LEAF_TOOLSHIM")
         .map(|val| val == "1" || val.to_lowercase() == "true")
         .unwrap_or(false);
-    let toolshim_model = std::env::var("GOOSE_TOOLSHIM_OLLAMA_MODEL").ok();
+    let toolshim_model = std::env::var("LEAF_TOOLSHIM_OLLAMA_MODEL").ok();
 
     match test_provider_configuration(provider_name, &model, toolshim_enabled, toolshim_model).await
     {
@@ -1366,8 +1366,8 @@ pub async fn configure_settings_dialog() -> anyhow::Result<()> {
 pub fn configure_leaf_mode_dialog() -> anyhow::Result<()> {
     let config = Config::global();
 
-    if std::env::var("GOOSE_MODE").is_ok() {
-        let _ = cliclack::log::info("Notice: GOOSE_MODE environment variable is set and will override the configuration here.");
+    if std::env::var("LEAF_MODE").is_ok() {
+        let _ = cliclack::log::info("Notice: LEAF_MODE environment variable is set and will override the configuration here.");
     }
 
     let mode = cliclack::select("Which leaf mode would you like to configure?")
@@ -1407,8 +1407,8 @@ pub fn configure_leaf_mode_dialog() -> anyhow::Result<()> {
 pub fn configure_telemetry_dialog() -> anyhow::Result<()> {
     let config = Config::global();
 
-    if std::env::var("GOOSE_TELEMETRY_OFF").is_ok() {
-        let _ = cliclack::log::info("Notice: GOOSE_TELEMETRY_OFF environment variable is set and will override the configuration here.");
+    if std::env::var("LEAF_TELEMETRY_OFF").is_ok() {
+        let _ = cliclack::log::info("Notice: LEAF_TELEMETRY_OFF environment variable is set and will override the configuration here.");
     }
 
     let current_choice = get_telemetry_choice();
@@ -1438,8 +1438,8 @@ pub fn configure_telemetry_dialog() -> anyhow::Result<()> {
 pub fn configure_tool_output_dialog() -> anyhow::Result<()> {
     let config = Config::global();
 
-    if std::env::var("GOOSE_CLI_MIN_PRIORITY").is_ok() {
-        let _ = cliclack::log::info("Notice: GOOSE_CLI_MIN_PRIORITY environment variable is set and will override the configuration here.");
+    if std::env::var("LEAF_CLI_MIN_PRIORITY").is_ok() {
+        let _ = cliclack::log::info("Notice: LEAF_CLI_MIN_PRIORITY environment variable is set and will override the configuration here.");
     }
     let tool_log_level = cliclack::select("Which tool output would you like to show?")
         .item("high", "High Importance", "")
@@ -1449,15 +1449,15 @@ pub fn configure_tool_output_dialog() -> anyhow::Result<()> {
 
     match tool_log_level {
         "high" => {
-            config.set_param("GOOSE_CLI_MIN_PRIORITY", 0.8)?;
+            config.set_param("LEAF_CLI_MIN_PRIORITY", 0.8)?;
             cliclack::outro("Showing tool output of high importance only.")?;
         }
         "medium" => {
-            config.set_param("GOOSE_CLI_MIN_PRIORITY", 0.2)?;
+            config.set_param("LEAF_CLI_MIN_PRIORITY", 0.2)?;
             cliclack::outro("Showing tool output of medium importance.")?;
         }
         "all" => {
-            config.set_param("GOOSE_CLI_MIN_PRIORITY", 0.0)?;
+            config.set_param("LEAF_CLI_MIN_PRIORITY", 0.0)?;
             cliclack::outro("Showing all tool output.")?;
         }
         _ => unreachable!(),
@@ -1469,11 +1469,11 @@ pub fn configure_tool_output_dialog() -> anyhow::Result<()> {
 pub fn configure_keyring_dialog() -> anyhow::Result<()> {
     let config = Config::global();
 
-    if std::env::var("GOOSE_DISABLE_KEYRING").is_ok() {
-        let _ = cliclack::log::info("Notice: GOOSE_DISABLE_KEYRING environment variable is set and will override the configuration here.");
+    if std::env::var("LEAF_DISABLE_KEYRING").is_ok() {
+        let _ = cliclack::log::info("Notice: LEAF_DISABLE_KEYRING environment variable is set and will override the configuration here.");
     }
 
-    let currently_disabled = config.get_param::<String>("GOOSE_DISABLE_KEYRING").is_ok();
+    let currently_disabled = config.get_param::<String>("LEAF_DISABLE_KEYRING").is_ok();
 
     let current_status = if currently_disabled {
         "Disabled (using file-based storage)"
@@ -1500,14 +1500,14 @@ pub fn configure_keyring_dialog() -> anyhow::Result<()> {
     match storage_option {
         "keyring" => {
             // Set to empty string to enable keyring (absence or empty = enabled)
-            config.set_param("GOOSE_DISABLE_KEYRING", Value::String("".to_string()))?;
+            config.set_param("LEAF_DISABLE_KEYRING", Value::String("".to_string()))?;
             cliclack::outro("Secret storage set to system keyring (secure)")?;
             let _ =
                 cliclack::log::info("You may need to restart leaf for this change to take effect");
         }
         "file" => {
             // Set the disable flag to use file storage
-            config.set_param("GOOSE_DISABLE_KEYRING", Value::String("true".to_string()))?;
+            config.set_param("LEAF_DISABLE_KEYRING", Value::String("true".to_string()))?;
             cliclack::outro(
                 "Secret storage set to file (~/.config/leaf/secrets.yaml). Keep this file secure!",
             )?;
@@ -1731,7 +1731,7 @@ pub async fn configure_tool_permissions_dialog() -> anyhow::Result<()> {
 }
 
 fn configure_recipe_dialog() -> anyhow::Result<()> {
-    let key_name = GOOSE_RECIPE_GITHUB_REPO_CONFIG_KEY;
+    let key_name = LEAF_RECIPE_GITHUB_REPO_CONFIG_KEY;
     let config = Config::global();
     let default_recipe_repo = std::env::var(key_name)
         .ok()
@@ -1754,7 +1754,7 @@ fn configure_recipe_dialog() -> anyhow::Result<()> {
 pub fn configure_max_turns_dialog() -> anyhow::Result<()> {
     let config = Config::global();
 
-    let current_max_turns: u32 = config.get_param("GOOSE_MAX_TURNS").unwrap_or(1000);
+    let current_max_turns: u32 = config.get_param("LEAF_MAX_TURNS").unwrap_or(1000);
 
     let max_turns_input: String =
         cliclack::input("Set maximum number of agent turns without user input:")
@@ -1773,7 +1773,7 @@ pub fn configure_max_turns_dialog() -> anyhow::Result<()> {
             .interact()?;
 
     let max_turns: u32 = max_turns_input.parse()?;
-    config.set_param("GOOSE_MAX_TURNS", max_turns)?;
+    config.set_param("LEAF_MAX_TURNS", max_turns)?;
 
     cliclack::outro(format!(
         "Set maximum turns to {} - leaf will ask for input after {} consecutive actions",

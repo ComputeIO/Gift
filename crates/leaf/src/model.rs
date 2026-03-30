@@ -18,9 +18,9 @@ struct PredefinedModel {
 
 fn get_predefined_models() -> Vec<PredefinedModel> {
     static PREDEFINED_MODELS: Lazy<Vec<PredefinedModel>> =
-        Lazy::new(|| match std::env::var("GOOSE_PREDEFINED_MODELS") {
+        Lazy::new(|| match std::env::var("LEAF_PREDEFINED_MODELS") {
             Ok(json_str) => serde_json::from_str(&json_str).unwrap_or_else(|e| {
-                tracing::warn!("Failed to parse GOOSE_PREDEFINED_MODELS: {}", e);
+                tracing::warn!("Failed to parse LEAF_PREDEFINED_MODELS: {}", e);
                 Vec::new()
             }),
             Err(_) => Vec::new(),
@@ -82,8 +82,8 @@ impl ModelConfig {
             } else {
                 None
             }
-        } else if let Ok(val) = std::env::var("GOOSE_CONTEXT_LIMIT") {
-            Some(Self::validate_context_limit(&val, "GOOSE_CONTEXT_LIMIT")?)
+        } else if let Ok(val) = std::env::var("LEAF_CONTEXT_LIMIT") {
+            Some(Self::validate_context_limit(&val, "LEAF_CONTEXT_LIMIT")?)
         } else {
             None
         };
@@ -154,17 +154,17 @@ impl ModelConfig {
     }
 
     fn parse_temperature() -> Result<Option<f32>, ConfigError> {
-        if let Ok(val) = std::env::var("GOOSE_TEMPERATURE") {
+        if let Ok(val) = std::env::var("LEAF_TEMPERATURE") {
             let temp = val.parse::<f32>().map_err(|_| {
                 ConfigError::InvalidValue(
-                    "GOOSE_TEMPERATURE".to_string(),
+                    "LEAF_TEMPERATURE".to_string(),
                     val.clone(),
                     "must be a valid number".to_string(),
                 )
             })?;
             if temp < 0.0 {
                 return Err(ConfigError::InvalidRange(
-                    "GOOSE_TEMPERATURE".to_string(),
+                    "LEAF_TEMPERATURE".to_string(),
                     val,
                 ));
             }
@@ -195,12 +195,12 @@ impl ModelConfig {
     }
 
     fn parse_toolshim() -> Result<bool, ConfigError> {
-        if let Ok(val) = std::env::var("GOOSE_TOOLSHIM") {
+        if let Ok(val) = std::env::var("LEAF_TOOLSHIM") {
             match val.to_lowercase().as_str() {
                 "1" | "true" | "yes" | "on" => Ok(true),
                 "0" | "false" | "no" | "off" => Ok(false),
                 _ => Err(ConfigError::InvalidValue(
-                    "GOOSE_TOOLSHIM".to_string(),
+                    "LEAF_TOOLSHIM".to_string(),
                     val,
                     "must be one of: 1, true, yes, on, 0, false, no, off".to_string(),
                 )),
@@ -211,9 +211,9 @@ impl ModelConfig {
     }
 
     fn parse_toolshim_model() -> Result<Option<String>, ConfigError> {
-        match std::env::var("GOOSE_TOOLSHIM_OLLAMA_MODEL") {
+        match std::env::var("LEAF_TOOLSHIM_OLLAMA_MODEL") {
             Ok(val) if val.trim().is_empty() => Err(ConfigError::InvalidValue(
-                "GOOSE_TOOLSHIM_OLLAMA_MODEL".to_string(),
+                "LEAF_TOOLSHIM_OLLAMA_MODEL".to_string(),
                 val,
                 "cannot be empty if set".to_string(),
             )),
@@ -365,10 +365,10 @@ mod tests {
     fn test_model_config_with_max_tokens_env() {
         let _guard = env_lock::lock_env([
             ("LEAF_MAX_TOKENS", Some("8192")),
-            ("GOOSE_TEMPERATURE", None::<&str>),
-            ("GOOSE_CONTEXT_LIMIT", None::<&str>),
-            ("GOOSE_TOOLSHIM", None::<&str>),
-            ("GOOSE_TOOLSHIM_OLLAMA_MODEL", None::<&str>),
+            ("LEAF_TEMPERATURE", None::<&str>),
+            ("LEAF_CONTEXT_LIMIT", None::<&str>),
+            ("LEAF_TOOLSHIM", None::<&str>),
+            ("LEAF_TOOLSHIM_OLLAMA_MODEL", None::<&str>),
         ]);
         let config = ModelConfig::new("test-model").unwrap();
         assert_eq!(config.max_tokens, Some(8192));
@@ -378,10 +378,10 @@ mod tests {
     fn test_model_config_without_max_tokens_env() {
         let _guard = env_lock::lock_env([
             ("LEAF_MAX_TOKENS", None::<&str>),
-            ("GOOSE_TEMPERATURE", None::<&str>),
-            ("GOOSE_CONTEXT_LIMIT", None::<&str>),
-            ("GOOSE_TOOLSHIM", None::<&str>),
-            ("GOOSE_TOOLSHIM_OLLAMA_MODEL", None::<&str>),
+            ("LEAF_TEMPERATURE", None::<&str>),
+            ("LEAF_CONTEXT_LIMIT", None::<&str>),
+            ("LEAF_TOOLSHIM", None::<&str>),
+            ("LEAF_TOOLSHIM_OLLAMA_MODEL", None::<&str>),
         ]);
         let config = ModelConfig::new("test-model").unwrap();
         assert_eq!(config.max_tokens, None);
@@ -430,7 +430,7 @@ mod tests {
         fn sets_limits_from_canonical_model() {
             let _guard = env_lock::lock_env([
                 ("LEAF_MAX_TOKENS", None::<&str>),
-                ("GOOSE_CONTEXT_LIMIT", None::<&str>),
+                ("LEAF_CONTEXT_LIMIT", None::<&str>),
             ]);
             let config = ModelConfig::new_or_fail("gpt-4o").with_canonical_limits("openai");
 
@@ -443,7 +443,7 @@ mod tests {
         fn does_not_override_existing_context_limit() {
             let _guard = env_lock::lock_env([
                 ("LEAF_MAX_TOKENS", None::<&str>),
-                ("GOOSE_CONTEXT_LIMIT", None::<&str>),
+                ("LEAF_CONTEXT_LIMIT", None::<&str>),
             ]);
             let mut config = ModelConfig::new_or_fail("gpt-4o");
             config.context_limit = Some(64_000);
@@ -456,7 +456,7 @@ mod tests {
         fn does_not_override_existing_max_tokens() {
             let _guard = env_lock::lock_env([
                 ("LEAF_MAX_TOKENS", None::<&str>),
-                ("GOOSE_CONTEXT_LIMIT", None::<&str>),
+                ("LEAF_CONTEXT_LIMIT", None::<&str>),
             ]);
             let mut config = ModelConfig::new_or_fail("gpt-4o");
             config.max_tokens = Some(1_000);
@@ -469,7 +469,7 @@ mod tests {
         fn unknown_model_leaves_fields_none() {
             let _guard = env_lock::lock_env([
                 ("LEAF_MAX_TOKENS", None::<&str>),
-                ("GOOSE_CONTEXT_LIMIT", None::<&str>),
+                ("LEAF_CONTEXT_LIMIT", None::<&str>),
             ]);
             let config =
                 ModelConfig::new_or_fail("totally-unknown-model").with_canonical_limits("openai");
@@ -485,10 +485,10 @@ mod tests {
 
         const ENV_LOCK_KEYS: [(&str, Option<&str>); 5] = [
             ("LEAF_MAX_TOKENS", None),
-            ("GOOSE_TEMPERATURE", None),
-            ("GOOSE_CONTEXT_LIMIT", None),
-            ("GOOSE_TOOLSHIM", None),
-            ("GOOSE_TOOLSHIM_OLLAMA_MODEL", None),
+            ("LEAF_TEMPERATURE", None),
+            ("LEAF_CONTEXT_LIMIT", None),
+            ("LEAF_TOOLSHIM", None),
+            ("LEAF_TOOLSHIM_OLLAMA_MODEL", None),
         ];
 
         #[test]

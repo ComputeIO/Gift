@@ -200,7 +200,7 @@ impl ProviderTestConfig {
 impl ProviderFixture {
     async fn setup(config: &ProviderTestConfig, mode: LeafMode) -> Result<Self> {
         let mut env_vars: Vec<(&'static str, Option<&str>)> =
-            vec![("GOOSE_MODE", Some(<&str>::from(mode)))];
+            vec![("LEAF_MODE", Some(<&str>::from(mode)))];
         for &var in config.clear_env {
             env_vars.push((var, None));
         }

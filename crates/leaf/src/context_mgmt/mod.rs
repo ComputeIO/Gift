@@ -22,7 +22,7 @@ const TOOLCALL_SUMMARIZATION_BATCH_SIZE: usize = 10;
 
 fn tool_pair_summarization_enabled() -> bool {
     Config::global()
-        .get_param::<bool>("GOOSE_TOOL_PAIR_SUMMARIZATION")
+        .get_param::<bool>("LEAF_TOOL_PAIR_SUMMARIZATION")
         .unwrap_or(true)
 }
 
@@ -192,7 +192,7 @@ pub async fn check_if_compaction_needed(
     let config = Config::global();
     let threshold = threshold_override.unwrap_or_else(|| {
         config
-            .get_param::<f64>("GOOSE_AUTO_COMPACT_THRESHOLD")
+            .get_param::<f64>("LEAF_AUTO_COMPACT_THRESHOLD")
             .unwrap_or(DEFAULT_COMPACTION_THRESHOLD)
     });
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-REPO="${GOOSE_GITHUB_REPO:-$(git remote get-url origin | sed 's|.*github.com[:/]||;s|\.git$||')}"
+REPO="${LEAF_GITHUB_REPO:-$(git remote get-url origin | sed 's|.*github.com[:/]||;s|\.git$||')}"
 DEST="$HOME/Downloads"
 TMPDIR=$(mktemp -d)
 PLIST=$(mktemp /tmp/entitlements.XXXXXX)

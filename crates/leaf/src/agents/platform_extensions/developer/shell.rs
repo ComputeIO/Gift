@@ -364,7 +364,7 @@ async fn run_command(
 fn build_shell_command(command_line: &str) -> tokio::process::Command {
     #[cfg(windows)]
     let mut command = {
-        let shell = std::env::var("GOOSE_SHELL").unwrap_or_else(|_| "cmd".to_string());
+        let shell = std::env::var("LEAF_SHELL").unwrap_or_else(|_| "cmd".to_string());
         let shell_stem = Path::new(&shell)
             .file_stem()
             .and_then(|s| s.to_str())

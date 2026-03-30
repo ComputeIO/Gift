@@ -11,10 +11,10 @@ else
 fi
 
 SCRIPT_DIR=$(pwd)
-GOOSE_BIN="$SCRIPT_DIR/target/debug/goose"
+LEAF_BIN="$SCRIPT_DIR/target/debug/goose"
 
-TEST_PROVIDER=${GOOSE_PROVIDER:-anthropic}
-TEST_MODEL=${GOOSE_MODEL:-claude-haiku-4-5-20251001}
+TEST_PROVIDER=${LEAF_PROVIDER:-anthropic}
+TEST_MODEL=${LEAF_MODEL:-claude-haiku-4-5-20251001}
 MCP_SAMPLING_TOOL="trigger-sampling-request"
 
 RESULTS=()
@@ -54,8 +54,8 @@ extensions:
 EOF
 
 TMPFILE=$(mktemp)
-(cd "$TESTDIR" && GOOSE_PROVIDER="$TEST_PROVIDER" GOOSE_MODEL="$TEST_MODEL" \
-    "$GOOSE_BIN" run --recipe recipe.yaml 2>&1) | tee "$TMPFILE"
+(cd "$TESTDIR" && LEAF_PROVIDER="$TEST_PROVIDER" LEAF_MODEL="$TEST_MODEL" \
+    "$LEAF_BIN" run --recipe recipe.yaml 2>&1) | tee "$TMPFILE"
 
 if grep -qE "(add \| test_mcp)|(▸.*add.*test_mcp)" "$TMPFILE" && grep -q "100" "$TMPFILE"; then
     echo "✓ FastMCP stderr test passed"
@@ -72,8 +72,8 @@ echo ""
 TESTDIR=$(mktemp -d)
 TMPFILE=$(mktemp)
 
-(cd "$TESTDIR" && GOOSE_PROVIDER="$TEST_PROVIDER" GOOSE_MODEL="$TEST_MODEL" \
-    "$GOOSE_BIN" run --text "Use the sampleLLM tool to ask for an original short poem about the ocean" \
+(cd "$TESTDIR" && LEAF_PROVIDER="$TEST_PROVIDER" LEAF_MODEL="$TEST_MODEL" \
+    "$LEAF_BIN" run --text "Use the sampleLLM tool to ask for an original short poem about the ocean" \
     --with-extension "npx -y @modelcontextprotocol/server-everything@2026.1.14" 2>&1) | tee "$TMPFILE"
 
 if grep -qE "($MCP_SAMPLING_TOOL \| )|(▸.*$MCP_SAMPLING_TOOL)" "$TMPFILE"; then
@@ -100,8 +100,8 @@ $(cat "$TMPFILE")
 ----- END TRANSCRIPT -----
 EOF
 )
-    JUDGE_OUT=$(GOOSE_PROVIDER="$TEST_PROVIDER" GOOSE_MODEL="$TEST_MODEL" \
-        "$GOOSE_BIN" run --text "$JUDGE_PROMPT" 2>&1)
+    JUDGE_OUT=$(LEAF_PROVIDER="$TEST_PROVIDER" LEAF_MODEL="$TEST_MODEL" \
+        "$LEAF_BIN" run --text "$JUDGE_PROMPT" 2>&1)
 
     if echo "$JUDGE_OUT" | tr -d '\r' | grep -Eq '^[[:space:]]*PASS[[:space:]]*$'; then
         echo "✓ MCP sampling test passed"

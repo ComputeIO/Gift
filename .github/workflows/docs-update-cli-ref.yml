@@ -81,25 +81,25 @@ jobs:
         run: |
           mkdir -p /home/runner/.local/bin
           curl -fsSL https://github.com/block/leaf/releases/download/stable/download_cli.sh \
-            | CONFIGURE=false GOOSE_BIN_DIR=/home/runner/.local/bin bash
+            | CONFIGURE=false LEAF_BIN_DIR=/home/runner/.local/bin bash
           echo "/home/runner/.local/bin" >> $GITHUB_PATH
           goose --version
       
       - name: Configure goose for CI
         env:
-          GOOSE_PROVIDER: ${{ vars.GOOSE_PROVIDER || 'anthropic' }}
-          GOOSE_MODEL: ${{ vars.GOOSE_MODEL || 'claude-opus-4-5' }}
+          LEAF_PROVIDER: ${{ vars.LEAF_PROVIDER || 'anthropic' }}
+          LEAF_MODEL: ${{ vars.LEAF_MODEL || 'claude-opus-4-5' }}
         run: |
           mkdir -p ~/.config/goose
           cat <<EOF > ~/.config/goose/config.yaml
-          GOOSE_PROVIDER: $GOOSE_PROVIDER
-          GOOSE_MODEL: $GOOSE_MODEL
+          LEAF_PROVIDER: $LEAF_PROVIDER
+          LEAF_MODEL: $LEAF_MODEL
           keyring: false
           EOF
 
           # Also export into the job environment so later steps can log the values
-          echo "GOOSE_PROVIDER=$GOOSE_PROVIDER" >> "$GITHUB_ENV"
-          echo "GOOSE_MODEL=$GOOSE_MODEL" >> "$GITHUB_ENV"
+          echo "LEAF_PROVIDER=$LEAF_PROVIDER" >> "$GITHUB_ENV"
+          echo "LEAF_MODEL=$LEAF_MODEL" >> "$GITHUB_ENV"
 
           echo "✅ Created goose config:"
           cat ~/.config/goose/config.yaml
@@ -148,7 +148,7 @@ jobs:
         timeout-minutes: 30  # Building goose takes time
         working-directory: documentation/automation/cli-command-tracking
         env:
-          GOOSE_REPO: ${{ github.workspace }}
+          LEAF_REPO: ${{ github.workspace }}
         run: |
           set -o pipefail  # Ensure pipeline failures are caught
           
@@ -172,8 +172,8 @@ jobs:
           CLI_COMMANDS_PATH: ${{ github.workspace }}/documentation/docs/guides/leaf-cli-commands.md
         run: |
           echo "🔍 Environment diagnostics:"
-          echo "  GOOSE_PROVIDER: $GOOSE_PROVIDER"
-          echo "  GOOSE_MODEL: $GOOSE_MODEL"
+          echo "  LEAF_PROVIDER: $LEAF_PROVIDER"
+          echo "  LEAF_MODEL: $LEAF_MODEL"
           echo "  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:0:8}..." # Show first 8 chars only
           echo "  CLI_COMMANDS_PATH: $CLI_COMMANDS_PATH"
           echo "  HOME: $HOME"

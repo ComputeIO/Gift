@@ -30,7 +30,7 @@ pub enum RecipeSource {
     GitHub,
 }
 
-pub const GOOSE_RECIPE_GITHUB_REPO_CONFIG_KEY: &str = "GOOSE_RECIPE_GITHUB_REPO";
+pub const LEAF_RECIPE_GITHUB_REPO_CONFIG_KEY: &str = "LEAF_RECIPE_GITHUB_REPO";
 pub fn retrieve_recipe_from_github(
     recipe_name: &str,
     recipe_repo_full_name: &str,
@@ -238,7 +238,7 @@ fn discover_github_recipes(repo: &str) -> Result<Vec<RecipeInfo>> {
         .args(["api", &format!("repos/{}/contents", repo)])
         .set_no_window()
         .output()
-        .map_err(|e| anyhow!("Failed to fetch repository contents using 'gh api' command (executed when GOOSE_RECIPE_GITHUB_REPO is configured). This requires GitHub CLI (gh) to be installed and authenticated. Error: {}", e))?;
+        .map_err(|e| anyhow!("Failed to fetch repository contents using 'gh api' command (executed when LEAF_RECIPE_GITHUB_REPO is configured). This requires GitHub CLI (gh) to be installed and authenticated. Error: {}", e))?;
 
     if !output.status.success() {
         let error_msg = String::from_utf8_lossy(&output.stderr);

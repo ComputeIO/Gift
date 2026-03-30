@@ -20,10 +20,7 @@ pub(crate) fn to_env_var(field_path: &str) -> String {
         format!("provider.{}", field_path)
     };
 
-    format!(
-        "GOOSE_{}",
-        normalized_path.replace('.', "__").to_uppercase()
-    )
+    format!("LEAF_{}", normalized_path.replace('.', "__").to_uppercase())
 }
 
 #[cfg(test)]
@@ -32,9 +29,9 @@ mod tests {
 
     #[test]
     fn test_env_var_conversion() {
-        assert_eq!(to_env_var("type"), "GOOSE_PROVIDER__TYPE");
-        assert_eq!(to_env_var("api_key"), "GOOSE_PROVIDER__API_KEY");
-        assert_eq!(to_env_var("provider.host"), "GOOSE_PROVIDER__HOST");
-        assert_eq!(to_env_var("provider.api_key"), "GOOSE_PROVIDER__API_KEY");
+        assert_eq!(to_env_var("type"), "LEAF_PROVIDER__TYPE");
+        assert_eq!(to_env_var("api_key"), "LEAF_PROVIDER__API_KEY");
+        assert_eq!(to_env_var("provider.host"), "LEAF_PROVIDER__HOST");
+        assert_eq!(to_env_var("provider.api_key"), "LEAF_PROVIDER__API_KEY");
     }
 }

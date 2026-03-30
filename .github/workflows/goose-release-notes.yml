@@ -25,7 +25,7 @@ on:
         type: string
 
 env:
-  GOOSE_RECIPE: |
+  LEAF_RECIPE: |
     version: "1.0.0"
     title: "Release Notes Generator"
     description: "Generate release notes for ${RELEASE_TAG}"
@@ -88,8 +88,8 @@ jobs:
       image: ghcr.io/block/leaf:latest
       options: --user root
       env:
-        GOOSE_PROVIDER: ${{ vars.GOOSE_PROVIDER || 'anthropic' }}
-        GOOSE_MODEL: ${{ vars.GOOSE_MODEL || 'claude-opus-4-5' }}
+        LEAF_PROVIDER: ${{ vars.LEAF_PROVIDER || 'anthropic' }}
+        LEAF_MODEL: ${{ vars.LEAF_MODEL || 'claude-opus-4-5' }}
         ANTHROPIC_API_KEY: ${{ secrets.RELEASE_BOT_ANTHROPIC_KEY }}
         HOME: /tmp/goose-home
 
@@ -135,7 +135,7 @@ jobs:
           git checkout "${RELEASE_TAG}"
 
           # Create recipe from env var with variable substitution
-          echo "$GOOSE_RECIPE" | envsubst '$RELEASE_TAG' > /tmp/recipe.yaml
+          echo "$LEAF_RECIPE" | envsubst '$RELEASE_TAG' > /tmp/recipe.yaml
 
           goose run --recipe /tmp/recipe.yaml
 
