@@ -61,7 +61,8 @@ pub struct Identifier {
 
     #[arg(
         long = "session-id",
-        alias = "id",
+        short = 'i',
+        visible_alias = "id",
         value_name = "SESSION_ID",
         help = "Session ID (e.g., '20250921_143022')",
         long_help = "Specify a session ID directly. When used with --resume, will resume this specific session if it exists."
