@@ -62,7 +62,16 @@ use tokio_util::sync::CancellationToken;
 use tracing::{debug, error, info, instrument, warn};
 
 const DEFAULT_MAX_TURNS: u32 = 1000;
+const MAX_TRANSIENT_RETRIES: u32 = 3;
 const COMPACTION_THINKING_TEXT: &str = "leaf is compacting the conversation...";
+
+fn calculate_backoff(attempt: u32) -> std::time::Duration {
+    use rand::Rng;
+    let base_secs: u64 = 1 << (attempt - 1); // 1, 2, 4
+    let mut rng = rand::thread_rng();
+    let jitter = rng.gen_range(0..base_secs);
+    std::time::Duration::from_secs(base_secs + jitter)
+}
 
 /// Context needed for the reply function
 pub struct ReplyContext {
@@ -1155,6 +1164,7 @@ impl Agent {
                     .unwrap_or(DEFAULT_MAX_TURNS)
             });
             let mut compaction_attempts = 0;
+            let mut transient_retry_count: u32 = 0;
             let mut last_assistant_text = String::new();
 
             loop {
@@ -1564,6 +1574,21 @@ impl Agent {
                         Err(ref provider_err @ ProviderError::NetworkError(_)) => {
                             crate::posthog::emit_error(provider_err.telemetry_type(), &provider_err.to_string());
                             error!("Error: {}", provider_err);
+
+                            if transient_retry_count < MAX_TRANSIENT_RETRIES {
+                                transient_retry_count += 1;
+                                let delay = calculate_backoff(transient_retry_count);
+                                yield AgentEvent::Message(
+                                    Message::assistant().with_system_notification(
+                                        SystemNotificationType::InlineMessage,
+                                        format!("Network error (attempt {}/{}): {}. Retrying in {}s...",
+                                            transient_retry_count, MAX_TRANSIENT_RETRIES, provider_err, delay.as_secs()),
+                                    )
+                                );
+                                tokio::time::sleep(delay).await;
+                                continue;
+                            }
+
                             yield AgentEvent::Message(
                                 Message::assistant().with_text(
                                     format!("{provider_err}\n\nPlease resend your message to try again.")
@@ -1571,9 +1596,78 @@ impl Agent {
                             );
                             break;
                         }
-                        Err(ref provider_err) => {
+                        Err(ref provider_err @ ProviderError::RateLimitExceeded { ref retry_delay, .. }) => {
                             crate::posthog::emit_error(provider_err.telemetry_type(), &provider_err.to_string());
                             error!("Error: {}", provider_err);
+
+                            if transient_retry_count < MAX_TRANSIENT_RETRIES {
+                                transient_retry_count += 1;
+                                let delay = retry_delay.unwrap_or_else(|| calculate_backoff(transient_retry_count));
+                                yield AgentEvent::Message(
+                                    Message::assistant().with_system_notification(
+                                        SystemNotificationType::InlineMessage,
+                                        format!("Rate limited (attempt {}/{}): {}. Retrying in {}s...",
+                                            transient_retry_count, MAX_TRANSIENT_RETRIES, provider_err, delay.as_secs()),
+                                    )
+                                );
+                                tokio::time::sleep(delay).await;
+                                continue;
+                            }
+
+                            yield AgentEvent::Message(
+                                Message::assistant().with_text(
+                                    format!("Ran into this error: {provider_err}.\n\nPlease retry if you think this is a transient or recoverable error.")
+                                )
+                            );
+                            break;
+                        }
+                        Err(ref provider_err @ ProviderError::ServerError(_)) => {
+                            crate::posthog::emit_error(provider_err.telemetry_type(), &provider_err.to_string());
+                            error!("Error: {}", provider_err);
+
+                            if transient_retry_count < MAX_TRANSIENT_RETRIES {
+                                transient_retry_count += 1;
+                                let delay = calculate_backoff(transient_retry_count);
+                                yield AgentEvent::Message(
+                                    Message::assistant().with_system_notification(
+                                        SystemNotificationType::InlineMessage,
+                                        format!("Server error (attempt {}/{}): {}. Retrying in {}s...",
+                                            transient_retry_count, MAX_TRANSIENT_RETRIES, provider_err, delay.as_secs()),
+                                    )
+                                );
+                                tokio::time::sleep(delay).await;
+                                continue;
+                            }
+
+                            yield AgentEvent::Message(
+                                Message::assistant().with_text(
+                                    format!("Ran into this error: {provider_err}.\n\nPlease retry if you think this is a transient or recoverable error.")
+                                )
+                            );
+                            break;
+                        }
+                        Err(ref provider_err) => {
+                            let is_transient_stream = matches!(provider_err,
+                                ProviderError::RequestFailed(msg) if msg.contains("Stream decode error")
+                            );
+
+                            crate::posthog::emit_error(provider_err.telemetry_type(), &provider_err.to_string());
+                            error!("Error: {}", provider_err);
+
+                            if is_transient_stream && transient_retry_count < MAX_TRANSIENT_RETRIES {
+                                transient_retry_count += 1;
+                                let delay = calculate_backoff(transient_retry_count);
+                                yield AgentEvent::Message(
+                                    Message::assistant().with_system_notification(
+                                        SystemNotificationType::InlineMessage,
+                                        format!("Stream error (attempt {}/{}): {}. Retrying in {}s...",
+                                            transient_retry_count, MAX_TRANSIENT_RETRIES, provider_err, delay.as_secs()),
+                                    )
+                                );
+                                tokio::time::sleep(delay).await;
+                                continue;
+                            }
+
                             yield AgentEvent::Message(
                                 Message::assistant().with_text(
                                     format!("Ran into this error: {provider_err}.\n\nPlease retry if you think this is a transient or recoverable error.")
