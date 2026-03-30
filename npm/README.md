@@ -38,8 +38,8 @@ done
 
 ## Package Naming
 
-All npm packages have been renamed from `goose-acp-server-*` to `leaf-binary-*`:
-- Package names changed from `@block/goose-acp-server-*` to `@block/leaf-binary-*`
-- Binary files changed from `bin/goose` to `bin/leaf`
-- Repository URL changed from `block/goose` to `LeafAI/Leaf`
+All npm packages have been renamed from `leaf_acp_server_placeholder-*` to `leaf-binary-*`:
+- Package names changed from `@block/leaf_acp_server_placeholder-*` to `@block/leaf-binary-*`
+- Binary files changed from `bin/leaf` to `bin/leaf`
+- Repository URL changed from `block/leaf` to `LeafAI/Leaf`
 - The standalone `leaf-acp-server` binary was removed; use `leaf acp` subcommand instead

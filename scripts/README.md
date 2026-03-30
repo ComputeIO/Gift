@@ -1,14 +1,14 @@
-# Goose Benchmark Scripts
+# Leaf Benchmark Scripts
 
-This directory contains scripts for running and analyzing Goose benchmarks.
+This directory contains scripts for running and analyzing Leaf benchmarks.
 
 ## run-benchmarks.sh
 
-This script runs Goose benchmarks across multiple provider:model pairs and analyzes the results.
+This script runs Leaf benchmarks across multiple provider:model pairs and analyzes the results.
 
 ### Prerequisites
 
-- Goose CLI must be built or installed
+- Leaf CLI must be built or installed
 - `jq` command-line tool for JSON processing (optional, but recommended for result analysis)
 
 ### Usage

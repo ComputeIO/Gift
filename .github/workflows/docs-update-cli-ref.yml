@@ -77,21 +77,21 @@ jobs:
         with:
           node-version: '20'
       
-      - name: Install goose CLI
+      - name: Install leaf CLI
         run: |
           mkdir -p /home/runner/.local/bin
           curl -fsSL https://github.com/block/leaf/releases/download/stable/download_cli.sh \
             | CONFIGURE=false LEAF_BIN_DIR=/home/runner/.local/bin bash
           echo "/home/runner/.local/bin" >> $GITHUB_PATH
-          goose --version
+          leaf --version
       
-      - name: Configure goose for CI
+      - name: Configure leaf for CI
         env:
           LEAF_PROVIDER: ${{ vars.LEAF_PROVIDER || 'anthropic' }}
           LEAF_MODEL: ${{ vars.LEAF_MODEL || 'claude-opus-4-5' }}
         run: |
-          mkdir -p ~/.config/goose
-          cat <<EOF > ~/.config/goose/config.yaml
+          mkdir -p ~/.config/leaf
+          cat <<EOF > ~/.config/leaf/config.yaml
           LEAF_PROVIDER: $LEAF_PROVIDER
           LEAF_MODEL: $LEAF_MODEL
           keyring: false
@@ -101,8 +101,8 @@ jobs:
           echo "LEAF_PROVIDER=$LEAF_PROVIDER" >> "$GITHUB_ENV"
           echo "LEAF_MODEL=$LEAF_MODEL" >> "$GITHUB_ENV"
 
-          echo "✅ Created goose config:"
-          cat ~/.config/goose/config.yaml
+          echo "✅ Created leaf config:"
+          cat ~/.config/leaf/config.yaml
       
       - name: Determine versions to compare
         id: versions
@@ -145,7 +145,7 @@ jobs:
       
       - name: Extract and compare CLI structures
         id: extract
-        timeout-minutes: 30  # Building goose takes time
+        timeout-minutes: 30  # Building leaf takes time
         working-directory: documentation/automation/cli-command-tracking
         env:
           LEAF_REPO: ${{ github.workspace }}
@@ -179,15 +179,15 @@ jobs:
           echo "  HOME: $HOME"
           echo "  PATH: $PATH"
           echo ""
-          echo "📁 Goose config file:"
-          cat ~/.config/goose/config.yaml || echo "Config file not found!"
+          echo "📁 Leaf config file:"
+          cat ~/.config/leaf/config.yaml || echo "Config file not found!"
           echo ""
           echo "📁 Current directory:"
           pwd
           ls -la
           echo ""
           echo "🤖 Applying changes to leaf-cli-commands.md..."
-          goose run --recipe ../recipes/update-cli-commands.yaml
+          leaf run --recipe ../recipes/update-cli-commands.yaml
       
       - name: Upload automation outputs
         if: always()

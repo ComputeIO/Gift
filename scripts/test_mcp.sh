@@ -2,8 +2,8 @@
 set -e
 
 if [ -z "$SKIP_BUILD" ]; then
-  echo "Building goose..."
-  cargo build --bin goose
+  echo "Building leaf..."
+  cargo build --bin leaf
   echo ""
 else
   echo "Skipping build (SKIP_BUILD is set)..."
@@ -11,7 +11,7 @@ else
 fi
 
 SCRIPT_DIR=$(pwd)
-LEAF_BIN="$SCRIPT_DIR/target/debug/goose"
+LEAF_BIN="$SCRIPT_DIR/target/debug/leaf"
 
 TEST_PROVIDER=${LEAF_PROVIDER:-anthropic}
 TEST_MODEL=${LEAF_MODEL:-claude-haiku-4-5-20251001}

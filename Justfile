@@ -21,7 +21,7 @@ release-binary:
     @echo "Building release version..."
     cargo build --release
     @echo "Generating OpenAPI schema..."
-    cargo run -p goose-server --bin generate_schema
+    cargo run -p leaf-server --bin generate_schema
 
 # release-windows docker build command
 win_docker_build_sh := '''rustup target add x86_64-pc-windows-gnu && \
@@ -47,19 +47,19 @@ release-windows:
     #!/usr/bin/env sh
     if [ "$(uname)" = "Darwin" ] || [ "$(uname)" = "Linux" ]; then
         echo "Building Windows executable using Docker..."
-        docker volume create goose-windows-cache || true
+        docker volume create leaf-windows-cache || true
         docker run --rm \
             -v "$(pwd)":/usr/src/myapp \
-            -v goose-windows-cache:/usr/local/cargo/registry \
+            -v leaf-windows-cache:/usr/local/cargo/registry \
             -w /usr/src/myapp \
             rust:latest \
             sh -c "{{win_docker_build_sh}}"
     else
         echo "Building Windows executable using Docker through PowerShell..."
-        powershell.exe -Command "docker volume create goose-windows-cache; \
+        powershell.exe -Command "docker volume create leaf-windows-cache; \
             docker run --rm \
                 -v ${PWD}:/usr/src/myapp \
-                -v goose-windows-cache:/usr/local/cargo/registry \
+                -v leaf-windows-cache:/usr/local/cargo/registry \
                 -w /usr/src/myapp \
                 rust:latest \
                 sh -c '{{win_docker_build_sh}}'"
@@ -74,17 +74,17 @@ run-docs:
 # Run server
 run-server:
     @echo "Running server..."
-    cargo run -p goose-server --bin goosed agent
+    cargo run -p leaf-server --bin leafd agent
 
 # Generate OpenAPI specification
 generate-openapi:
     @echo "Generating OpenAPI schema..."
-    cargo run -p goose-server --bin generate_schema
+    cargo run -p leaf-server --bin generate_schema
 
 # Generate manpages for the CLI
 generate-manpages:
     @echo "Generating manpages..."
-    cargo run -p goose-cli --bin generate_manpages
+    cargo run -p leaf-cli --bin generate_manpages
     @echo "Manpages generated at target/man/"
 
 ensure-release-branch:
@@ -140,8 +140,8 @@ prepare-release version:
     @git add \
         Cargo.toml \
         Cargo.lock \
-        crates/goose/src/providers/canonical/data/canonical_models.json \
-        crates/goose/src/providers/canonical/data/provider_metadata.json
+        crates/leaf/src/providers/canonical/data/canonical_models.json \
+        crates/leaf/src/providers/canonical/data/provider_metadata.json
     @git commit --message "chore(release): release version {{ version }}"
 
 # extract version from Cargo.toml
@@ -177,7 +177,7 @@ set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
 ### profile = --release or "" for debug
 ### allparam = OR/AND/ANY/NONE --workspace --all-features --all-targets
 win-bld profile allparam:
-  cargo run {{profile}} -p goose-server --bin  generate_schema
+  cargo run {{profile}} -p leaf-server --bin  generate_schema
   cargo build {{profile}} {{allparam}}
 
 ### Build just debug
@@ -197,8 +197,8 @@ win-bld-rls-all:
   just win-bld "--release" "--workspace --all-targets --all-features"
 
 build-test-tools:
-  cargo build -p goose-test
+  cargo build -p leaf-test
 
 record-mcp-tests: build-test-tools
-  GOOSE_RECORD_MCP=1 cargo test --package goose --test mcp_integration_test
-  git add crates/goose/tests/mcp_replays/
+  LEAF_RECORD_MCP=1 cargo test --package leaf --test mcp_integration_test
+  git add crates/leaf/tests/mcp_replays/

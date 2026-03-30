@@ -33,7 +33,7 @@ impl Settings {
             .set_default("tls", default_tls())?
             // Layer on the environment variables
             .add_source(
-                Environment::with_prefix("GOOSE")
+                Environment::with_prefix("LEAF")
                     .prefix_separator("_")
                     .separator("__")
                     .try_parsing(true),

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "GooseExtensions",
+  "title": "LeafExtensions",
   "$defs": {
     "AddExtensionRequest": {
       "type": "object",
@@ -281,7 +281,7 @@
                       "$ref": "#/$defs/AddExtensionRequest"
                     }
                   ],
-                  "description": "Params for _goose/extensions/add",
+                  "description": "Params for _leaf_placeholder/extensions/add",
                   "title": "AddExtensionRequest"
                 },
                 {
@@ -290,7 +290,7 @@
                       "$ref": "#/$defs/RemoveExtensionRequest"
                     }
                   ],
-                  "description": "Params for _goose/extensions/remove",
+                  "description": "Params for _leaf_placeholder/extensions/remove",
                   "title": "RemoveExtensionRequest"
                 },
                 {
@@ -299,7 +299,7 @@
                       "$ref": "#/$defs/GetToolsRequest"
                     }
                   ],
-                  "description": "Params for _goose/tools",
+                  "description": "Params for _leaf_placeholder/tools",
                   "title": "GetToolsRequest"
                 },
                 {
@@ -308,7 +308,7 @@
                       "$ref": "#/$defs/ReadResourceRequest"
                     }
                   ],
-                  "description": "Params for _goose/resource/read",
+                  "description": "Params for _leaf_placeholder/resource/read",
                   "title": "ReadResourceRequest"
                 },
                 {
@@ -317,7 +317,7 @@
                       "$ref": "#/$defs/UpdateWorkingDirRequest"
                     }
                   ],
-                  "description": "Params for _goose/working_dir/update",
+                  "description": "Params for _leaf_placeholder/working_dir/update",
                   "title": "UpdateWorkingDirRequest"
                 },
                 {
@@ -326,7 +326,7 @@
                       "$ref": "#/$defs/GetSessionRequest"
                     }
                   ],
-                  "description": "Params for _goose/session/get",
+                  "description": "Params for _leaf_placeholder/session/get",
                   "title": "GetSessionRequest"
                 },
                 {
@@ -335,7 +335,7 @@
                       "$ref": "#/$defs/DeleteSessionRequest"
                     }
                   ],
-                  "description": "Params for _goose/session/delete",
+                  "description": "Params for _leaf_placeholder/session/delete",
                   "title": "DeleteSessionRequest"
                 },
                 {
@@ -344,7 +344,7 @@
                       "$ref": "#/$defs/ExportSessionRequest"
                     }
                   ],
-                  "description": "Params for _goose/session/export",
+                  "description": "Params for _leaf_placeholder/session/export",
                   "title": "ExportSessionRequest"
                 },
                 {
@@ -353,7 +353,7 @@
                       "$ref": "#/$defs/ImportSessionRequest"
                     }
                   ],
-                  "description": "Params for _goose/session/import",
+                  "description": "Params for _leaf_placeholder/session/import",
                   "title": "ImportSessionRequest"
                 }
               ]

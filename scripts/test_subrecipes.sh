@@ -6,8 +6,8 @@ if [ -f .env ]; then
 fi
 
 if [ -z "$SKIP_BUILD" ]; then
-  echo "Building goose..."
-  cargo build --bin goose
+  echo "Building leaf..."
+  cargo build --bin leaf
   echo ""
 else
   echo "Skipping build (SKIP_BUILD is set)..."
@@ -16,7 +16,7 @@ fi
 
 SCRIPT_DIR=$(pwd)
 
-# Add goose binary to PATH so subagents can find it when spawning
+# Add leaf binary to PATH so subagents can find it when spawning
 export PATH="$SCRIPT_DIR/target/debug:$PATH"
 
 # Set default provider and model if not already set
@@ -98,7 +98,7 @@ check_recipe_output() {
 
 echo "Running recipe with parallel subrecipes..."
 TMPFILE=$(mktemp)
-if (cd "$TESTDIR" && "$SCRIPT_DIR/target/debug/goose" run --recipe project_analyzer_parallel.yaml --no-session 2>&1) | tee "$TMPFILE"; then
+if (cd "$TESTDIR" && "$SCRIPT_DIR/target/debug/leaf" run --recipe project_analyzer_parallel.yaml --no-session 2>&1) | tee "$TMPFILE"; then
   echo "✓ SUCCESS: Recipe completed successfully"
   RESULTS+=("✓ Recipe exit code")
   check_recipe_output "$TMPFILE" "parallel"

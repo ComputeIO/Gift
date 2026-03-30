@@ -13,8 +13,8 @@ if [ -f .env ]; then
 fi
 
 if [ -z "$SKIP_BUILD" ]; then
-  echo "Building goose..."
-  cargo build --bin goose
+  echo "Building leaf..."
+  cargo build --bin leaf
   echo ""
 else
   echo "Skipping build (SKIP_BUILD is set)..."
@@ -22,7 +22,7 @@ else
 fi
 
 SCRIPT_DIR=$(pwd)
-LEAF_BIN="$SCRIPT_DIR/target/debug/goose"
+LEAF_BIN="$SCRIPT_DIR/target/debug/leaf"
 
 # Apply provider/model overrides if set
 if [ -n "$COMPACTION_PROVIDER" ]; then

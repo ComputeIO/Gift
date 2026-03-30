@@ -64,7 +64,7 @@ async def setup_agent() -> None:
         # First create the agent
         response = await client.post(
             f"{LEAF_URL}/agent/update_provider",
-            json={"provider": "databricks", "model": "goose"},
+            json={"provider": "databricks", "model": "leaf"},
             headers={"X-Secret-Key": SECRET_KEY},
         )
         response.raise_for_status()
@@ -168,7 +168,7 @@ def execute_enable_extension(args: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 
 def submit_tool_result(tool_id: str, result: List[Dict[str, Any]]) -> None:
-    """Submit the tool execution result back to Goose.
+    """Submit the tool execution result back to Leaf.
 
     The result should be a list of Content variants (Text, Image, or Resource).
     Each Content variant has a type tag and appropriate fields.
@@ -190,7 +190,7 @@ def submit_tool_result(tool_id: str, result: List[Dict[str, Any]]) -> None:
 
 
 async def chat_loop() -> None:
-    """Main chat loop that handles the conversation with Goose."""
+    """Main chat loop that handles the conversation with Leaf."""
     session_id = "test-session"
 
     # Use a client with a longer timeout for streaming
@@ -246,7 +246,7 @@ async def chat_loop() -> None:
                 # Handle different message types
                 for content in message.get("content", []):
                     if content["type"] == "text":
-                        print(f"\nGoose: {content['text']}")
+                        print(f"\nLeaf: {content['text']}")
                     elif content["type"] == "frontendToolRequest":
                         # Execute the tool and submit results
                         tool_call = content["toolCall"]["value"]

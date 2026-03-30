@@ -47,10 +47,10 @@ Agent frameworks that execute the tests. Each runner has its own binary, type, a
 
 ```yaml
 runners:
-  # Goose agent with extensions
-  - name: goose-full
-    type: goose
-    bin: goose                    # path to binary (can be absolute)
+  # Leaf agent with extensions
+  - name: leaf-full
+    type: leaf
+    bin: leaf                    # path to binary (can be absolute)
     extensions: [developer, todo, skills]
     stdio:
       - node mcp-harness/dist/index.js
@@ -62,15 +62,15 @@ runners:
     stdio:
       - node mcp-harness/dist/index.js
 
-  # Custom goose binary path
-  - name: goose-dev
-    type: goose
-    bin: /path/to/my/goose-dev
+  # Custom leaf binary path
+  - name: leaf-dev
+    type: leaf
+    bin: /path/to/my/leaf-dev
     extensions: [developer]
 ```
 
 **Supported runner types:**
-- `goose` — [Goose](https://github.com/block/goose) agent framework
+- `leaf` — [Leaf](https://github_com_block_leaf_placeholder) agent framework
 - `opencode` — [OpenCode](https://opencode.ai) agent framework
 - `pi` — [Pi](https://github.com/badlogic/pi-mono) coding agent
 
@@ -78,13 +78,13 @@ runners:
 
 Each runner has different setup requirements, MCP integration methods, and session handling.
 
-### Goose
+### Leaf
 
-[Goose](https://github.com/block/goose) is Block's open-source coding agent with built-in MCP support.
+[Leaf](https://github_com_block_leaf_placeholder) is Block's open-source coding agent with built-in MCP support.
 
-**Setup:** Install via `brew install goose` or from source.
+**Setup:** Install via `brew install leaf` or from source.
 
-**MCP Integration:** Native support. The harness writes a `config.yaml` to an isolated `.goose-root/` directory with extensions and MCP servers:
+**MCP Integration:** Native support. The harness writes a `config.yaml` to an isolated `.leaf-root/` directory with extensions and MCP servers:
 
 ```yaml
 extensions:
@@ -98,9 +98,9 @@ extensions:
 ```
 
 **Session Handling:** Uses `--name <session>` for named sessions, `--resume` to continue:
-- Turn 1: `goose run -i <prompt> --name <session>`
-- Turn 2+: `goose run -i <prompt> --name <session> --resume`
-- Single-turn: `goose run -i <prompt> --no-session`
+- Turn 1: `leaf run -i <prompt> --name <session>`
+- Turn 2+: `leaf run -i <prompt> --name <session> --resume`
+- Single-turn: `leaf run -i <prompt> --no-session`
 
 ### OpenCode
 
@@ -196,7 +196,7 @@ Define which scenarios run against which models/runners:
 matrix:
   - scenario: file-editing
     models: [opus, qwen3-coder]      # omit to run all models
-    runners: [goose-full, opencode]  # omit to run all runners
+    runners: [leaf-full, opencode]  # omit to run all runners
 
   - scenario: everyday-app-automation
     # runs against ALL models and ALL runners
@@ -276,7 +276,7 @@ Each tool returns realistic mock data. Tool calls are logged to `tool-calls.log`
 
 ```bash
 # Filter by scenario, model, or runner
-npx tsx src/runner.ts --scenario=file-editing --model=opus --runner=goose
+npx tsx src/runner.ts --scenario=file-editing --model=opus --runner=leaf
 
 # Control repetition count
 npx tsx src/runner.ts --run-count=5

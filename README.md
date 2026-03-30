@@ -2,7 +2,7 @@
 
 # Leaf
 
-_a pure CLI AI agent forked from Goose, focused on automation through the command line_
+_a pure CLI AI agent forked from Leaf, focused on automation through the command line_
 
 <p align="center">
   <a href="https://opensource.org/licenses/Apache-2.0"
@@ -12,9 +12,9 @@ _a pure CLI AI agent forked from Goose, focused on automation through the comman
 </p>
 </div>
 
-Leaf is a **pure CLI AI agent** forked from the [Goose](https://github.com/block/goose) project by Block. While Goose provides both desktop and CLI interfaces, Leaf focuses exclusively on command-line automation for developers who prefer terminal-based workflows.
+Leaf is a **pure CLI AI agent** forked from the [Leaf](https://github_com_block_leaf_placeholder) project by Block. While Leaf provides both desktop and CLI interfaces, Leaf focuses exclusively on command-line automation for developers who prefer terminal-based workflows.
 
-## Key Differences from Goose
+## Key Differences from Leaf
 
 - **Pure CLI**: No desktop UI or Electron components - just a fast, terminal-based experience
 - **Lightweight**: Removed V8 dependencies and UI components for a smaller footprint
@@ -127,7 +127,7 @@ Apache License 2.0 - see [LICENSE](LICENSE) file.
 
 ## Acknowledgments
 
-Leaf is a fork of [Goose](https://github.com/block/goose) by Block. We're grateful for the solid foundation they built.
+Leaf is a fork of [Leaf](https://github_com_block_leaf_placeholder) by Block. We're grateful for the solid foundation they built.
 
 ---
 

@@ -1,12 +1,12 @@
-# goose Release Notes Generator
+# leaf Release Notes Generator
 #
-# Automatically generates release notes using goose AI agent when a new release is published.
+# Automatically generates release notes using leaf AI agent when a new release is published.
 # Updates the GitHub release with AI-generated categorized notes and posts to Discord.
 #
 # Uses workflow_run instead of release:published because GitHub doesn't trigger
 # workflows for events created by GITHUB_TOKEN (to prevent infinite loops).
 
-name: goose Release Notes Generator
+name: leaf Release Notes Generator
 
 on:
   # Trigger when Release workflow completes (works around GITHUB_TOKEN limitation)
@@ -35,10 +35,10 @@ env:
         name: developer
 
     instructions: |
-      Generate release notes for the goose release.
+      Generate release notes for the leaf release.
 
       ## Process
-      1. You are already in the goose repository. Do NOT clone or checkout anything.
+      1. You are already in the leaf repository. Do NOT clone or checkout anything.
       2. Get the previous release tag by running: git describe --tags --abbrev=0 ${RELEASE_TAG}^
       3. Get commits between tags: git log <previous_tag>..${RELEASE_TAG} --oneline --no-merges
       4. Analyze the commits and categorize changes
@@ -63,7 +63,7 @@ env:
       Write ONLY the release notes content to /tmp/release_notes.md (no extra commentary)
 
     prompt: |
-      Generate release notes for ${RELEASE_TAG} in the goose repository.
+      Generate release notes for ${RELEASE_TAG} in the leaf repository.
 
 permissions:
   contents: write
@@ -91,7 +91,7 @@ jobs:
         LEAF_PROVIDER: ${{ vars.LEAF_PROVIDER || 'anthropic' }}
         LEAF_MODEL: ${{ vars.LEAF_MODEL || 'claude-opus-4-5' }}
         ANTHROPIC_API_KEY: ${{ secrets.RELEASE_BOT_ANTHROPIC_KEY }}
-        HOME: /tmp/goose-home
+        HOME: /tmp/leaf-home
 
     outputs:
       release_notes: ${{ steps.read-notes.outputs.notes }}
@@ -123,12 +123,12 @@ jobs:
           apt-get update
           apt-get install -y gettext curl ripgrep git jq
 
-      - name: Run goose to generate release notes
+      - name: Run leaf to generate release notes
         env:
           RELEASE_TAG: ${{ steps.get-tag.outputs.tag }}
         run: |
-          mkdir -p $HOME/.local/share/goose/sessions
-          mkdir -p $HOME/.config/goose
+          mkdir -p $HOME/.local/share/leaf/sessions
+          mkdir -p $HOME/.config/leaf
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
           # Checkout the release tag
@@ -137,7 +137,7 @@ jobs:
           # Create recipe from env var with variable substitution
           echo "$LEAF_RECIPE" | envsubst '$RELEASE_TAG' > /tmp/recipe.yaml
 
-          goose run --recipe /tmp/recipe.yaml
+          leaf run --recipe /tmp/recipe.yaml
 
       - name: Read release notes
         id: read-notes
@@ -239,7 +239,7 @@ jobs:
           }
 
           # Build the announcement header
-          HEADER="## 🎉 goose ${RELEASE_TAG} is here!
+          HEADER="## 🎉 leaf ${RELEASE_TAG} is here!
 
           📦 **Release:** ${RELEASE_URL}"
 

@@ -13,7 +13,7 @@ import { validateAll } from "./validator.js";
 // Types
 // =============================================================================
 
-type RunnerType = "goose" | "opencode" | "pi";
+type RunnerType = "leaf" | "opencode" | "pi";
 
 interface ModelConfig {
   name: string;
@@ -25,7 +25,7 @@ interface RunnerConfig {
   name: string;
   type: RunnerType;
   bin: string;
-  extensions?: string[];  // goose-specific
+  extensions?: string[];  // leaf-specific
   stdio?: string[];       // MCP servers
 }
 
@@ -287,7 +287,7 @@ function clearCache(): void {
 }
 
 // =============================================================================
-// Goose Runner
+// Leaf Runner
 // =============================================================================
 
 const PLATFORM_EXTENSIONS = new Set([
@@ -295,11 +295,11 @@ const PLATFORM_EXTENSIONS = new Set([
   "chatrecall", "apps", "imagegenerator"
 ]);
 
-// Isolated goose config directory
-const GOOSE_ROOT = join(import.meta.dirname, "../.goose-root");
-const GOOSE_CONFIG_DIR = join(GOOSE_ROOT, "config");
+// Isolated leaf config directory
+const LEAF_ROOT = join(import.meta.dirname, "../.leaf-root");
+const LEAF_CONFIG_DIR = join(LEAF_ROOT, "config");
 
-function generateGooseConfig(model: ModelConfig, runner: RunnerConfig): object {
+function generateLeafConfig(model: ModelConfig, runner: RunnerConfig): object {
   const extensions: Record<string, object> = {};
 
   // Add extensions (detect platform vs builtin)
@@ -341,13 +341,13 @@ function generateGooseConfig(model: ModelConfig, runner: RunnerConfig): object {
 
   return {
     extensions,
-    GOOSE_PROVIDER: model.provider,
-    GOOSE_MODEL: model.model,
-    GOOSE_TELEMETRY_ENABLED: false,
+    LEAF_PROVIDER: model.provider,
+    LEAF_MODEL: model.model,
+    LEAF_TELEMETRY_ENABLED: false,
   };
 }
 
-async function runGooseAgent(
+async function runLeafAgent(
   model: ModelConfig,
   runner: RunnerConfig,
   prompt: string,
@@ -355,13 +355,13 @@ async function runGooseAgent(
   sessionName?: string,  // If provided, use/continue this session
   resume: boolean = false  // If true, resume existing session (for turn 2+)
 ): Promise<string> {
-  const promptFile = join(workdir, ".goose-prompt.txt");
+  const promptFile = join(workdir, ".leaf-prompt.txt");
   writeFileSync(promptFile, prompt);
 
-  // Write goose config
-  mkdirSync(GOOSE_CONFIG_DIR, { recursive: true });
-  const gooseConfig = generateGooseConfig(model, runner);
-  writeFileSync(join(GOOSE_CONFIG_DIR, "config.yaml"), stringify(gooseConfig));
+  // Write leaf config
+  mkdirSync(LEAF_CONFIG_DIR, { recursive: true });
+  const leafConfig = generateLeafConfig(model, runner);
+  writeFileSync(join(LEAF_CONFIG_DIR, "config.yaml"), stringify(leafConfig));
 
   let cmd: string;
   if (sessionName) {
@@ -382,7 +382,7 @@ async function runGooseAgent(
     cwd: workdir,
     env: {
       ...process.env,
-      GOOSE_PATH_ROOT: GOOSE_ROOT,
+      LEAF_PATH_ROOT: LEAF_ROOT,
       MCP_HARNESS_LOG: join(workdir, "tool-calls.log"),
     },
     timeout: 5 * 60 * 1000,
@@ -495,7 +495,7 @@ async function runOpenCodeAgent(
 // Pi takes --provider and --model as CLI arguments
 // MCP support via pi-mcp-adapter: `pi install npm:pi-mcp-adapter`
 
-// Isolated Pi config directory (like Goose/OpenCode)
+// Isolated Pi config directory (like Leaf/OpenCode)
 const PI_CONFIG_DIR = join(import.meta.dirname, "../.pi-root");
 
 // User's real Pi config (for copying auth.json)
@@ -658,7 +658,7 @@ async function runPiAgent(
 
 interface AgentResult {
   output: string;
-  sessionId?: string;  // For multi-turn (goose, pi)
+  sessionId?: string;  // For multi-turn (leaf, pi)
 }
 
 async function runAgent(
@@ -666,7 +666,7 @@ async function runAgent(
   runner: RunnerConfig,
   prompt: string,
   workdir: string,
-  sessionId?: string,  // For multi-turn (goose, pi)
+  sessionId?: string,  // For multi-turn (leaf, pi)
   resume: boolean = false  // For multi-turn: true on turn 2+
 ): Promise<AgentResult> {
   if (runner.type === "opencode") {
@@ -677,7 +677,7 @@ async function runAgent(
     const output = await runPiAgent(model, runner, prompt, workdir, sessionId, resume);
     return { output, sessionId };
   }
-  const output = await runGooseAgent(model, runner, prompt, workdir, sessionId, resume);
+  const output = await runLeafAgent(model, runner, prompt, workdir, sessionId, resume);
   return { output, sessionId };
 }
 
@@ -750,14 +750,14 @@ function parseLogMetrics(logContent: string, workdir?: string): { toolCalls: num
     }
   }
 
-  // Goose format: ─── tool_name | extension ───
-  const gooseToolCalls = (logContent.match(/─── .+ \| .+ ───/g) || []).length;
+  // Leaf format: ─── tool_name | extension ───
+  const leafToolCalls = (logContent.match(/─── .+ \| .+ ───/g) || []).length;
   
   // OpenCode format: TURN N
   const opencodeTurns = (logContent.match(/^TURN \d+$/gm) || []).length;
   
-  // Total tool calls = MCP harness calls + Goose built-in tool calls
-  const toolCalls = mcpToolCalls + gooseToolCalls;
+  // Total tool calls = MCP harness calls + Leaf built-in tool calls
+  const toolCalls = mcpToolCalls + leafToolCalls;
 
   // For OpenCode, use explicit TURN markers
   const turns = opencodeTurns > 0 ? opencodeTurns : Math.ceil(toolCalls / 3); // Estimate ~3 tool calls per turn
@@ -877,9 +877,9 @@ async function runScenario(
   ];
   const isMultiTurn = turns.length > 1;
 
-  // For goose/pi: generate session ID upfront
+  // For leaf/pi: generate session ID upfront
   // For opencode: capture session ID from first turn's output
-  let sessionId: string | undefined = isMultiTurn && (runner.type === "goose" || runner.type === "pi")
+  let sessionId: string | undefined = isMultiTurn && (runner.type === "leaf" || runner.type === "pi")
     ? `test_${testId}_${Date.now()}`
     : undefined;
 

@@ -39,17 +39,17 @@ if [ -f .env ]; then
   export $(grep -v '^#' .env | xargs)
 fi
 
-build_goose() {
+build_leaf() {
   if [ -z "$SKIP_BUILD" ]; then
-    echo "Building goose..." >&2
-    cargo build --bin goose >&2
+    echo "Building leaf..." >&2
+    cargo build --bin leaf >&2
     echo "" >&2
   else
     echo "Skipping build (SKIP_BUILD is set)..." >&2
     echo "" >&2
   fi
 
-  echo "$(pwd)/target/debug/goose"
+  echo "$(pwd)/target/debug/leaf"
 }
 
 has_env() { [ -n "${!1}" ]; }
@@ -72,8 +72,8 @@ is_provider_available() {
     venice)          has_env VENICE_API_KEY ;;
     litellm)         has_env LITELLM_API_KEY ;;
     sagemaker_tgi)   has_env SAGEMAKER_ENDPOINT_NAME && has_env AWS_REGION ;;
-    github_copilot)  has_env GITHUB_COPILOT_TOKEN || has_file "$HOME/.config/goose/github_copilot_token.json" ;;
-    chatgpt_codex)   has_env CHATGPT_CODEX_TOKEN || has_file "$HOME/.config/goose/chatgpt_codex_token.json" ;;
+    github_copilot)  has_env GITHUB_COPILOT_TOKEN || has_file "$HOME/.config/leaf/github_copilot_token.json" ;;
+    chatgpt_codex)   has_env CHATGPT_CODEX_TOKEN || has_file "$HOME/.config/leaf/chatgpt_codex_token.json" ;;
     ollama)          has_env OLLAMA_HOST || has_cmd ollama ;;
     claude-code)     has_cmd claude ;;
     codex)           has_cmd codex ;;

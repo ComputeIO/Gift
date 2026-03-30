@@ -1,4 +1,4 @@
-# Agent Runner - Test Suite (supports goose and opencode)
+# Agent Runner - Test Suite (supports leaf and opencode)
 
 # Default recipe
 default: run
