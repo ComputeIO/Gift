@@ -599,7 +599,7 @@ mod tests {
             // Set a low cutoff so we don't need hundreds of tool pairs.
             // cutoff=2 means we need >2+10=12 visible tool pairs to trigger.
             Config::global()
-                .set_param("GOOSE_TOOL_CALL_CUTOFF", 2)
+                .set_param("LEAF_TOOL_CALL_CUTOFF", 2)
                 .unwrap();
 
             let agent = Agent::new();
@@ -716,7 +716,7 @@ mod tests {
             );
 
             // Clean up the config override
-            Config::global().delete("GOOSE_TOOL_CALL_CUTOFF").unwrap();
+            Config::global().delete("LEAF_TOOL_CALL_CUTOFF").unwrap();
 
             Ok(())
         }

@@ -17,8 +17,8 @@ docker run --rm ghcr.io/block/goose:latest --version
 
 # Run with LLM configuration
 docker run --rm \
-  -e GOOSE_PROVIDER=openai \
-  -e GOOSE_MODEL=gpt-4o \
+  -e LEAF_PROVIDER=openai \
+  -e LEAF_MODEL=gpt-4o \
   -e OPENAI_API_KEY=$OPENAI_API_KEY \
   ghcr.io/block/goose:latest run -t "Hello, world!"
 ```
@@ -72,8 +72,8 @@ docker run --rm goose:local --help
 
 # Run a command
 docker run --rm \
-  -e GOOSE_PROVIDER=openai \
-  -e GOOSE_MODEL=gpt-4o \
+  -e LEAF_PROVIDER=openai \
+  -e LEAF_MODEL=gpt-4o \
   -e OPENAI_API_KEY=$OPENAI_API_KEY \
   goose:local run -t "Explain Docker containers"
 ```
@@ -83,8 +83,8 @@ With volume mounts for file access:
 docker run --rm \
   -v $(pwd):/workspace \
   -w /workspace \
-  -e GOOSE_PROVIDER=openai \
-  -e GOOSE_MODEL=gpt-4o \
+  -e LEAF_PROVIDER=openai \
+  -e LEAF_MODEL=gpt-4o \
   -e OPENAI_API_KEY=$OPENAI_API_KEY \
   goose:local run -t "Analyze the code in this directory"
 ```
@@ -92,8 +92,8 @@ docker run --rm \
 Interactive session mode with Databricks:
 ```bash
 docker run -it --rm \
-  -e GOOSE_PROVIDER=databricks \
-  -e GOOSE_MODEL=databricks-dbrx-instruct \
+  -e LEAF_PROVIDER=databricks \
+  -e LEAF_MODEL=databricks-dbrx-instruct \
   -e DATABRICKS_HOST="$DATABRICKS_HOST" \
   -e DATABRICKS_TOKEN="$DATABRICKS_TOKEN" \
   goose:local session
@@ -112,8 +112,8 @@ services:
   goose:
     image: ghcr.io/block/goose:latest
     environment:
-      - GOOSE_PROVIDER=${GOOSE_PROVIDER:-openai}
-      - GOOSE_MODEL=${GOOSE_MODEL:-gpt-4o}
+      - LEAF_PROVIDER=${LEAF_PROVIDER:-openai}
+      - LEAF_MODEL=${LEAF_MODEL:-gpt-4o}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     volumes:
       - ./workspace:/workspace
@@ -137,8 +137,8 @@ docker-compose run --rm goose session
 
 The Docker image accepts all standard goose environment variables:
 
-- `GOOSE_PROVIDER`: LLM provider (openai, anthropic, google, etc.)
-- `GOOSE_MODEL`: Model to use (gpt-4o, claude-sonnet-4, etc.)
+- `LEAF_PROVIDER`: LLM provider (openai, anthropic, google, etc.)
+- `LEAF_MODEL`: Model to use (gpt-4o, claude-sonnet-4, etc.)
 - Provider-specific API keys (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.)
 
 ### Persistent Configuration
@@ -183,8 +183,8 @@ jobs:
     container:
       image: ghcr.io/block/goose:latest
       env:
-        GOOSE_PROVIDER: openai
-        GOOSE_MODEL: gpt-4o
+        LEAF_PROVIDER: openai
+        LEAF_MODEL: gpt-4o
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     steps:
       - uses: actions/checkout@v4
@@ -199,8 +199,8 @@ jobs:
 analyze:
   image: ghcr.io/block/goose:latest
   variables:
-    GOOSE_PROVIDER: openai
-    GOOSE_MODEL: gpt-4o
+    LEAF_PROVIDER: openai
+    LEAF_MODEL: gpt-4o
   script:
     - goose run -t "Generate documentation for this project"
 ```

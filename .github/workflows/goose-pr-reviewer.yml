@@ -13,8 +13,8 @@
 #   - ANTHROPIC_API_KEY: API key for Anthropic
 #
 # Optional Variables:
-#   - GOOSE_PROVIDER: LLM provider (default: anthropic)
-#   - GOOSE_MODEL: Model name (default: claude-opus-4-5)
+#   - LEAF_PROVIDER: LLM provider (default: anthropic)
+#   - LEAF_MODEL: Model name (default: claude-opus-4-5)
 #
 # Security:
 #   - PR content could prompt-inject the agent; only trigger on PRs you trust.
@@ -27,7 +27,7 @@ on:
     types: [created]
 
 env:
-  GOOSE_RECIPE: |
+  LEAF_RECIPE: |
     version: "1.0.0"
     title: "Review Pull Request"
     description: "Review PR #${PR_NUMBER}"
@@ -225,8 +225,8 @@ jobs:
       image: ghcr.io/block/leaf:latest
       options: --user root
       env:
-        GOOSE_PROVIDER: ${{ vars.GOOSE_PROVIDER || 'anthropic' }}
-        GOOSE_MODEL: ${{ vars.GOOSE_MODEL || 'claude-opus-4-5' }}
+        LEAF_PROVIDER: ${{ vars.LEAF_PROVIDER || 'anthropic' }}
+        LEAF_MODEL: ${{ vars.LEAF_MODEL || 'claude-opus-4-5' }}
         ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         HOME: /tmp/goose-home
 
@@ -297,7 +297,7 @@ jobs:
           # SECURITY: Use printf with env var instead of heredoc to prevent injection
           printf '%s' "$ISSUE_JSON" > /tmp/pr.json
 
-          echo "$GOOSE_RECIPE" | envsubst '$PR_NUMBER $PR_TITLE $PR_BODY $REVIEW_INSTRUCTIONS' > /tmp/recipe.yaml
+          echo "$LEAF_RECIPE" | envsubst '$PR_NUMBER $PR_TITLE $PR_BODY $REVIEW_INSTRUCTIONS' > /tmp/recipe.yaml
 
           goose run --recipe /tmp/recipe.yaml
 

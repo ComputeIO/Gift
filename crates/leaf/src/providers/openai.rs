@@ -640,7 +640,7 @@ impl EmbeddingCapable for OpenAiProvider {
             return Ok(vec![]);
         }
 
-        let embedding_model = std::env::var("GOOSE_EMBEDDING_MODEL")
+        let embedding_model = std::env::var("LEAF_EMBEDDING_MODEL")
             .unwrap_or_else(|_| "text-embedding-3-small".to_string());
 
         let request = EmbeddingRequest {

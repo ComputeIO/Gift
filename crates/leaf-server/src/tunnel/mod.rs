@@ -151,7 +151,7 @@ impl TunnelManager {
     }
 
     fn is_tunnel_disabled() -> bool {
-        if let Ok(val) = std::env::var("GOOSE_TUNNEL") {
+        if let Ok(val) = std::env::var("LEAF_TUNNEL") {
             let val = val.to_lowercase();
             val == "no" || val == "none"
         } else {
@@ -252,7 +252,7 @@ impl TunnelManager {
 
     pub async fn start(&self) -> anyhow::Result<TunnelInfo> {
         if Self::is_tunnel_disabled() {
-            anyhow::bail!("Tunnel is disabled via GOOSE_TUNNEL environment variable");
+            anyhow::bail!("Tunnel is disabled via LEAF_TUNNEL environment variable");
         }
 
         let mut state = self.state.write().await;

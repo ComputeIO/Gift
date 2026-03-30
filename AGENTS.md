@@ -287,7 +287,7 @@ When adding TLS-related changes:
 The `download_cli.sh` script has its own naming conventions:
 
 **Environment variables:**
-- `LEAF_BIN_DIR` (not `GOOSE_BIN_DIR`)
+- `LEAF_BIN_DIR` (not `LEAF_BIN_DIR`)
 - `LEAF_VERSION`, `LEAF_PROVIDER`, `LEAF_MODEL`
 - `LEAFD_CERT_FINGERPRINT` for TLS cert fingerprint output
 
@@ -296,7 +296,7 @@ The `download_cli.sh` script has its own naming conventions:
 - `LeafAI/Leaf` as the repo identifier
 
 When adapting upstream shell script changes, always rename:
-- `GOOSE_BIN_DIR` → `LEAF_BIN_DIR`
+- `LEAF_BIN_DIR` → `LEAF_BIN_DIR`
 - `GOOSED_CERT_FINGERPRINT` → `LEAFD_CERT_FINGERPRINT`
 - `block/goose` → `LeafAI/Leaf`
 - `goose` binary → `leaf` binary

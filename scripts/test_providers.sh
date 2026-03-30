@@ -6,7 +6,7 @@ source "$LIB_DIR/test_providers_lib.sh"
 echo "Mode: normal (direct tool calls)"
 echo ""
 
-GOOSE_BIN=$(build_goose)
+LEAF_BIN=$(build_goose)
 BUILTINS="developer"
 
 mkdir -p target
@@ -37,9 +37,9 @@ run_test() {
   fi
 
   (
-    export GOOSE_PROVIDER="$provider"
-    export GOOSE_MODEL="$model"
-    cd "$testdir" && "$GOOSE_BIN" run --text "$prompt" --with-builtin "$BUILTINS" 2>&1
+    export LEAF_PROVIDER="$provider"
+    export LEAF_MODEL="$model"
+    cd "$testdir" && "$LEAF_BIN" run --text "$prompt" --with-builtin "$BUILTINS" 2>&1
   ) > "$output_file" 2>&1
 
   if is_agentic_provider "$provider"; then

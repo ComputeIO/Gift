@@ -1015,8 +1015,8 @@ mod tests {
     #[tokio::test]
     async fn test_job_runs_on_schedule() {
         let _guard = env_lock::lock_env([
-            ("GOOSE_PROVIDER", Some("openai")),
-            ("GOOSE_MODEL", Some("gpt-4o")),
+            ("LEAF_PROVIDER", Some("openai")),
+            ("LEAF_MODEL", Some("gpt-4o")),
             ("OPENAI_API_KEY", Some("fake-openai-no-keyring")),
             ("OPENAI_CUSTOM_HEADERS", Some("")),
         ]);
@@ -1047,8 +1047,8 @@ mod tests {
     #[tokio::test]
     async fn test_paused_job_does_not_run() {
         let _guard = env_lock::lock_env([
-            ("GOOSE_PROVIDER", Some("openai")),
-            ("GOOSE_MODEL", Some("gpt-4o")),
+            ("LEAF_PROVIDER", Some("openai")),
+            ("LEAF_MODEL", Some("gpt-4o")),
             ("OPENAI_API_KEY", Some("fake-openai-no-keyring")),
             ("OPENAI_CUSTOM_HEADERS", Some("")),
         ]);
@@ -1080,8 +1080,8 @@ mod tests {
     #[tokio::test]
     async fn test_job_with_no_prompt_does_not_panic() {
         let _guard = env_lock::lock_env([
-            ("GOOSE_PROVIDER", Some("openai")),
-            ("GOOSE_MODEL", Some("gpt-4o")),
+            ("LEAF_PROVIDER", Some("openai")),
+            ("LEAF_MODEL", Some("gpt-4o")),
             ("OPENAI_API_KEY", Some("fake-openai-no-keyring")),
             ("OPENAI_CUSTOM_HEADERS", Some("")),
         ]);

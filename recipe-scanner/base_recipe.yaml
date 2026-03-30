@@ -36,7 +36,7 @@ instructions: |
   - You have sudo privileges (passwordless) for apt/apt-get/dpkg/curl/wget to install tools required for analysis.
   - When you are finished, output exactly the following structure with markers on their own lines:
 
-    BEGIN_GOOSE_JSON
+    BEGIN_LEAF_JSON
   ## Context (templated parameters)
   - Target recipe to analyze (absolute path): {{ recipe_path }}
   - Strict mode: {{ strict_mode }}
@@ -107,9 +107,9 @@ instructions: |
   You MUST read and analyze exactly the file at {{ recipe_path }}. Do not guess. If the file does not exist or cannot be read, state that in the summary and still output JSON per the schema.
 
     { ...valid JSON per schema... }
-    END_GOOSE_JSON
+    END_LEAF_JSON
   - When 'strict_mode' is 'true', copy this exact JSON template between the markers and replace only the VALUES. Do not change keys or add fields.
-    BEGIN_GOOSE_JSON
+    BEGIN_LEAF_JSON
     {
       "score": 5,
       "threshold": 70,
@@ -118,7 +118,7 @@ instructions: |
       "urls": [],
       "summary": "Very low risk. Simple greeting behavior with no file system, network, or process execution."
     }
-    END_GOOSE_JSON
+    END_LEAF_JSON
   - Output only the JSON between markers in strict mode; omit any other text.
 
   - Do not include any other text before or after the markers.

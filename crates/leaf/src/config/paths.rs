@@ -5,7 +5,7 @@ pub struct Paths;
 
 impl Paths {
     fn get_dir(dir_type: DirType) -> PathBuf {
-        if let Ok(test_root) = std::env::var("GOOSE_PATH_ROOT") {
+        if let Ok(test_root) = std::env::var("LEAF_PATH_ROOT") {
             let base = PathBuf::from(test_root);
             match dir_type {
                 DirType::Config => base.join("config"),

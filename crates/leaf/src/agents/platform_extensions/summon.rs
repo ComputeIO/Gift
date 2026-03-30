@@ -349,7 +349,7 @@ fn discover_filesystem_sources(working_dir: &Path) -> Vec<Source> {
     let local_recipe_dirs: Vec<PathBuf> =
         vec![working_dir.to_path_buf(), working_dir.join(".leaf/recipes")];
 
-    let global_recipe_dirs: Vec<PathBuf> = std::env::var("GOOSE_RECIPE_PATH")
+    let global_recipe_dirs: Vec<PathBuf> = std::env::var("LEAF_RECIPE_PATH")
         .ok()
         .into_iter()
         .flat_map(|p| {
@@ -471,7 +471,7 @@ fn current_epoch_millis() -> u64 {
 /// Get maximum number of concurrent background tasks
 fn max_background_tasks() -> usize {
     Config::global()
-        .get_param::<usize>("GOOSE_MAX_BACKGROUND_TASKS")
+        .get_param::<usize>("LEAF_MAX_BACKGROUND_TASKS")
         .unwrap_or(5)
 }
 

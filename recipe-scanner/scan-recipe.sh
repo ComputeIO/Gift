@@ -12,7 +12,7 @@ echo "======================================"
 RECIPE_FILE="/input/recipe.yaml"
 OUTPUT_DIR="/output"
 WORKSPACE="/workspace"
-GOOSE_BIN="/usr/local/bin/goose"
+LEAF_BIN="/usr/local/bin/goose"
 BASE_RECIPE="/docker/base_recipe.yaml"
 
 # Globals used for meta
@@ -48,7 +48,7 @@ error_trap() {
     "timestamp": "$(date -u -Iseconds)",
     "environment": {
       "recipe_exists": $([ -f "$RECIPE_FILE" ] && echo "true" || echo "false"),
-      "goose_exists": $([ -f "$GOOSE_BIN" ] && echo "true" || echo "false"),
+      "goose_exists": $([ -f "$LEAF_BIN" ] && echo "true" || echo "false"),
       "base_recipe_exists": $([ -f "$BASE_RECIPE" ] && echo "true" || echo "false"),
       "api_key_set": $([ -n "${OPENAI_API_KEY:-}" ] && echo "true" || echo "false")
     }
@@ -66,7 +66,7 @@ Timestamp: $(date -u)
 
 🔧 Environment Debug:
 - Recipe file exists: $([ -f "$RECIPE_FILE" ] && echo "✅ YES" || echo "❌ NO")
-- Goose binary exists: $([ -f "$GOOSE_BIN" ] && echo "✅ YES" || echo "❌ NO")
+- Goose binary exists: $([ -f "$LEAF_BIN" ] && echo "✅ YES" || echo "❌ NO")
 - Base recipe exists: $([ -f "$BASE_RECIPE" ] && echo "✅ YES" || echo "❌ NO")
 - API key configured: $([ -n "${OPENAI_API_KEY:-}" ] && echo "✅ YES" || echo "❌ NO")
 
@@ -200,22 +200,22 @@ mkdir -p "$OUTPUT_DIR"
 echo "📁 Output directory: $OUTPUT_DIR"
 
 # Install Goose CLI if needed
-if [ ! -f "$GOOSE_BIN" ]; then
+if [ ! -f "$LEAF_BIN" ]; then
     echo "⬇️ Installing Goose CLI..."
 
     if curl -fsSL --connect-timeout 30 --max-time 300 \
        https://github.com/block/goose/releases/download/stable/download_cli.sh | bash; then
         for path in "$HOME/.local/bin/goose" "/usr/local/bin/goose" "$(which goose 2>/dev/null || true)"; do
             if [ -n "$path" ] && [ -f "$path" ] && [ -x "$path" ]; then
-                cp "$path" "$GOOSE_BIN"
-                chmod +x "$GOOSE_BIN"
+                cp "$path" "$LEAF_BIN"
+                chmod +x "$LEAF_BIN"
                 echo "✅ Goose CLI installed from $path"
                 break
             fi
         done
     fi
 
-    if [ ! -f "$GOOSE_BIN" ]; then
+    if [ ! -f "$LEAF_BIN" ]; then
         echo "⚠️ Trying direct download..."
         temp_dir=$(mktemp -d)
         if curl -fsSL --connect-timeout 30 --max-time 300 \
@@ -224,15 +224,15 @@ if [ ! -f "$GOOSE_BIN" ]; then
             tar -xjf "$temp_dir/goose.tar.bz2" -C "$temp_dir"
             goose_binary=$(find "$temp_dir" -name "goose" -type f -executable | head -1)
             if [ -n "$goose_binary" ]; then
-                cp "$goose_binary" "$GOOSE_BIN"
-                chmod +x "$GOOSE_BIN"
+                cp "$goose_binary" "$LEAF_BIN"
+                chmod +x "$LEAF_BIN"
                 echo "✅ Goose CLI installed via direct download"
             fi
         fi
         rm -rf "$temp_dir"
     fi
 
-    if [ ! -f "$GOOSE_BIN" ]; then
+    if [ ! -f "$LEAF_BIN" ]; then
         echo "❌ Failed to install Goose CLI"
         exit 1
     fi
@@ -240,38 +240,38 @@ fi
 
 # Verify Goose installation
 echo "🔧 Verifying Goose installation..."
-if ! "$GOOSE_BIN" --version >/dev/null 2>&1; then
+if ! "$LEAF_BIN" --version >/dev/null 2>&1; then
     echo "❌ Goose CLI not working"
-    "$GOOSE_BIN" --version || true
+    "$LEAF_BIN" --version || true
     exit 1
 fi
 
-echo "✅ Goose CLI ready: $($GOOSE_BIN --version)"
+echo "✅ Goose CLI ready: $($LEAF_BIN --version)"
 
 # Set up Goose environment
 echo "🔧 Configuring Goose environment..."
 
 USER_ID="$(id -u)"
-GOOSE_TMP="/tmp/goose_${USER_ID}"
-mkdir -p "$GOOSE_TMP"/{logs,state,cache,config} 2>/dev/null || true
-chmod -R 755 "$GOOSE_TMP" 2>/dev/null || true
+LEAF_TMP="/tmp/goose_${USER_ID}"
+mkdir -p "$LEAF_TMP"/{logs,state,cache,config} 2>/dev/null || true
+chmod -R 755 "$LEAF_TMP" 2>/dev/null || true
 
-export XDG_STATE_HOME="$GOOSE_TMP/state"
-export XDG_CACHE_HOME="$GOOSE_TMP/cache"
-export GOOSE_TELEMETRY_ENABLED=false
-export GOOSE_PROJECT_TRACKER_ENABLED=false
+export XDG_STATE_HOME="$LEAF_TMP/state"
+export XDG_CACHE_HOME="$LEAF_TMP/cache"
+export LEAF_TELEMETRY_ENABLED=false
+export LEAF_PROJECT_TRACKER_ENABLED=false
 export RUST_LOG=error
 
 if [ -f "$HOME/.config/goose/config.yaml" ]; then
-    cp "$HOME/.config/goose/config.yaml" "$GOOSE_TMP/config/config.yaml" 2>/dev/null || true
-    export GOOSE_CONFIG_DIR="$GOOSE_TMP/config"
+    cp "$HOME/.config/goose/config.yaml" "$LEAF_TMP/config/config.yaml" 2>/dev/null || true
+    export LEAF_CONFIG_DIR="$LEAF_TMP/config"
 fi
 
 echo "✅ Goose environment configured"
 
 # Quick health check (decoupled from analysis)
 echo "🔍 Running Goose health check..."
-if timeout 30 "$GOOSE_BIN" run --no-session -t "Hello, are you working?" >> "$OUTPUT_DIR/goose_output.log" 2>&1; then
+if timeout 30 "$LEAF_BIN" run --no-session -t "Hello, are you working?" >> "$OUTPUT_DIR/goose_output.log" 2>&1; then
     echo "✅ Goose health check passed"
 else
     echo "⚠️ Goose health check failed - continuing anyway"
@@ -519,7 +519,7 @@ EOF
 fi
 
 # Render the resolved base recipe (for debugging)
-if timeout 60 "$GOOSE_BIN" run \
+if timeout 60 "$LEAF_BIN" run \
     --recipe "$BASE_RECIPE" \
     --no-session \
     --render-recipe \
@@ -536,7 +536,7 @@ echo "🚀 Starting AI-powered security analysis..."
 mkdir -p "$WORKSPACE/security-analysis"
 cd "$WORKSPACE"
 
-timeout 600 "$GOOSE_BIN" run \
+timeout 600 "$LEAF_BIN" run \
     --recipe "$BASE_RECIPE" \
     --no-session \
     --quiet \
@@ -547,11 +547,11 @@ echo "📊 Security analysis completed with exit code: $SCAN_EXIT_CODE"
 
 # Parsing helpers
 extract_marked_json() {
-  if grep -q 'BEGIN_GOOSE_JSON' "$OUTPUT_DIR/goose_output.log" && grep -q 'END_GOOSE_JSON' "$OUTPUT_DIR/goose_output.log"; then
+  if grep -q 'BEGIN_LEAF_JSON' "$OUTPUT_DIR/goose_output.log" && grep -q 'END_LEAF_JSON' "$OUTPUT_DIR/goose_output.log"; then
     MARKERS_FOUND=true
     tac "$OUTPUT_DIR/goose_output.log" | awk '
-        /END_GOOSE_JSON/ && !found { found=1; next }
-        found && /BEGIN_GOOSE_JSON/ { exit }
+        /END_LEAF_JSON/ && !found { found=1; next }
+        found && /BEGIN_LEAF_JSON/ { exit }
         found { print }
     ' | tac > "$OUTPUT_DIR/goose_result.marked.txt" 2>/dev/null || true
     # strip code fences and blank lines
@@ -626,7 +626,7 @@ fi
 if [ "$JSON_VALID" = false ]; then
   RETRY_ATTEMPTED=true
   echo "🔁 Retrying once with strict JSON-only instruction..." | tee -a "$OUTPUT_DIR/goose_output.log"
-  timeout 120 "$GOOSE_BIN" run \
+  timeout 120 "$LEAF_BIN" run \
       --recipe "$BASE_RECIPE" \
       --no-session \
       --params recipe_path="$RECIPE_FILE" \

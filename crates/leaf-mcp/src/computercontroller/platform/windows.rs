@@ -12,7 +12,7 @@ impl SystemAutomation for WindowsAutomation {
             .arg("-NonInteractive")
             .arg("-Command")
             .arg(script)
-            .env("GOOSE_TERMINAL", "1")
+            .env("LEAF_TERMINAL", "1")
             .env("AGENT", "leaf")
             .set_no_window()
             .output()?;

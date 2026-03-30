@@ -11,7 +11,7 @@ on:
         type: string
 
 env:
-  GOOSE_RECIPE: |
+  LEAF_RECIPE: |
     version: "1.0.0"
     title: "Solve GitHub Issue"
     description: "Solve GitHub issue #${ISSUE_NUMBER}"
@@ -134,8 +134,8 @@ jobs:
       image: ghcr.io/block/leaf:latest
       options: --user root
       env:
-        GOOSE_PROVIDER: ${{ vars.GOOSE_PROVIDER || 'anthropic' }}
-        GOOSE_MODEL: ${{ vars.GOOSE_MODEL || 'claude-opus-4-5' }}
+        LEAF_PROVIDER: ${{ vars.LEAF_PROVIDER || 'anthropic' }}
+        LEAF_MODEL: ${{ vars.LEAF_MODEL || 'claude-opus-4-5' }}
         ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         HOME: /tmp/goose-home
 
@@ -198,7 +198,7 @@ jobs:
           mkdir -p $HOME/.config/goose
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
-          echo "$GOOSE_RECIPE" | envsubst '$ISSUE_NUMBER $ISSUE_TITLE $TRIGGER_COMMENT' > /tmp/recipe.yaml
+          echo "$LEAF_RECIPE" | envsubst '$ISSUE_NUMBER $ISSUE_TITLE $TRIGGER_COMMENT' > /tmp/recipe.yaml
 
           goose run --recipe /tmp/recipe.yaml
 

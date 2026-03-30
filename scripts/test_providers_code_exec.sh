@@ -9,7 +9,7 @@ echo ""
 
 # --- Setup ---
 
-GOOSE_BIN=$(build_goose)
+LEAF_BIN=$(build_goose)
 BUILTINS="memory,code_execution"
 
 # --- Test case ---
@@ -22,9 +22,9 @@ run_test() {
 
   # Run goose
   (
-    export GOOSE_PROVIDER="$provider"
-    export GOOSE_MODEL="$model"
-    cd "$testdir" && "$GOOSE_BIN" run --text "$prompt" --with-builtin "$BUILTINS" 2>&1
+    export LEAF_PROVIDER="$provider"
+    export LEAF_MODEL="$model"
+    cd "$testdir" && "$LEAF_BIN" run --text "$prompt" --with-builtin "$BUILTINS" 2>&1
   ) > "$output_file" 2>&1
 
   # Matches: "execute_typescript | code_execution", "get_function_details | code_execution",

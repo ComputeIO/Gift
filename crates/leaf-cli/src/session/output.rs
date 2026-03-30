@@ -38,10 +38,10 @@ impl Theme {
     fn as_str(&self) -> String {
         match self {
             Theme::Light => Config::global()
-                .get_param::<String>("GOOSE_CLI_LIGHT_THEME")
+                .get_param::<String>("LEAF_CLI_LIGHT_THEME")
                 .unwrap_or(DEFAULT_CLI_LIGHT_THEME.to_string()),
             Theme::Dark => Config::global()
-                .get_param::<String>("GOOSE_CLI_DARK_THEME")
+                .get_param::<String>("LEAF_CLI_DARK_THEME")
                 .unwrap_or(DEFAULT_CLI_DARK_THEME.to_string()),
             Theme::Ansi => "base16".to_string(),
         }
@@ -68,10 +68,10 @@ impl Theme {
 
 thread_local! {
     static CURRENT_THEME: RefCell<Theme> = RefCell::new(
-        std::env::var("GOOSE_CLI_THEME").ok()
+        std::env::var("LEAF_CLI_THEME").ok()
             .map(|val| Theme::from_config_str(&val))
             .unwrap_or_else(||
-                Config::global().get_param::<String>("GOOSE_CLI_THEME").ok()
+                Config::global().get_param::<String>("LEAF_CLI_THEME").ok()
                     .map(|val| Theme::from_config_str(&val))
                     .unwrap_or(Theme::Ansi)
             )
@@ -82,7 +82,7 @@ thread_local! {
 pub fn set_theme(theme: Theme) {
     let config = Config::global();
     config
-        .set_param("GOOSE_CLI_THEME", theme.as_config_string())
+        .set_param("LEAF_CLI_THEME", theme.as_config_string())
         .expect("Failed to set theme");
     CURRENT_THEME.with(|t| *t.borrow_mut() = theme);
 
@@ -93,7 +93,7 @@ pub fn set_theme(theme: Theme) {
         Theme::Ansi => "ansi",
     };
 
-    if let Err(e) = config.set_param("GOOSE_CLI_THEME", theme_str) {
+    if let Err(e) = config.set_param("LEAF_CLI_THEME", theme_str) {
         eprintln!("Failed to save theme setting to config: {}", e);
     }
 }
@@ -176,7 +176,7 @@ pub fn hide_thinking() {
 }
 
 pub fn run_status_hook(status: &str) {
-    if let Ok(hook) = Config::global().get_param::<String>("GOOSE_STATUS_HOOK") {
+    if let Ok(hook) = Config::global().get_param::<String>("LEAF_STATUS_HOOK") {
         let status = status.to_string();
         std::thread::spawn(move || {
             #[cfg(target_os = "windows")]
@@ -447,7 +447,7 @@ pub fn leaf_mode_message(text: &str) {
 }
 
 static SHOW_THINKING: LazyLock<bool> = LazyLock::new(|| {
-    std::env::var("GOOSE_CLI_SHOW_THINKING").is_ok() && std::io::stdout().is_terminal()
+    std::env::var("LEAF_CLI_SHOW_THINKING").is_ok() && std::io::stdout().is_terminal()
 });
 
 fn should_show_thinking() -> bool {
@@ -516,7 +516,7 @@ fn render_tool_response(resp: &ToolResponse, debug: bool) {
                 }
 
                 let min_priority = config
-                    .get_param::<f32>("GOOSE_CLI_MIN_PRIORITY")
+                    .get_param::<f32>("LEAF_CLI_MIN_PRIORITY")
                     .ok()
                     .unwrap_or(DEFAULT_MIN_PRIORITY);
 

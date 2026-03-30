@@ -159,7 +159,7 @@ pub async fn spawn_acp_server_in_process(
     if !config_path.exists() {
         fs::write(
             &config_path,
-            format!("GOOSE_MODEL: {TEST_MODEL}\nGOOSE_PROVIDER: openai\n"),
+            format!("LEAF_MODEL: {TEST_MODEL}\nLEAF_PROVIDER: openai\n"),
         )
         .unwrap();
     }

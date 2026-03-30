@@ -23,8 +23,8 @@ jobs:
       image: ghcr.io/block/leaf:latest
       options: --user root
       env:
-        GOOSE_PROVIDER: ${{ vars.GOOSE_PROVIDER || 'openai' }}
-        GOOSE_MODEL: ${{ vars.GOOSE_MODEL || 'gpt-5' }}
+        LEAF_PROVIDER: ${{ vars.LEAF_PROVIDER || 'openai' }}
+        LEAF_MODEL: ${{ vars.LEAF_MODEL || 'gpt-5' }}
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         HOME: /tmp/goose-home
 

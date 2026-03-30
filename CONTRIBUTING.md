@@ -177,12 +177,12 @@ API changes should be made in the Rust source under `crates/goose-server/src/`.
 To debug the Goose server, run it from an IDE. The configuration will depend on the IDE. The command to run is:
 
 ```
-export GOOSE_SERVER__SECRET_KEY=test
+export LEAF_SERVER__SECRET_KEY=test
 cargo run --package goose-server --bin goosed -- agent   # or: `just run-server`
 ```
 
 The server listens on port `3000` by default; this can be changed by setting the
-`GOOSE_PORT` environment variable.
+`LEAF_PORT` environment variable.
 
 ## Creating a fork
 
@@ -284,7 +284,7 @@ your configuration.
 > At the moment, we are still updating some of the CLI configuration to make sure this is
 > respected.
 
-You can change the provider goose points to via the `GOOSE_PROVIDER` env var. If you already
+You can change the provider goose points to via the `LEAF_PROVIDER` env var. If you already
 have a credential for that provider in your keychain from previously setting up, it should
 reuse it. For things like automations or to test without doing official setup, you can also
 set the relevant env vars for that provider. For example `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
@@ -292,15 +292,15 @@ or `DATABRICKS_HOST`. Refer to the provider details for more info on required ke
 
 ### Isolating Test Environments
 
-When testing changes or running multiple goose configurations, use `GOOSE_PATH_ROOT` to isolate your data:
+When testing changes or running multiple goose configurations, use `LEAF_PATH_ROOT` to isolate your data:
 
 ```bash
 # Test with a clean environment
-export GOOSE_PATH_ROOT="/tmp/goose-test"
+export LEAF_PATH_ROOT="/tmp/goose-test"
 ./target/debug/goose session
 
 # Or for a single command
-GOOSE_PATH_ROOT="/tmp/goose-dev" cargo run -p goose-cli -- session
+LEAF_PATH_ROOT="/tmp/goose-dev" cargo run -p goose-cli -- session
 ```
 
 This creates isolated `config/`, `data/`, and `state/` directories under the specified path, preventing your test sessions from affecting your main goose installation. See the [environment variables guide](./documentation/docs/guides/environment-variables.md#development--testing) for more details.

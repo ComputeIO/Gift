@@ -155,7 +155,7 @@ pub static PLATFORM_EXTENSIONS: Lazy<HashMap<&'static str, PlatformExtensionDef>
                 name: tom::EXTENSION_NAME,
                 display_name: "Top Of Mind",
                 description:
-                    "Inject custom context into every turn via GOOSE_MOIM_MESSAGE_TEXT and GOOSE_MOIM_MESSAGE_FILE environment variables",
+                    "Inject custom context into every turn via LEAF_MOIM_MESSAGE_TEXT and LEAF_MOIM_MESSAGE_FILE environment variables",
                 default_enabled: true,
                 unprefixed_tools: false,
                 hidden: false,
