@@ -143,6 +143,9 @@ When contributing to Leaf, keep these CLI-only constraints in mind:
 When syncing from upstream block/goose:
 
 1. **Create tracking issue** with commit range to analyze
+
+    > ⚠️ **IMPORTANT**: Always create the issue on **LeafAI/Leaf** (origin), NOT on block/goose (upstream).
+    > Verify the repo URL before creating: `git remote -v` shows origin → LeafAI/Leaf, upstream → block/goose.
 2. **List all commits**: `git log upstream/main --oneline 928f4ac46..59a96c986`
 3. **Analyze each commit**:
    - Check if CLI-relevant (affects `crates/leaf`, `crates/leaf-cli`, `crates/leaf-server`, `crates/leaf-acp`, `crates/leaf-mcp`, `download_cli.sh`)
