@@ -1305,6 +1305,7 @@ pub fn display_session_info(
     provider: &str,
     model: &str,
     session_id: &Option<String>,
+    message_count: Option<usize>,
 ) {
     set_terminal_title();
 
@@ -1320,33 +1321,73 @@ pub fn display_session_info(
 
     let cwd_display = std::env::current_dir()
         .ok()
-        .map(|p| p.display().to_string())
+        .map(|p| shorten_path(&p.display().to_string(), false))
         .unwrap_or_else(|| "unknown".to_string());
 
-    // ASCII art leaf with session info on the right
-    println!(
-        "  {} {} {} {}",
+    let line1 = format!(
+        " {} {} {} {}",
         style(status).dim(),
         style("·").dim(),
         style(provider).dim(),
         style(&model_display).cyan(),
     );
+    let line1_plain = format!(" {} · {} {}", status, provider, &model_display);
 
-    if let Some(id) = session_id {
-        println!(
-            "  {} {} {}",
-            style(" ").dim(),
-            style(id).dim(),
-            style(format!("· {}", cwd_display)).dim(),
-        );
+    let line2 = if let Some(id) = session_id {
+        let msg_info = match message_count {
+            Some(count) if count > 0 => format!(" · {} messages", count),
+            _ => String::new(),
+        };
+        let cwd_part = format!("· {}", cwd_display);
+        (
+            format!(
+                " {}{}{}",
+                style(id).dim(),
+                style(&cwd_part).dim(),
+                style(&msg_info).dim(),
+            ),
+            format!(" {}{}{}", id, cwd_part, msg_info),
+        )
     } else {
-        println!(
-            "  {} {}",
-            style(" ").dim(),
-            style(format!("  {}", cwd_display)).dim(),
-        );
-    }
-    println!("  {}", style("   leaf is ready").white());
+        (
+            format!(" {}", style(&cwd_display).dim()),
+            format!(" {}", cwd_display),
+        )
+    };
+
+    let inner_width = line1_plain.len().max(line2.1.len());
+    let box_width = inner_width;
+
+    println!(
+        "{}",
+        style(format!("╭{}╮", "─".repeat(box_width)))
+            .fg(Color::Green)
+            .dim()
+    );
+    println!(
+        "{}{}{}",
+        style("│").fg(Color::Green).dim(),
+        pad_to_width(&line1, &line1_plain, inner_width),
+        style("│").fg(Color::Green).dim()
+    );
+    println!(
+        "{}{}{}",
+        style("│").fg(Color::Green).dim(),
+        pad_to_width(&line2.0, &line2.1, inner_width),
+        style("│").fg(Color::Green).dim()
+    );
+    println!(
+        "{}",
+        style(format!("╰{}╯", "─".repeat(box_width)))
+            .fg(Color::Green)
+            .dim()
+    );
+}
+
+fn pad_to_width(styled_line: &str, plain_line: &str, target_width: usize) -> String {
+    let current_width = measure_text_width(plain_line);
+    let padding = target_width.saturating_sub(current_width);
+    format!("{}{}", styled_line, " ".repeat(padding))
 }
 
 fn set_terminal_title() {

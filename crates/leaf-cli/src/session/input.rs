@@ -1,6 +1,7 @@
 use super::completion::LeafCompleter;
 use super::{CompletionCache, HintStatus};
 use anyhow::Result;
+use console::style;
 use leaf::config::{Config, LeafMode};
 use rustyline::Editor;
 use shlex;
@@ -462,7 +463,7 @@ fn parse_model_command(input: &str) -> Option<InputResult> {
 }
 
 fn get_input_prompt_string() -> String {
-    "🌿 ".to_string()
+    format!("{} ", style("❯").green())
 }
 
 fn print_help() {

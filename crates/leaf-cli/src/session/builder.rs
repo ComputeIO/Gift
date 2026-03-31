@@ -716,11 +716,21 @@ pub async fn build_session(session_config: SessionBuilderConfig) -> CliSession {
     configure_session_prompts(&session, config, &session_config, &session_id).await;
 
     if !session_config.quiet {
+        let message_count = if session_config.resume {
+            session_manager
+                .get_session(&session_id, false)
+                .await
+                .ok()
+                .map(|s| s.message_count)
+        } else {
+            None
+        };
         output::display_session_info(
             session_config.resume,
             &resolved.provider_name,
             &resolved.model_name,
             &Some(session_id),
+            message_count,
         );
     }
     session
