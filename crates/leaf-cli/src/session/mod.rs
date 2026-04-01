@@ -789,9 +789,15 @@ impl CliSession {
                 let mut models: Vec<String> =
                     meta.known_models.iter().map(|m| m.name.clone()).collect();
                 models.sort();
+                let is_current_provider = meta.name == current_provider;
+                let provider_style = console::style(meta.name.clone()).fg(Color::Green).bold();
                 print!(
                     " 🚀 {} - {} (default: {})",
-                    console::style(meta.name.clone()).fg(Color::Green).bold(),
+                    if is_current_provider {
+                        provider_style.bg(Color::Yellow)
+                    } else {
+                        provider_style
+                    },
                     meta.display_name,
                     meta.default_model
                 );
@@ -799,13 +805,8 @@ impl CliSession {
                 let mut i = 1;
                 let mut newline = true;
                 for model in &models {
-                    let is_current = model == &current_model;
-                    let display_len = if is_current {
-                        model.len() + 2 // account for " ◀"
-                    } else {
-                        model.len()
-                    };
-                    if line_length + display_len + 2 > default_line_length {
+                    let is_current = is_current_provider && model == &current_model;
+                    if line_length + model.len() + 2 > default_line_length {
                         newline = true;
                     }
                     if newline {
@@ -818,12 +819,13 @@ impl CliSession {
                         print!(", ");
                         line_length += 2;
                     }
+                    let model_style = console::style(model).fg(Color::Blue).italic();
                     if is_current {
-                        print!("{} ◀", console::style(model).fg(Color::Green).bold());
+                        print!("{}", model_style.bg(Color::Yellow));
                     } else {
-                        print!("{}", console::style(model).fg(Color::Blue).italic());
+                        print!("{}", model_style);
                     }
-                    line_length += display_len;
+                    line_length += model.len();
                 }
                 println!();
             }
