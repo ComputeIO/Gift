@@ -14,6 +14,7 @@ use crate::model::ModelConfig;
 use crate::providers::base::{ProviderDef, ProviderMetadata};
 
 const GEMINI_ACP_PROVIDER_NAME: &str = "gemini-acp";
+pub const GEMINI_ACP_DEFAULT_MODEL: &str = "current";
 const GEMINI_ACP_DOC_URL: &str = "https://github.com/google-gemini/gemini-cli";
 
 pub struct GeminiAcpProvider;

@@ -810,6 +810,14 @@ async fn test_codex_acp_provider() -> Result<()> {
         .await
 }
 
+// Requires: npm install -g @github/copilot
+#[tokio::test]
+async fn test_copilot_acp_provider() -> Result<()> {
+    ProviderTestConfig::with_agentic_provider("copilot-acp", "current", "copilot")
+        .run()
+        .await
+}
+
 // Requires: npm install -g @google/gemini-cli
 #[tokio::test]
 async fn test_gemini_acp_provider() -> Result<()> {

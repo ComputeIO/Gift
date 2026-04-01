@@ -7,6 +7,7 @@ use super::{
     chatgpt_codex::ChatGptCodexProvider,
     claude_acp::ClaudeAcpProvider,
     codex_acp::CodexAcpProvider,
+    copilot_acp::CopilotAcpProvider,
     cursor_agent::CursorAgentProvider,
     databricks::DatabricksProvider,
     gemini_acp::GeminiAcpProvider,
@@ -45,6 +46,7 @@ async fn init_registry() -> RwLock<ProviderRegistry> {
         registry.register::<ClaudeAcpProvider>(false);
         registry.register::<GeminiAcpProvider>(false);
         registry.register::<CodexAcpProvider>(false);
+        registry.register::<CopilotAcpProvider>(false);
         registry.register::<CursorAgentProvider>(false);
         registry.register::<DatabricksProvider>(true);
         registry.register::<GeminiCliProvider>(false);
