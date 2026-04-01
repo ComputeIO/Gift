@@ -120,7 +120,6 @@ tree-sitter-swift = { workspace = true }
 tree-sitter-typescript = { workspace = true }
 which = { workspace = true }
 pulldown-cmark = "0.13.0"
-encoding_rs = "0.8.35"
 pastey = "0.2.1"
 shell-words = "1.1.1"
 
@@ -140,6 +139,10 @@ env-lock = { workspace = true }
 rmcp = { workspace = true, features = ["transport-streamable-http-server"] }
 opentelemetry_sdk = { workspace = true, features = ["testing"] }
 leaf-test-support = { path = "../leaf-test-support" }
+
+[[test]]
+name = "session_id_propagation_test"
+required-features = ["telemetry"]
 
 [[example]]
 name = "agent"
