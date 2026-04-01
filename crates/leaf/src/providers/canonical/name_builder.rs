@@ -43,6 +43,7 @@ fn map_provider_name(provider: &str) -> &str {
     match provider {
         // Leaf provider names that differ from models.dev names
         "xai" => "x-ai",
+        "gcp_vertex_ai" => "google-vertex",
         // OpenCode provider names - strip the suffix to get base provider
         _ if provider.starts_with("opencode-") => "opencode",
         _ => provider,
@@ -388,7 +389,7 @@ mod tests {
         );
         assert_eq!(
             map_to_canonical_model("azure", "gpt-4o", r),
-            Some("openai/gpt-4o".to_string())
+            Some("azure/gpt-4o".to_string())
         );
 
         // === OpenAI O-series ===

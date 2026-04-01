@@ -1,5 +1,5 @@
 use crate::recipe::read_recipe_file_content::RecipeFile;
-use crate::recipe::template_recipe::parse_recipe_content;
+use crate::recipe::template_recipe::{parse_recipe_content, uses_template_inheritance};
 use crate::recipe::{
     Recipe, RecipeParameter, RecipeParameterInputType, RecipeParameterRequirement,
     BUILT_IN_RECIPE_DIR_PARAM,
@@ -15,7 +15,12 @@ pub fn parse_and_validate_parameters(
         parse_recipe_content(recipe_file_content, recipe_dir_str)?;
     let recipe_parameters = &recipe_template.parameters;
     validate_optional_parameters(recipe_parameters)?;
-    validate_parameters_in_template(recipe_parameters, &template_variables)?;
+    // Skip parameter-to-template-variable validation for inherited templates:
+    // the child template alone has no variables, but inherits parameters from
+    // the parent which were already validated when the parent was parsed.
+    if !uses_template_inheritance(recipe_file_content) {
+        validate_parameters_in_template(recipe_parameters, &template_variables)?;
+    }
     Ok(recipe_template)
 }
 
