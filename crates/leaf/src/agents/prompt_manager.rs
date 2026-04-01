@@ -409,7 +409,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[tokio::test]
     #[ignore = "snapshot depends on dynamic skill files that differ between environments"]
     async fn test_all_platform_extensions() {
         use crate::agents::platform_extensions::{PlatformExtensionContext, PLATFORM_EXTENSIONS};
