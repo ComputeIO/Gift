@@ -1,5 +1,6 @@
 pub mod anthropic;
 pub mod databricks;
+pub mod gcpvertexai;
 pub mod google;
 pub mod ollama;
 pub mod openai;

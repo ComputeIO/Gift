@@ -16,6 +16,8 @@ pub mod databricks;
 pub mod embedding;
 pub mod errors;
 pub mod formats;
+pub mod gcpauth;
+pub mod gcpvertexai;
 pub mod gemini_acp;
 pub mod gemini_cli;
 pub mod githubcopilot;
