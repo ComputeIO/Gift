@@ -6,7 +6,7 @@ on:
       - opened
       - synchronize
     branches:
-      - main
+      - cli
 
 jobs:
   check-commits:
@@ -22,7 +22,7 @@ jobs:
       run: |
         git fetch origin main
 
-        CHERRY_OUTPUT=$(git cherry origin/main HEAD)
+        CHERRY_OUTPUT=$(git cherry origin/cli HEAD)
 
         if [ -z "$CHERRY_OUTPUT" ]; then
           echo "✅ All commits already exist in main"
@@ -40,7 +40,7 @@ jobs:
         fi
 
         COMMIT_COUNT=$(echo "$MISSING_COMMITS" | wc -l)
-        FIRST_COMMIT=$(git rev-list --reverse HEAD ^origin/main | head -1)
+        FIRST_COMMIT=$(git rev-list --reverse HEAD ^origin/cli | head -1)
 
         if [ "$COMMIT_COUNT" -eq 1 ] && echo "$MISSING_COMMITS" | grep -q "$FIRST_COMMIT"; then
           echo "✅ Only version bump commit is unique"

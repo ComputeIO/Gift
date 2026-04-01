@@ -25,6 +25,11 @@ Leaf is a **fork of the block/goose project** with the following key transformat
 - MCP extensions (`crates/leaf-mcp`)
 - Server backend (`crates/leaf-server` → `leafd`)
 
+## Branches
+
+- **`cli`** — Current active development branch (main/master equivalent for CLI-only Leaf)
+- **`main`** — Upstream block/goose reference; do not use directly
+
 ## Setup
 ```bash
 source bin/activate-hermit

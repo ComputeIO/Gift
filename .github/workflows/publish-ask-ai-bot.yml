@@ -3,7 +3,7 @@ name: Publish Ask AI Bot Docker Image
 on:
   push:
     branches:
-      - main
+      - cli
     paths:
       - "services/ask-ai-bot/**"
       - "documentation/**"

@@ -11,7 +11,7 @@ on:
         description: 'Target branch for the pull request'
         required: false
         type: string
-        default: 'main'
+        default: 'cli'
     secrets:
       ANTHROPIC_API_KEY:
         required: false

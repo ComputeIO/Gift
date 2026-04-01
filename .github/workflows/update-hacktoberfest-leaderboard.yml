@@ -9,7 +9,7 @@ on:
 jobs:
   update-leaderboard:
     runs-on: ubuntu-latest
-    if: github.repository == 'block/leaf'
+    if: github.repository == 'LeafAI/Leaf'
     permissions:
       contents: read
       pull-requests: read
@@ -29,7 +29,7 @@ jobs:
 
             // Track the Leaf repo only
             const REPOS = [
-              'block/leaf'
+              'LeafAI/Leaf'
             ];
 
             const POINT_VALUES = { small: 5, medium: 10, large: 15 };

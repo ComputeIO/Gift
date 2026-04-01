@@ -3,13 +3,13 @@ name: CI
 on:
   push:
     branches:
-      - main
+      - cli
   pull_request:
     branches:
-      - main
+      - cli
   merge_group:
     branches:
-      - main
+      - cli
   workflow_dispatch:
 
 jobs:
@@ -79,7 +79,7 @@ jobs:
   rust-build-windows:
     name: Build Rust Project on Windows
     runs-on: windows-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/cli'
     steps:
       - name: Checkout Code
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
@@ -119,7 +119,7 @@ jobs:
           # play nicely with hermit-managed rust
           hermit uninstall rustup
           export CARGO_INCREMENTAL=0
-          cargo clippy --workspace --all-targets --exclude v8 -- -D warnings
+          cargo clippy --workspace --all-targets -- -D warnings
 
       - name: Check for banned TLS crates
         run: ./scripts/check-no-native-tls.sh

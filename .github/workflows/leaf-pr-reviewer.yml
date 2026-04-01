@@ -222,7 +222,7 @@ jobs:
     timeout-minutes: 15
 
     container:
-      image: ghcr.io/block/leaf:latest
+      image: ghcr.io/LeafAI/Leaf:latest
       options: --user root
       env:
         LEAF_PROVIDER: ${{ vars.LEAF_PROVIDER || 'anthropic' }}

@@ -20,7 +20,7 @@ jobs:
   find-untested-code:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/block/leaf:latest
+      image: ghcr.io/LeafAI/Leaf:latest
       options: --user root
       env:
         LEAF_PROVIDER: ${{ vars.LEAF_PROVIDER || 'openai' }}
