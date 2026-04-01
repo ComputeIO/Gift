@@ -6,6 +6,7 @@ use etcetera::home_dir;
 use leaf::session::{generate_diagnostics, Session, SessionManager};
 use leaf::utils::safe_truncate;
 use regex::Regex;
+use std::collections::BTreeMap;
 use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
@@ -169,15 +170,14 @@ pub async fn handle_session_list(
         sessions.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
     }
 
-    if let Some(n) = limit {
-        sessions.truncate(n);
-    }
-
     let stdout = io::stdout();
     let mut out = stdout.lock();
 
     match format.as_str() {
         "json" => {
+            if let Some(n) = limit {
+                sessions.truncate(n);
+            }
             let payload = serde_json::to_string(&sessions)?;
             if !write_line_or_broken_pipe_ok(&mut out, &payload)? {
                 return Ok(());
@@ -191,21 +191,79 @@ pub async fn handle_session_list(
                 return Ok(());
             }
 
-            if !write_line_or_broken_pipe_ok(&mut out, "Available sessions:")? {
+            if !write_line_or_broken_pipe_ok(&mut out, "Available sessions:\n")? {
                 return Ok(());
             }
 
-            for session in sessions {
-                let output = format!(
-                    "{} - {} - {} - {}",
-                    session.id,
-                    session.name,
-                    session.updated_at,
-                    display_path_with_tilde(&session.working_dir)
-                );
-                if !write_line_or_broken_pipe_ok(&mut out, &output)? {
+            let mut groups: BTreeMap<PathBuf, Vec<&Session>> = BTreeMap::new();
+            for session in &sessions {
+                groups
+                    .entry(session.working_dir.clone())
+                    .or_default()
+                    .push(session);
+            }
+
+            let mut group_entries: Vec<(PathBuf, Vec<&Session>)> = groups.into_iter().collect();
+
+            let max_updated = |sessions: &[&Session]| {
+                sessions
+                    .iter()
+                    .map(|s| s.updated_at)
+                    .max()
+                    .unwrap_or_default()
+            };
+
+            if ascending {
+                group_entries.sort_by_key(|(_, s)| max_updated(s));
+            } else {
+                group_entries.sort_by_key(|(_, s)| std::cmp::Reverse(max_updated(s)));
+            }
+
+            for (dir, group_sessions) in &group_entries {
+                let dir_display = display_path_with_tilde(dir);
+                let count = group_sessions.len();
+                if !write_line_or_broken_pipe_ok(
+                    &mut out,
+                    &format!(
+                        "{dir_display} ({count} session{})",
+                        if count == 1 { "" } else { "s" }
+                    ),
+                )? {
                     return Ok(());
                 }
+
+                let display_sessions: Vec<&Session> = if let Some(n) = limit {
+                    group_sessions.iter().take(n).copied().collect()
+                } else {
+                    group_sessions.clone()
+                };
+
+                for session in &display_sessions {
+                    let output = format!(
+                        "  {} - {} - {}",
+                        session.id, session.name, session.updated_at,
+                    );
+                    if !write_line_or_broken_pipe_ok(&mut out, &output)? {
+                        return Ok(());
+                    }
+                }
+
+                if !write_line_or_broken_pipe_ok(&mut out, "")? {
+                    return Ok(());
+                }
+            }
+
+            let total = sessions.len();
+            let dir_count = group_entries.len();
+            if !write_line_or_broken_pipe_ok(
+                &mut out,
+                &format!(
+                    "Total: {total} session{} in {dir_count} director{}",
+                    if total == 1 { "" } else { "s" },
+                    if dir_count == 1 { "y" } else { "ies" }
+                ),
+            )? {
+                return Ok(());
             }
         }
     }
