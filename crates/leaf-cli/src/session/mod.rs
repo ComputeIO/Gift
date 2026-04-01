@@ -779,22 +779,22 @@ impl CliSession {
         let available_providers = providers::providers().await;
 
         if options.provider.is_none() {
-            let default_line_length = 120 - "    [001] ".len();
+            let term_width = console::Term::stdout().size().1 as usize;
+            let default_line_length = term_width.saturating_sub("    [001] ".len());
             let current_provider = self.agent.provider_name().await;
             let current_model = self.agent.model_name().await;
             println!("\nAvailable providers:");
             let mut sorted_providers: Vec<_> = available_providers.iter().collect();
             sorted_providers.sort_by(|a, b| a.0.name.cmp(&b.0.name));
             for (meta, _) in &sorted_providers {
-                let mut models: Vec<String> =
-                    meta.known_models.iter().map(|m| m.name.clone()).collect();
-                models.sort();
+                let mut models: Vec<_> = meta.known_models.iter().collect();
+                models.sort_by(|a, b| a.name.cmp(&b.name));
                 let is_current_provider = meta.name == current_provider;
                 let provider_style = console::style(meta.name.clone()).fg(Color::Green).bold();
                 print!(
                     " 🚀 {} - {} (default: {})",
                     if is_current_provider {
-                        provider_style.bg(Color::Yellow)
+                        provider_style.bg(Color::Cyan)
                     } else {
                         provider_style
                     },
@@ -805,8 +805,10 @@ impl CliSession {
                 let mut i = 1;
                 let mut newline = true;
                 for model in &models {
-                    let is_current = is_current_provider && model == &current_model;
-                    if line_length + model.len() + 2 > default_line_length {
+                    let is_current = is_current_provider && model.name == current_model;
+                    let context_k = model.context_limit / 1024;
+                    let display = format!("{} ({}K)", model.name, context_k);
+                    if line_length + display.len() + 2 > default_line_length {
                         newline = true;
                     }
                     if newline {
@@ -819,13 +821,13 @@ impl CliSession {
                         print!(", ");
                         line_length += 2;
                     }
-                    let model_style = console::style(model).fg(Color::Blue).italic();
+                    let model_style = console::style(&display).fg(Color::Blue).italic();
                     if is_current {
-                        print!("{}", model_style.bg(Color::Yellow));
+                        print!("{}", model_style.bg(Color::Cyan));
                     } else {
                         print!("{}", model_style);
                     }
-                    line_length += model.len();
+                    line_length += display.len();
                 }
                 println!();
             }
