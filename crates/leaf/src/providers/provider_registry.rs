@@ -34,7 +34,21 @@ impl ProviderEntry {
         let provider_name = &self.metadata.name;
         let model_config =
             ModelConfig::new(default_model.as_str())?.with_canonical_limits(provider_name);
+        let model_config = self.enrich_context_limit(model_config);
         (self.constructor)(model_config, extensions).await
+    }
+
+    pub fn enrich_context_limit(&self, config: ModelConfig) -> ModelConfig {
+        if config.context_limit.is_some() {
+            return config;
+        }
+        let limit = self
+            .metadata
+            .known_models
+            .iter()
+            .find(|m| m.name == config.model_name)
+            .map(|m| m.context_limit);
+        config.with_context_limit(limit)
     }
 
     pub fn with_fallback_display_name(&self, original_name: &str) -> Self {
