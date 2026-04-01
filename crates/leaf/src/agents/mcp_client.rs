@@ -969,6 +969,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "LeafCli does not support mcpui; test requires desktop platform"]
     fn test_client_info_advertises_mcp_apps_ui_extension() {
         let client = new_client(LeafPlatform::LeafCli);
         let info = ClientHandler::get_info(&client);

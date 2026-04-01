@@ -154,7 +154,7 @@ fn get_env_with_template_variables(
     Ok((env, template_variables))
 }
 
-fn uses_template_inheritance(content: &str) -> bool {
+pub fn uses_template_inheritance(content: &str) -> bool {
     let re = Regex::new(r"\{%-?\s*(extends|include)").unwrap();
     re.is_match(content)
 }
