@@ -782,7 +782,6 @@ impl CliSession {
             let default_line_length = 120 - "    [001] ".len();
             let current_provider = self.agent.provider_name().await;
             let current_model = self.agent.model_name().await;
-            println!("Current model: {}/{}", current_provider, current_model);
             println!("\nAvailable providers:");
             let mut sorted_providers: Vec<_> = available_providers.iter().collect();
             sorted_providers.sort_by(|a, b| a.0.name.cmp(&b.0.name));
@@ -800,8 +799,13 @@ impl CliSession {
                 let mut i = 1;
                 let mut newline = true;
                 for model in &models {
-                    let model_len = model.len();
-                    if line_length + model_len + 2 > default_line_length {
+                    let is_current = model == &current_model;
+                    let display_len = if is_current {
+                        model.len() + 2 // account for " ◀"
+                    } else {
+                        model.len()
+                    };
+                    if line_length + display_len + 2 > default_line_length {
                         newline = true;
                     }
                     if newline {
@@ -814,11 +818,16 @@ impl CliSession {
                         print!(", ");
                         line_length += 2;
                     }
-                    print!("{}", console::style(model).fg(Color::Blue).italic());
-                    line_length += model_len;
+                    if is_current {
+                        print!("{} ◀", console::style(model).fg(Color::Green).bold());
+                    } else {
+                        print!("{}", console::style(model).fg(Color::Blue).italic());
+                    }
+                    line_length += display_len;
                 }
                 println!();
             }
+            println!("\nCurrent model: {}/{}", current_provider, current_model);
             return Ok(());
         }
 
