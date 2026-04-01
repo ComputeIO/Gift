@@ -142,7 +142,9 @@ pub async fn create(
     model: ModelConfig,
     extensions: Vec<ExtensionConfig>,
 ) -> Result<Arc<dyn Provider>> {
-    let constructor = get_from_registry(name).await?.constructor.clone();
+    let entry = get_from_registry(name).await?;
+    let model = entry.enrich_context_limit(model);
+    let constructor = entry.constructor.clone();
     constructor(model, extensions).await
 }
 
@@ -175,8 +177,11 @@ pub async fn create_with_named_model(
     model_name: &str,
     extensions: Vec<ExtensionConfig>,
 ) -> Result<Arc<dyn Provider>> {
+    let entry = get_from_registry(provider_name).await?;
     let config = ModelConfig::new(model_name)?.with_canonical_limits(provider_name);
-    create(provider_name, config, extensions).await
+    let config = entry.enrich_context_limit(config);
+    let constructor = entry.constructor.clone();
+    constructor(config, extensions).await
 }
 
 #[cfg(test)]
