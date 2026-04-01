@@ -12,30 +12,33 @@ use crate::config::{Config, LeafMode};
 use crate::model::ModelConfig;
 use crate::providers::base::{ProviderDef, ProviderMetadata};
 
-const CLAUDE_ACP_PROVIDER_NAME: &str = "claude-acp";
-pub const CLAUDE_ACP_DEFAULT_MODEL: &str = "current";
-const CLAUDE_ACP_DOC_URL: &str = "https://github.com/zed-industries/claude-agent-acp";
-const CLAUDE_ACP_BINARY: &str = "claude-agent-acp";
+const COPILOT_ACP_PROVIDER_NAME: &str = "copilot-acp";
+pub const COPILOT_ACP_DEFAULT_MODEL: &str = "current";
+const COPILOT_ACP_DOC_URL: &str = "https://github.com/github/copilot-cli";
+const COPILOT_ACP_BINARY: &str = "copilot";
 
-pub struct ClaudeAcpProvider;
+const MODE_AGENT: &str = "https://agentclientprotocol.com/protocol/session-modes#agent";
+const MODE_PLAN: &str = "https://agentclientprotocol.com/protocol/session-modes#plan";
 
-impl ProviderDef for ClaudeAcpProvider {
+pub struct CopilotAcpProvider;
+
+impl ProviderDef for CopilotAcpProvider {
     type Provider = AcpProvider;
 
     fn metadata() -> ProviderMetadata {
         ProviderMetadata::new(
-            CLAUDE_ACP_PROVIDER_NAME,
-            "Claude Code",
-            "Use leaf with your Claude Code subscription via the claude-agent-acp adapter.",
+            COPILOT_ACP_PROVIDER_NAME,
+            "GitHub Copilot CLI (ACP)",
+            "Use leaf with your GitHub Copilot subscription via the Copilot CLI.",
             ACP_CURRENT_MODEL,
             vec![],
-            CLAUDE_ACP_DOC_URL,
+            COPILOT_ACP_DOC_URL,
             vec![],
         )
         .with_setup_steps(vec![
-            "Install the ACP adapter: `npm install -g @zed-industries/claude-agent-acp`",
-            "Ensure your Claude CLI is authenticated (run `claude` to verify)",
-            "Set in your leaf config file (`~/.config/leaf/config.yaml` on macOS/Linux):\n  LEAF_PROVIDER: claude-acp\n  LEAF_MODEL: current",
+            "Install the Copilot CLI: `npm install -g @github/copilot`",
+            "Run `copilot login` to authenticate with your GitHub account",
+            "Set in your leaf config file (`~/.config/leaf/config.yaml` on macOS/Linux):\n  LEAF_PROVIDER: copilot-acp\n  LEAF_MODEL: current",
             "Restart leaf for changes to take effect",
         ])
     }
@@ -48,27 +51,29 @@ impl ProviderDef for ClaudeAcpProvider {
             let config = Config::global();
             let resolved_command = SearchPaths::builder()
                 .with_npm()
-                .resolve(CLAUDE_ACP_BINARY)?;
+                .resolve(COPILOT_ACP_BINARY)?;
             let leaf_mode = config.get_leaf_mode().unwrap_or(LeafMode::Auto);
 
-            let permission_mapping = PermissionMapping {
-                allow_option_id: Some("allow".to_string()),
-                reject_option_id: Some("reject".to_string()),
-                rejected_tool_status: sacp::schema::ToolCallStatus::Failed,
-            };
+            let permission_mapping = PermissionMapping::default();
+
+            let mut args = vec!["--acp".to_string()];
+            if model.model_name != COPILOT_ACP_DEFAULT_MODEL {
+                args.push("--model".to_string());
+                args.push(model.model_name.clone());
+            }
 
             let mode_mapping = HashMap::from([
-                (LeafMode::Auto, "bypassPermissions".to_string()),
-                (LeafMode::Approve, "default".to_string()),
-                (LeafMode::SmartApprove, "acceptEdits".to_string()),
-                (LeafMode::Chat, "plan".to_string()),
+                (LeafMode::Auto, MODE_AGENT.to_string()),
+                (LeafMode::Approve, MODE_AGENT.to_string()),
+                (LeafMode::SmartApprove, MODE_AGENT.to_string()),
+                (LeafMode::Chat, MODE_PLAN.to_string()),
             ]);
 
             let provider_config = AcpProviderConfig {
                 command: resolved_command,
-                args: vec![],
+                args,
                 env: vec![],
-                env_remove: vec!["CLAUDECODE".to_string()],
+                env_remove: vec![],
                 work_dir: std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
                 mcp_servers: extension_configs_to_mcp_servers(&extensions),
                 session_mode_id: Some(mode_mapping[&leaf_mode].clone()),

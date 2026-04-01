@@ -14,6 +14,7 @@ use crate::model::ModelConfig;
 use crate::providers::base::{ProviderDef, ProviderMetadata};
 
 const CODEX_ACP_PROVIDER_NAME: &str = "codex-acp";
+pub const CODEX_ACP_DEFAULT_MODEL: &str = "current";
 const CODEX_ACP_DOC_URL: &str = "https://github.com/zed-industries/codex-acp";
 const CODEX_ACP_BINARY: &str = "codex";
 
