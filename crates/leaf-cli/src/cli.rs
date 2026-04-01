@@ -61,7 +61,7 @@ pub struct Identifier {
 
     #[arg(
         long = "session-id",
-        short = 'i',
+        short = 's',
         visible_alias = "id",
         value_name = "SESSION_ID",
         help = "Session ID (e.g., '20250921_143022')",
