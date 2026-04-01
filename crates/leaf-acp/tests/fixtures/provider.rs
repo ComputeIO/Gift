@@ -150,6 +150,7 @@ impl Connection for ClientToProviderConnection {
             work_dir: cwd_path,
             mcp_servers,
             session_mode_id: None,
+            mode_mapping: std::collections::HashMap::new(),
             permission_mapping: PermissionMapping::default(),
             notification_callback: Some(Arc::new(move |n| {
                 sink_clone.lock().unwrap().push(n.update.clone());

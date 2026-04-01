@@ -155,11 +155,13 @@ impl ProviderTestConfig {
         self
     }
 
+    #[allow(dead_code)]
     fn clear_env(mut self, vars: &'static [&'static str]) -> Self {
         self.clear_env = vars;
         self
     }
 
+    #[allow(dead_code)]
     fn test_permissions(mut self, v: bool) -> Self {
         self.test_permissions = v;
         self
