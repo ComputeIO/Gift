@@ -3,7 +3,7 @@ name: Quarantine check
 on:
   pull_request_target:
     branches:
-      - main
+      - cli
 
 permissions:
   pull-requests: write

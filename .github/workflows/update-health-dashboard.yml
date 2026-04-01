@@ -23,7 +23,7 @@ jobs:
   update-dashboard:
     name: 'Update Health Dashboard'
     runs-on: ubuntu-latest
-    if: github.repository == 'block/leaf'
+    if: github.repository == 'LeafAI/Leaf'
     
     steps:
       - name: 'Download previous metrics'

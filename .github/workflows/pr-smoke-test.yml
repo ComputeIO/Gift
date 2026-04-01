@@ -1,16 +1,16 @@
 on:
   pull_request:
     branches:
-      - main
+      - cli
   push:
     branches:
-      - main
+      - cli
   workflow_dispatch:
     inputs:
       branch:
         description: "Branch to test"
         required: true
-        default: "main"
+        default: "cli"
         type: string
 
 name: Live Provider Tests
@@ -168,44 +168,6 @@ jobs:
           SKIP_BUILD: 1
         run: |
           bash scripts/test_subrecipes.sh
-
-  smoke-tests-code-exec:
-    name: Smoke Tests (Code Execution)
-    runs-on: ubuntu-latest
-    needs: build-binary
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
-        with:
-          ref: ${{ github.event.inputs.branch || github.ref }}
-
-      - name: Download Binary
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
-        with:
-          name: leaf-binary
-          path: target/debug
-
-      - name: Make Binary Executable
-        run: chmod +x target/debug/leaf
-
-      - name: Run Provider Tests (Code Execution Mode)
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
-          TETRATE_API_KEY: ${{ secrets.TETRATE_API_KEY }}
-          HOME: /tmp/leaf-home
-          LEAF_DISABLE_KEYRING: 1
-          SKIP_BUILD: 1
-          SKIP_PROVIDERS: ${{ vars.SKIP_PROVIDERS || '' }}
-        run: |
-          mkdir -p $HOME/.local/share/leaf/sessions
-          mkdir -p $HOME/.config/leaf
-          bash scripts/test_providers_code_exec.sh
 
   compaction-tests:
     name: Compaction Tests

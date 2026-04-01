@@ -18,7 +18,7 @@ on:
 jobs:
   deny:
     runs-on: ubuntu-latest
-    if: github.repository == 'block/leaf'
+    if: github.repository == 'LeafAI/Leaf'
     permissions:
       contents: read
     steps:

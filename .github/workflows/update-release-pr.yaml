@@ -5,7 +5,7 @@ on:
     types:
       - synchronize
     branches:
-      - main
+      - cli
       - release/**
 
 permissions:
