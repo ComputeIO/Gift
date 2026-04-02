@@ -148,8 +148,8 @@ enum TestMode {
     vec!["github-mcp-server", "stdio"],
     vec![
         CallToolRequestParams::new("get_file_contents").with_arguments(object!({
-            "owner": "block",
-            "repo": "leaf",
+            "owner": "LeafAI",
+            "repo": "Leaf",
             "path": "README.md",
             "sha": "ab62b863c1666232a67048b6c4e10007a2a5b83c"
         })),
