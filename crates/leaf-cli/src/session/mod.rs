@@ -540,6 +540,7 @@ impl CliSession {
             }
             self.handle_input(input, &history_manager, &mut editor)
                 .await?;
+            output::ring_bell();
         }
 
         println!(
