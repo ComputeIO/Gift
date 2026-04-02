@@ -1,4 +1,5 @@
 pub mod edit;
+pub mod file_cache;
 pub mod shell;
 pub mod tree;
 
