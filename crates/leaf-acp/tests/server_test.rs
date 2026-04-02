@@ -77,6 +77,7 @@ fn test_prompt_basic() {
 }
 
 #[test]
+#[ignore = "code_execution requires V8 which was removed from Leaf CLI"]
 fn test_prompt_codemode() {
     run_test(async { run_prompt_codemode::<ClientToAgentConnection>().await });
 }
