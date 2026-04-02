@@ -17,6 +17,25 @@ TEST_PROVIDER=${LEAF_PROVIDER:-anthropic}
 TEST_MODEL=${LEAF_MODEL:-claude-haiku-4-5-20251001}
 MCP_SAMPLING_TOOL="trigger-sampling-request"
 
+check_provider_available() {
+  case "$TEST_PROVIDER" in
+    openrouter)      [ -n "$OPENROUTER_API_KEY" ] ;;
+    xai)             [ -n "$XAI_API_KEY" ] ;;
+    openai)          [ -n "$OPENAI_API_KEY" ] ;;
+    anthropic)       [ -n "$ANTHROPIC_API_KEY" ] ;;
+    google)          [ -n "$GOOGLE_API_KEY" ] ;;
+    tetrate)         [ -n "$TETRATE_API_KEY" ] ;;
+    databricks)      [ -n "$DATABRICKS_HOST" ] && [ -n "$DATABRICKS_TOKEN" ] ;;
+    *)               return 0 ;;
+  esac
+}
+
+if ! check_provider_available; then
+  echo "⚠️  Skipping MCP tests: $TEST_PROVIDER API key not configured"
+  echo "   Set $TEST_PROVIDER credentials to enable these tests"
+  exit 0
+fi
+
 RESULTS=()
 
 TESTDIR=$(mktemp -d)

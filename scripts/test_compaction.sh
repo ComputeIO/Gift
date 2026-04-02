@@ -37,6 +37,27 @@ if [ -n "$COMPACTION_PROVIDER" ] || [ -n "$COMPACTION_MODEL" ]; then
   echo ""
 fi
 
+# Determine effective provider and check for API key
+COMPACTION_EFFECTIVE_PROVIDER="${LEAF_PROVIDER:-${COMPACTION_PROVIDER:-anthropic}}"
+check_provider_available() {
+  case "$COMPACTION_EFFECTIVE_PROVIDER" in
+    openrouter)      [ -n "$OPENROUTER_API_KEY" ] ;;
+    xai)             [ -n "$XAI_API_KEY" ] ;;
+    openai)          [ -n "$OPENAI_API_KEY" ] ;;
+    anthropic)       [ -n "$ANTHROPIC_API_KEY" ] ;;
+    google)          [ -n "$GOOGLE_API_KEY" ] ;;
+    tetrate)         [ -n "$TETRATE_API_KEY" ] ;;
+    databricks)      [ -n "$DATABRICKS_HOST" ] && [ -n "$DATABRICKS_TOKEN" ] ;;
+    *)               return 0 ;;
+  esac
+}
+
+if ! check_provider_available; then
+  echo "⚠️  Skipping compaction tests: $COMPACTION_EFFECTIVE_PROVIDER API key not configured"
+  echo "   Set $COMPACTION_EFFECTIVE_PROVIDER credentials to enable these tests"
+  exit 0
+fi
+
 # Validation function to check compaction structure in session JSON
 validate_compaction() {
   local session_id=$1

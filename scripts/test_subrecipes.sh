@@ -28,6 +28,25 @@ echo "Using provider: $LEAF_PROVIDER"
 echo "Using model: $LEAF_MODEL"
 echo ""
 
+check_provider_available() {
+  case "$LEAF_PROVIDER" in
+    openrouter)      [ -n "$OPENROUTER_API_KEY" ] ;;
+    xai)             [ -n "$XAI_API_KEY" ] ;;
+    openai)          [ -n "$OPENAI_API_KEY" ] ;;
+    anthropic)       [ -n "$ANTHROPIC_API_KEY" ] ;;
+    google)          [ -n "$GOOGLE_API_KEY" ] ;;
+    tetrate)         [ -n "$TETRATE_API_KEY" ] ;;
+    databricks)      [ -n "$DATABRICKS_HOST" ] && [ -n "$DATABRICKS_TOKEN" ] ;;
+    *)               return 0 ;;
+  esac
+}
+
+if ! check_provider_available; then
+  echo "⚠️  Skipping subrecipe tests: $LEAF_PROVIDER API key not configured"
+  echo "   Set $LEAF_PROVIDER credentials to enable these tests"
+  exit 0
+fi
+
 TESTDIR=$(mktemp -d)
 echo "Created test directory: $TESTDIR"
 
