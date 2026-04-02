@@ -462,19 +462,42 @@ pub fn response_to_message(response: &Value) -> anyhow::Result<Message> {
                             ));
                         }
                         Err(e) => {
-                            let error = ErrorData {
-                                code: ErrorCode::INVALID_PARAMS,
-                                message: Cow::from(format!(
-                                    "Could not interpret tool use parameters for id {}: {}. Raw arguments: '{}'",
-                                    id, e, arguments_str
-                                )),
-                                data: None,
-                            };
-                            content.push(MessageContent::tool_request_with_metadata(
-                                id,
-                                Err(error),
-                                metadata.as_ref(),
-                            ));
+                            tracing::warn!(
+                                "Streaming: tool {} arguments parsing failed ({} bytes), attempting auto-fix: {}",
+                                function_name,
+                                arguments_str.len(),
+                                e
+                            );
+                            let fix_result = complete_tool_params(&function_name, &arguments_str);
+
+                            match fix_result {
+                                Some(fix) => {
+                                    if let Some(warn_msg) = &fix.warning {
+                                        tracing::warn!("{}", warn_msg);
+                                    }
+                                    content.push(MessageContent::tool_request_with_metadata(
+                                        id,
+                                        Ok(CallToolRequestParams::new(function_name)
+                                            .with_arguments(object(fix.params))),
+                                        metadata.as_ref(),
+                                    ));
+                                }
+                                None => {
+                                    let error = ErrorData {
+                                        code: ErrorCode::INVALID_PARAMS,
+                                        message: Cow::from(format!(
+                                            "Could not interpret tool use parameters for id {}: {}",
+                                            id, e
+                                        )),
+                                        data: None,
+                                    };
+                                    content.push(MessageContent::tool_request_with_metadata(
+                                        id,
+                                        Err(error),
+                                        metadata.as_ref(),
+                                    ));
+                                }
+                            }
                         }
                     }
                 }
@@ -1363,6 +1386,33 @@ mod tests {
                     assert!(msg.starts_with("The provided function name"));
                 }
                 _ => panic!("Expected ToolNotFound error"),
+            }
+        } else {
+            panic!("Expected ToolRequest content");
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_response_to_message_truncated_arguments_auto_fixed() -> anyhow::Result<()> {
+        let mut response: Value = serde_json::from_str(OPENAI_TOOL_USE_RESPONSE)?;
+        // Simulate a truncated response: the "content" string value is cut off
+        response["choices"][0]["message"]["tool_calls"][0]["function"]["name"] = json!("write");
+        response["choices"][0]["message"]["tool_calls"][0]["function"]["arguments"] =
+            json!("{\"path\": \"test.rs\", \"content\": \"fn main() {");
+
+        let message = response_to_message(&response)?;
+
+        // The auto-fix should complete the truncated JSON and return a valid tool request
+        if let MessageContent::ToolRequest(request) = &message.content[0] {
+            match &request.tool_call {
+                Ok(params) => {
+                    assert_eq!(params.name, "write");
+                    let args = params.arguments.as_ref().unwrap();
+                    assert_eq!(args["path"], json!("test.rs"));
+                }
+                Err(e) => panic!("Expected successful tool request, got error: {:?}", e),
             }
         } else {
             panic!("Expected ToolRequest content");
