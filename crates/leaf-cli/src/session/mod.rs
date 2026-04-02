@@ -621,7 +621,9 @@ impl CliSession {
             }
             InputResult::Model(options) => {
                 history.save(editor);
-                self.handle_model_command(options).await?;
+                if let Err(e) = self.handle_model_command(options).await {
+                    output::render_error(&e.to_string());
+                }
             }
             InputResult::Plan(options) => {
                 self.handle_plan_mode(options).await?;
