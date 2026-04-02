@@ -1486,8 +1486,6 @@ impl Agent {
                                                 "A tool call could not be parsed — the response may have been truncated. Try breaking the task into smaller steps or resending your message."
                                             )
                                         );
-                                        exit_chat = true;
-                                        break;
                                     }
                                 }
 

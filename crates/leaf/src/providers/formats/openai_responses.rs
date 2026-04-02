@@ -2,6 +2,7 @@ use crate::conversation::message::{Message, MessageContent};
 use crate::mcp_utils::extract_text_from_resource;
 use crate::model::ModelConfig;
 use crate::providers::base::{ProviderUsage, Usage};
+use crate::providers::formats::util::parse_tool_arguments;
 use crate::providers::utils::extract_reasoning_effort;
 use anyhow::{anyhow, Error};
 use async_stream::try_stream;
@@ -559,11 +560,7 @@ pub fn responses_api_to_message(response: &ResponsesApiResponse) -> anyhow::Resu
                 ..
             } => {
                 let request_id = call_id.as_ref().unwrap_or(id).clone();
-                let parsed_args = if arguments.is_empty() {
-                    json!({})
-                } else {
-                    serde_json::from_str(arguments).unwrap_or_else(|_| json!({}))
-                };
+                let parsed_args = parse_tool_arguments(name, arguments);
 
                 content.push(MessageContent::tool_request(
                     request_id,
@@ -615,11 +612,7 @@ fn process_streaming_output_items(
                             name,
                             arguments,
                         } => {
-                            let parsed_args = if arguments.is_empty() {
-                                json!({})
-                            } else {
-                                serde_json::from_str(&arguments).unwrap_or_else(|_| json!({}))
-                            };
+                            let parsed_args = parse_tool_arguments(&name, &arguments);
 
                             content.push(MessageContent::tool_request(
                                 id,
@@ -638,11 +631,7 @@ fn process_streaming_output_items(
                 ..
             } => {
                 let request_id = call_id.unwrap_or(id);
-                let parsed_args = if arguments.is_empty() {
-                    json!({})
-                } else {
-                    serde_json::from_str(&arguments).unwrap_or_else(|_| json!({}))
-                };
+                let parsed_args = parse_tool_arguments(&name, &arguments);
 
                 content.push(MessageContent::tool_request(
                     request_id,

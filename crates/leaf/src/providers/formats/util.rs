@@ -200,3 +200,37 @@ pub fn complete_json_braces(json_str: &str) -> Option<String> {
 
     None
 }
+
+/// Parses tool arguments from a JSON string, with auto-fix recovery on parse failure.
+/// Returns the parsed JSON value, or falls back to empty `{}` if auto-fix also fails.
+#[inline]
+pub fn parse_tool_arguments(tool_name: &str, arguments: &str) -> Value {
+    if arguments.is_empty() {
+        return json!({});
+    }
+    match serde_json::from_str(arguments) {
+        Ok(v) => v,
+        Err(e) => {
+            tracing::warn!(
+                "Tool {} arguments parsing failed ({} bytes), attempting auto-fix: {}",
+                tool_name,
+                arguments.len(),
+                e
+            );
+            complete_tool_params(tool_name, arguments)
+                .map(|fix| {
+                    if let Some(w) = &fix.warning {
+                        tracing::warn!("{}", w);
+                    }
+                    fix.params
+                })
+                .unwrap_or_else(|| {
+                    tracing::warn!(
+                        "Failed to auto-fix JSON for tool {}, using empty params",
+                        tool_name
+                    );
+                    json!({})
+                })
+        }
+    }
+}
