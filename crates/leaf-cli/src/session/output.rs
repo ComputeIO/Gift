@@ -20,6 +20,7 @@ use std::path::Path;
 use std::sync::LazyLock;
 use std::time::Duration;
 
+use super::diff;
 use super::streaming_buffer::MarkdownBuffer;
 
 pub const DEFAULT_MIN_PRIORITY: f32 = 0.0;
@@ -692,27 +693,63 @@ pub fn render_builtin_error(names: &str, error: &str) {
 fn render_text_editor_request(call: &CallToolRequestParams, debug: bool) {
     print_tool_header(call);
 
-    if let Some(args) = &call.arguments {
-        if let Some(Value::String(path)) = args.get("path") {
-            println!(
-                "    {} {}",
-                style("path").dim(),
-                style(shorten_path(path, debug)).dim()
-            );
-        }
+    let Some(args) = &call.arguments else {
+        return;
+    };
 
-        if let Some(args) = &call.arguments {
-            let mut other_args = serde_json::Map::new();
-            for (k, v) in args {
-                if k != "path" {
-                    other_args.insert(k.clone(), v.clone());
+    let Some(Value::String(path)) = args.get("path") else {
+        return;
+    };
+
+    // Get path to display
+    let path_display = shorten_path(path, debug);
+    println!("    {} {}", style("path").dim(), style(&path_display).dim());
+
+    // Check if this is a file_edit or file_write operation
+    let tool_name = call.name.split("__").last().unwrap_or(&call.name);
+    if matches!(tool_name, "file_edit" | "file_write") {
+        // Get the proposed content
+        let proposed_content = if tool_name == "file_edit" {
+            args.get("after").and_then(|v| v.as_str()).unwrap_or("")
+        } else {
+            args.get("content").and_then(|v| v.as_str()).unwrap_or("")
+        };
+
+        // Get current file content for diff (if exists)
+        let current_content = if let Some((content, _)) = diff::read_file_safe(path) {
+            if content.contains("Binary file") {
+                // For binary files, just show the content
+                if !proposed_content.is_empty() {
+                    println!(
+                        "    {} {}",
+                        style("content").dim(),
+                        style("[binary content]").dim()
+                    );
                 }
+                return;
             }
-            if !other_args.is_empty() {
-                print_params(&Some(other_args), 1, debug);
+            content
+        } else {
+            String::new()
+        };
+
+        // Show unified diff
+        let preview = diff::DiffPreview::new(path, &current_content, proposed_content);
+        preview.render();
+        println!("{}", preview.summary());
+    } else {
+        // For other text editor operations, show params as before
+        let mut other_args = serde_json::Map::new();
+        for (k, v) in args {
+            if k != "path" {
+                other_args.insert(k.clone(), v.clone());
             }
+        }
+        if !other_args.is_empty() {
+            print_params(&Some(other_args), 1, debug);
         }
     }
+
     println!();
 }
 

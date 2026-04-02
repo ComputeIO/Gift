@@ -170,7 +170,11 @@ mod tests {
         assert!(preview.is_new_file);
         // The "more lines" message is in the lines vector (rendered separately)
         let lines_text = preview.lines.join("");
-        assert!(lines_text.contains("more lines"), "lines contained: {}", lines_text);
+        assert!(
+            lines_text.contains("more lines"),
+            "lines contained: {}",
+            lines_text
+        );
         assert_eq!(preview.total_additions, 150);
         // Check summary for new file
         assert!(preview.summary().contains("New file"));
