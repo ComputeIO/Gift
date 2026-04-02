@@ -227,7 +227,7 @@ pub async fn run_initialize_doesnt_hit_provider<C: Connection>() {
     assert!(conn
         .auth_methods()
         .iter()
-        .any(|m| &*m.id.0 == "goose-provider"));
+        .any(|m| &*m.id.0 == "leaf-provider"));
 }
 
 pub async fn run_load_mode<C: Connection>() {
