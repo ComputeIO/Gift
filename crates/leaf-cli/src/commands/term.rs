@@ -53,7 +53,7 @@ fi{command_not_found_handler}"#,
         r#"
 
 command_not_found_handle() {
-    echo "🌿 Command '$1' not found. Asking leaf..."
+    echo "🍂 Command '$1' not found. Asking leaf..."
     '{leaf_bin}' term run "$@"
     return 0
 }"#,
