@@ -3094,6 +3094,7 @@ dependencies = [
  "anstream",
  "anyhow",
  "async-trait",
+ "axum",
  "base64 0.22.1",
  "bat",
  "bzip2 0.5.2",
