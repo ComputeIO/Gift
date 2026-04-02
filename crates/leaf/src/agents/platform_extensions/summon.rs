@@ -346,8 +346,11 @@ fn discover_filesystem_sources(working_dir: &Path) -> Vec<Source> {
     let home = dirs::home_dir();
     let config = Paths::config_dir();
 
-    let local_recipe_dirs: Vec<PathBuf> =
-        vec![working_dir.to_path_buf(), working_dir.join(".leaf/recipes")];
+    let local_recipe_dirs: Vec<PathBuf> = vec![
+        working_dir.to_path_buf(),
+        working_dir.join(".leaf/recipes"),
+        working_dir.join(".agents/recipes"),
+    ];
 
     let global_recipe_dirs: Vec<PathBuf> = std::env::var("LEAF_RECIPE_PATH")
         .ok()
@@ -356,7 +359,14 @@ fn discover_filesystem_sources(working_dir: &Path) -> Vec<Source> {
             let sep = if cfg!(windows) { ';' } else { ':' };
             p.split(sep).map(PathBuf::from).collect::<Vec<_>>()
         })
-        .chain([config.join("recipes")])
+        .chain(
+            [
+                Some(config.join("recipes")),
+                home.as_ref().map(|h| h.join(".agents/recipes")),
+            ]
+            .into_iter()
+            .flatten(),
+        )
         .collect();
 
     let local_skill_dirs: Vec<PathBuf> = vec![
@@ -366,6 +376,7 @@ fn discover_filesystem_sources(working_dir: &Path) -> Vec<Source> {
     ];
 
     let global_skill_dirs: Vec<PathBuf> = [
+        home.as_ref().map(|h| h.join(".agents/skills")),
         Some(config.join("skills")),
         home.as_ref().map(|h| h.join(".claude/skills")),
         home.as_ref().map(|h| h.join(".config/agents/skills")),
@@ -377,9 +388,11 @@ fn discover_filesystem_sources(working_dir: &Path) -> Vec<Source> {
     let local_agent_dirs: Vec<PathBuf> = vec![
         working_dir.join(".leaf/agents"),
         working_dir.join(".claude/agents"),
+        working_dir.join(".agents/agents"),
     ];
 
     let global_agent_dirs: Vec<PathBuf> = [
+        home.as_ref().map(|h| h.join(".agents/agents")),
         Some(config.join("agents")),
         home.as_ref().map(|h| h.join(".claude/agents")),
     ]
@@ -1038,6 +1051,8 @@ impl SummonClient {
                 "No sources available for load/delegate.\n\n\
                  Sources are discovered from:\n\
                  • Current recipe's sub_recipes\n\
+                 • .agents/skills/, .agents/recipes/, .agents/agents/ (project-level)\n\
+                 • ~/.agents/skills/, ~/.agents/agents/ (global)\n\
                  • .leaf/recipes/, .leaf/skills/, .leaf/agents/\n\
                  • ~/.config/leaf/recipes/, skills/, agents/\n\
                  • LEAF_RECIPE_PATH directories\n\
