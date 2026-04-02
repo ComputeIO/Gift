@@ -26,6 +26,12 @@ pub const DEFAULT_MIN_PRIORITY: f32 = 0.0;
 pub const DEFAULT_CLI_LIGHT_THEME: &str = "GitHub";
 pub const DEFAULT_CLI_DARK_THEME: &str = "zenburn";
 
+/// Ring the terminal bell (visual `\a` character) to signal user attention is required.
+pub fn ring_bell() {
+    print!("\u{7}");
+    std::io::stdout().flush().ok();
+}
+
 // Re-export theme for use in main
 #[derive(Clone, Copy)]
 pub enum Theme {
