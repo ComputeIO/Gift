@@ -55,7 +55,8 @@ impl EditTools {
 
         match fs::read(&path) {
             Ok(bytes) => {
-                {
+                let full_read = params.line.is_none() && params.limit.is_none();
+                if full_read {
                     let mut cache = self.file_cache.lock().unwrap();
                     if let super::file_cache::CacheStatus::Unchanged { len } =
                         cache.check(&path, &bytes)
@@ -646,14 +647,14 @@ mod tests {
     }
 
     #[test]
-    fn test_file_edit_invalidates_cache() {
+    fn test_file_read_cache_partial_read_skips_cache() {
         let dir = setup();
-        let path = dir.path().join("edit_invalidate.txt");
-        fs::write(&path, "old text").unwrap();
+        let path = dir.path().join("partial.txt");
+        fs::write(&path, "line1\nline2\nline3\nline4\nline5").unwrap();
         let tools = EditTools::new();
         let path_str = path.to_string_lossy().to_string();
 
-        // First read — caches "old text"
+        // Full read — caches the file
         tools.file_read_with_cwd(
             FileReadParams {
                 path: path_str.clone(),
@@ -663,14 +664,39 @@ mod tests {
             None,
         );
 
-        // Edit — should invalidate cache
-        tools.file_edit(FileEditParams {
-            path: path_str.clone(),
-            before: "old".to_string(),
-            after: "new".to_string(),
-        });
+        // Partial read — should return actual content, NOT stub
+        let result = tools.file_read_with_cwd(
+            FileReadParams {
+                path: path_str.clone(),
+                line: Some(2),
+                limit: Some(2),
+            },
+            None,
+        );
+        assert!(!result.is_error.unwrap_or(false));
+        assert_eq!(extract_text(&result), "line2\nline3\n");
+    }
 
-        // Read again — should return full content, not stub
+    #[test]
+    fn test_file_read_cache_full_read_after_partial_also_caches() {
+        let dir = setup();
+        let path = dir.path().join("full_after_partial.txt");
+        fs::write(&path, "line1\nline2\nline3").unwrap();
+        let tools = EditTools::new();
+        let path_str = path.to_string_lossy().to_string();
+
+        // Partial read — does NOT cache
+        let result = tools.file_read_with_cwd(
+            FileReadParams {
+                path: path_str.clone(),
+                line: Some(2),
+                limit: Some(1),
+            },
+            None,
+        );
+        assert_eq!(extract_text(&result), "line2\n");
+
+        // Full read — caches the file
         let result = tools.file_read_with_cwd(
             FileReadParams {
                 path: path_str.clone(),
@@ -679,6 +705,124 @@ mod tests {
             },
             None,
         );
-        assert_eq!(extract_text(&result), "new text");
+        assert_eq!(extract_text(&result), "line1\nline2\nline3");
+
+        // Second full read — should return stub
+        let result = tools.file_read_with_cwd(
+            FileReadParams {
+                path: path_str.clone(),
+                line: None,
+                limit: None,
+            },
+            None,
+        );
+        let text = extract_text(&result);
+        assert!(
+            text.starts_with("[file unchanged since last read]"),
+            "expected stub, got: {text}"
+        );
+    }
+
+    #[test]
+    fn test_file_read_cache_empty_file() {
+        let dir = setup();
+        let path = dir.path().join("empty.txt");
+        fs::write(&path, "").unwrap();
+        let tools = EditTools::new();
+        let path_str = path.to_string_lossy().to_string();
+
+        // First read of empty file
+        let result = tools.file_read_with_cwd(
+            FileReadParams {
+                path: path_str.clone(),
+                line: None,
+                limit: None,
+            },
+            None,
+        );
+        assert!(!result.is_error.unwrap_or(false));
+        assert_eq!(extract_text(&result), "");
+
+        // Second read — should return stub even for empty file
+        let result = tools.file_read_with_cwd(
+            FileReadParams {
+                path: path_str.clone(),
+                line: None,
+                limit: None,
+            },
+            None,
+        );
+        let text = extract_text(&result);
+        assert!(
+            text.starts_with("[file unchanged since last read]"),
+            "expected stub for empty file, got: {text}"
+        );
+    }
+
+    #[test]
+    fn test_file_read_cache_nonexistent_file_error() {
+        let dir = setup();
+        let path = dir.path().join("nonexistent.txt");
+        let tools = EditTools::new();
+        let path_str = path.to_string_lossy().to_string();
+
+        let result = tools.file_read_with_cwd(
+            FileReadParams {
+                path: path_str.clone(),
+                line: None,
+                limit: None,
+            },
+            None,
+        );
+        assert!(result.is_error.unwrap_or(false));
+    }
+
+    #[test]
+    fn test_file_read_cache_after_external_write_returns_new_content() {
+        let dir = setup();
+        let path = dir.path().join("external_edit.txt");
+        fs::write(&path, "original content").unwrap();
+        let tools = EditTools::new();
+        let path_str = path.to_string_lossy().to_string();
+
+        // Read — caches
+        let result = tools.file_read_with_cwd(
+            FileReadParams {
+                path: path_str.clone(),
+                line: None,
+                limit: None,
+            },
+            None,
+        );
+        assert_eq!(extract_text(&result), "original content");
+
+        // External modification (bypassing leaf tools)
+        fs::write(&path, "externally modified").unwrap();
+
+        // Read again — should detect change and return new content
+        let result = tools.file_read_with_cwd(
+            FileReadParams {
+                path: path_str.clone(),
+                line: None,
+                limit: None,
+            },
+            None,
+        );
+        assert_eq!(extract_text(&result), "externally modified");
+
+        // Third read — new content cached, should return stub
+        let result = tools.file_read_with_cwd(
+            FileReadParams {
+                path: path_str.clone(),
+                line: None,
+                limit: None,
+            },
+            None,
+        );
+        let text = extract_text(&result);
+        assert!(
+            text.starts_with("[file unchanged since last read]"),
+            "expected stub after external edit, got: {text}"
+        );
     }
 }
