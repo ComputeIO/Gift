@@ -157,6 +157,7 @@ pub struct CliSession {
     messages: Conversation,
     session_id: String,
     completion_cache: Arc<std::sync::RwLock<CompletionCache>>,
+    shell_child: Arc<std::sync::Mutex<Option<std::process::Child>>>,
     debug: bool,
     run_mode: RunMode,
     scheduled_job_id: Option<String>,
@@ -293,6 +294,7 @@ impl CliSession {
             messages,
             session_id,
             completion_cache: Arc::new(std::sync::RwLock::new(CompletionCache::new())),
+            shell_child: Arc::new(std::sync::Mutex::new(None)),
             debug,
             run_mode: RunMode::Normal,
             scheduled_job_id,
@@ -645,7 +647,24 @@ impl CliSession {
                 self.handle_compact().await?;
             }
             InputResult::Shell(cmd) => {
-                self.handle_shell_command(&cmd);
+                let shell_child = self.shell_child.clone();
+                let kill_handle = tokio::spawn({
+                    let shell_child = shell_child.clone();
+                    async move {
+                        if ctrl_c().await.is_ok() {
+                            let mut lock = shell_child.lock().unwrap();
+                            if let Some(ref mut child) = *lock {
+                                let _ = child.kill();
+                            }
+                        }
+                    }
+                });
+                tokio::task::spawn_blocking(move || {
+                    Self::handle_shell_command(&shell_child, &cmd);
+                })
+                .await
+                .map_err(|e| anyhow::anyhow!("Shell task panicked: {}", e))?;
+                kill_handle.abort();
             }
             InputResult::Markdown(filepath) => {
                 history.save(editor);
@@ -978,17 +997,28 @@ impl CliSession {
         }
     }
 
-    fn handle_shell_command(&self, cmd: &str) {
+    fn handle_shell_command(
+        shell_child: &Arc<std::sync::Mutex<Option<std::process::Child>>>,
+        cmd: &str,
+    ) {
         use std::io::{BufRead, BufReader};
         use std::process::{Command, Stdio};
 
-        let mut child = match Command::new("sh")
-            .arg("-c")
-            .arg(cmd)
+        let parts: Vec<String> = match shlex::split(cmd) {
+            Some(parts) if !parts.is_empty() => parts,
+            _ => {
+                eprintln!("{}", console::style("No command provided").yellow());
+                return;
+            }
+        };
+
+        let mut command = Command::new(&parts[0]);
+        command
+            .args(&parts[1..])
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-        {
+            .stderr(Stdio::piped());
+
+        let child = match command.spawn() {
             Ok(child) => child,
             Err(e) => {
                 eprintln!(
@@ -999,22 +1029,52 @@ impl CliSession {
             }
         };
 
-        let stdout = child.stdout.take().map(BufReader::new);
-        let stderr = child.stderr.take().map(BufReader::new);
-
-        if let Some(reader) = stdout {
-            for line in reader.lines().map_while(Result::ok) {
-                println!("{}", line);
-            }
+        {
+            let mut lock = shell_child.lock().unwrap();
+            *lock = Some(child);
         }
 
-        if let Some(reader) = stderr {
-            for line in reader.lines().map_while(Result::ok) {
-                eprintln!("{}", line);
-            }
+        let stdout;
+        let stderr;
+        {
+            let mut lock = shell_child.lock().unwrap();
+            let child = lock.as_mut().unwrap();
+            stdout = child.stdout.take().map(BufReader::new);
+            stderr = child.stderr.take().map(BufReader::new);
         }
 
-        match child.wait() {
+        let stdout_thread = stdout.map(|reader| {
+            std::thread::spawn(move || {
+                for line in reader.lines().map_while(Result::ok) {
+                    println!("{}", line);
+                }
+            })
+        });
+
+        let stderr_thread = stderr.map(|reader| {
+            std::thread::spawn(move || {
+                for line in reader.lines().map_while(Result::ok) {
+                    eprintln!("{}", line);
+                }
+            })
+        });
+
+        if let Some(t) = stdout_thread {
+            let _ = t.join();
+        }
+        if let Some(t) = stderr_thread {
+            let _ = t.join();
+        }
+
+        let status = {
+            let mut lock = shell_child.lock().unwrap();
+            let child = lock.as_mut().unwrap();
+            let status = child.wait();
+            *lock = None;
+            status
+        };
+
+        match status {
             Ok(status) => {
                 if !status.success() {
                     eprintln!(
