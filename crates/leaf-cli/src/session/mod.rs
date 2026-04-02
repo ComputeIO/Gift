@@ -1,5 +1,6 @@
 mod builder;
 mod completion;
+mod diff;
 mod editor;
 mod elicitation;
 mod export;
@@ -1293,8 +1294,8 @@ impl CliSession {
                 result = stream.next() => {
                     match result {
                         Some(Ok(AgentEvent::Message(message))) => {
-                            if let Some((id, security_prompt)) = find_tool_confirmation(&message) {
-                                let permission = prompt_tool_confirmation(&security_prompt)?;
+                            if let Some((id, tool_name, path, arguments, security_prompt)) = find_tool_confirmation(&message) {
+                                let permission = prompt_tool_confirmation(&security_prompt, &tool_name, &path, &arguments)?;
 
                                 if permission == Permission::Cancel {
                                     output::render_text("Tool call cancelled. Returning to chat...", Some(Color::Yellow), true);
@@ -1813,8 +1814,35 @@ fn emit_stream_event(event: &StreamEvent) {
 }
 
 /// Prompt user for tool call confirmation, returns the Permission selected
-fn prompt_tool_confirmation(security_prompt: &Option<String>) -> Result<Permission> {
+fn prompt_tool_confirmation(
+    security_prompt: &Option<String>,
+    tool_name: &str,
+    path: &str,
+    arguments: &serde_json::Map<String, serde_json::Value>,
+) -> Result<Permission> {
     output::hide_thinking();
+
+    // Show diff preview for file operations
+    if matches!(tool_name, "file_edit" | "file_write") {
+        if let Some((current_content, _)) = diff::read_file_safe(path) {
+            let proposed_content = if tool_name == "file_edit" {
+                arguments
+                    .get("after")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+            } else {
+                arguments
+                    .get("content")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+            };
+
+            let preview = diff::DiffPreview::new(path, &current_content, proposed_content);
+            preview.render();
+            println!("{}", preview.summary());
+            println!();
+        }
+    }
 
     let prompt = if let Some(security_message) = security_prompt {
         println!("\n{}", security_message);
@@ -1863,11 +1891,37 @@ fn prompt_tool_confirmation(security_prompt: &Option<String>) -> Result<Permissi
 }
 
 /// Extract tool confirmation request from a message
-fn find_tool_confirmation(message: &Message) -> Option<(String, Option<String>)> {
+#[allow(clippy::type_complexity)]
+fn find_tool_confirmation(
+    message: &Message,
+) -> Option<(
+    String,
+    String,
+    String,
+    serde_json::Map<String, serde_json::Value>,
+    Option<String>,
+)> {
     message.content.iter().find_map(|content| {
         if let MessageContent::ActionRequired(action) = content {
-            if let ActionRequiredData::ToolConfirmation { id, prompt, .. } = &action.data {
-                return Some((id.clone(), prompt.clone()));
+            if let ActionRequiredData::ToolConfirmation {
+                id,
+                tool_name,
+                arguments,
+                prompt,
+            } = &action.data
+            {
+                let path = arguments
+                    .get("path")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                return Some((
+                    id.clone(),
+                    tool_name.clone(),
+                    path,
+                    arguments.clone(),
+                    prompt.clone(),
+                ));
             }
         }
         None

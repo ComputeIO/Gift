@@ -19,6 +19,7 @@ name = "generate_manpages"
 path = "src/bin/generate_manpages.rs"
 
 [dependencies]
+similar = "2.6"
 clap_mangen = "0.2.31"
 leaf = { path = "../leaf", default-features = false }
 leaf-acp = { path = "../leaf-acp", default-features = false }
