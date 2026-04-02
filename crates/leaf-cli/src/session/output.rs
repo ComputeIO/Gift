@@ -967,7 +967,7 @@ pub fn env_no_color() -> bool {
     std::env::var_os("NO_COLOR").is_none()
 }
 
-fn print_markdown(content: &str, theme: Theme) {
+pub fn print_markdown(content: &str, theme: Theme) {
     if std::io::stdout().is_terminal() {
         if let Some((before, table, after)) = extract_markdown_table(content) {
             if !before.is_empty() {

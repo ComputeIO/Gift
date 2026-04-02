@@ -29,6 +29,7 @@ pub enum InputResult {
     ToggleFullToolOutput,
     Shell(String),
     Model(ModelCommandOptions),
+    Markdown(String),
 }
 
 #[derive(Debug)]
@@ -342,6 +343,10 @@ fn handle_slash_command(input: &str) -> Option<InputResult> {
             Some(InputResult::Compact)
         }
         "/r" => Some(InputResult::ToggleFullToolOutput),
+        s if s.starts_with("/md ") => {
+            let filepath = s.strip_prefix("/md ").unwrap_or("").trim().to_string();
+            Some(InputResult::Markdown(filepath))
+        }
         _ => None,
     }
 }
@@ -490,6 +495,7 @@ fn print_help() {
 /recipe [filepath] - Generate a recipe from the current conversation and save it to the specified filepath (must end with .yaml).
                        If no filepath is provided, it will be saved to ./recipe.yaml.
 /compact - Compact the current conversation to reduce context length while preserving key information.
+/md <file> - Render a markdown file to the terminal with syntax highlighting and theme support.
 /? or /help - Display this help message
 /clear - Clears the current chat history
 
@@ -753,6 +759,27 @@ mod tests {
         // Test recipe with invalid extension
         let result = handle_slash_command("/recipe /path/to/file.txt");
         assert!(matches!(result, Some(InputResult::Retry)));
+    }
+
+    #[test]
+    fn test_md_command() {
+        // Test /md with a file path
+        if let Some(InputResult::Markdown(filepath)) = handle_slash_command("/md README.md") {
+            assert_eq!(filepath, "README.md");
+        } else {
+            panic!("Expected Markdown");
+        }
+
+        // Test /md with a path containing spaces (trimmed)
+        if let Some(InputResult::Markdown(filepath)) = handle_slash_command("/md  ./docs/PLAN.md  ")
+        {
+            assert_eq!(filepath, "./docs/PLAN.md");
+        } else {
+            panic!("Expected Markdown");
+        }
+
+        // Test /md without arguments falls through as a message
+        assert!(handle_slash_command("/md").is_none());
     }
 
     #[test]

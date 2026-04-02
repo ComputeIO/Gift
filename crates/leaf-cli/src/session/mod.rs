@@ -647,6 +647,10 @@ impl CliSession {
             InputResult::Shell(cmd) => {
                 self.handle_shell_command(&cmd);
             }
+            InputResult::Markdown(filepath) => {
+                history.save(editor);
+                self.handle_markdown(&filepath);
+            }
         }
         Ok(())
     }
@@ -1023,6 +1027,38 @@ impl CliSession {
                 eprintln!(
                     "{}",
                     console::style(format!("Failed to wait for command: {}", e)).red()
+                );
+            }
+        }
+    }
+
+    fn handle_markdown(&self, filepath: &str) {
+        if filepath.is_empty() {
+            println!(
+                "{}",
+                console::style("Usage: /md <file> - Specify a markdown file to render").yellow()
+            );
+            return;
+        }
+
+        let path = std::path::Path::new(filepath);
+        if !path.exists() {
+            println!(
+                "{}",
+                console::style(format!("File not found: {}", filepath)).red()
+            );
+            return;
+        }
+
+        match std::fs::read_to_string(path) {
+            Ok(content) => {
+                let theme = output::get_theme();
+                output::print_markdown(&content, theme);
+            }
+            Err(e) => {
+                println!(
+                    "{}",
+                    console::style(format!("Failed to read file: {}", e)).red()
                 );
             }
         }
