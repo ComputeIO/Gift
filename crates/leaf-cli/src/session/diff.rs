@@ -9,6 +9,7 @@ pub struct DiffPreview {
     pub lines: Vec<String>,
     pub truncated: bool,
     pub total_additions: usize,
+    pub is_new_file: bool,
 }
 
 impl DiffPreview {
@@ -69,6 +70,7 @@ impl DiffPreview {
             lines,
             truncated,
             total_additions: additions,
+            is_new_file,
         }
     }
 
@@ -81,14 +83,23 @@ impl DiffPreview {
 
     /// Generate summary line
     pub fn summary(&self) -> String {
-        if self.truncated {
-            format!(
-                "\n  {}: {} (+{} lines, {} total)",
-                console::style("New file").cyan(),
-                self.path,
-                self.additions,
-                self.total_additions
-            )
+        if self.is_new_file {
+            if self.truncated {
+                format!(
+                    "\n  {}: {} (+{} lines, {} total)",
+                    console::style("New file").cyan(),
+                    self.path,
+                    self.additions,
+                    self.total_additions
+                )
+            } else {
+                format!(
+                    "\n  {}: {} (+{} lines)",
+                    console::style("New file").cyan(),
+                    self.path,
+                    self.additions
+                )
+            }
         } else if self.additions > 0 || self.deletions > 0 {
             format!(
                 "\n  {}: {} (+{} lines, -{} lines)",
@@ -126,5 +137,75 @@ pub fn read_file_safe(path: &str) -> Option<(String, bool)> {
             }
         }
         Err(_) => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_diff_summary_with_changes() {
+        let preview = DiffPreview::new("test.rs", "old\nline2\n", "new\nline2\n");
+        let summary = preview.summary();
+        assert!(summary.contains("+1 lines, -1 lines"));
+        assert!(summary.contains("test.rs"));
+        assert!(!preview.is_new_file);
+    }
+
+    #[test]
+    fn test_diff_summary_new_file() {
+        let preview = DiffPreview::new("new.rs", "", "line1\nline2\nline3\n");
+        assert!(!preview.truncated);
+        assert!(preview.is_new_file);
+        assert!(preview.summary().contains("New file"));
+        assert!(preview.summary().contains("+3 lines"));
+    }
+
+    #[test]
+    fn test_diff_truncation_for_large_new_file() {
+        let large_content: String = (0..150).map(|i| format!("line{}\n", i)).collect();
+        let preview = DiffPreview::new("large.rs", "", &large_content);
+        assert!(preview.truncated);
+        assert!(preview.is_new_file);
+        // The "more lines" message is in the lines vector (rendered separately)
+        let lines_text = preview.lines.join("");
+        assert!(lines_text.contains("more lines"), "lines contained: {}", lines_text);
+        assert_eq!(preview.total_additions, 150);
+        // Check summary for new file
+        assert!(preview.summary().contains("New file"));
+    }
+
+    #[test]
+    fn test_diff_no_changes() {
+        let preview = DiffPreview::new("same.rs", "content\n", "content\n");
+        assert_eq!(preview.additions, 0);
+        assert_eq!(preview.deletions, 0);
+        assert!(!preview.truncated);
+    }
+
+    #[test]
+    fn test_is_binary_with_null_byte() {
+        assert!(is_binary(b"hello\x00world"));
+    }
+
+    #[test]
+    fn test_is_binary_without_null_byte() {
+        assert!(!is_binary(b"hello world"));
+    }
+
+    #[test]
+    fn test_is_binary_with_long_content() {
+        let content: Vec<u8> = (0..10000).map(|i| i as u8).collect();
+        assert!(is_binary(&content));
+    }
+
+    #[test]
+    fn test_diff_counts() {
+        // "a\nb\nc\n" -> "a\nx\ny\nc\n"
+        // Diff: equal "a\n", "c\n", delete "b\n", insert "x\ny\n"
+        let preview = DiffPreview::new("count.rs", "a\nb\nc\n", "a\nx\ny\nc\n");
+        assert_eq!(preview.additions, 2); // x, y
+        assert_eq!(preview.deletions, 1); // b
     }
 }
