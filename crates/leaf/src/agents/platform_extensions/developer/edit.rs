@@ -1,11 +1,15 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 use rmcp::model::{CallToolResult, Content};
 use schemars::JsonSchema;
 use serde::Deserialize;
 
+use super::file_cache::FileStateCache;
+
 const NO_MATCH_PREVIEW_LINES: usize = 20;
+const UNCHANGED_FILE_STUB: &str = "[file unchanged since last read]";
 
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct FileReadParams {
@@ -31,11 +35,15 @@ pub struct FileEditParams {
     pub after: String,
 }
 
-pub struct EditTools;
+pub struct EditTools {
+    file_cache: Mutex<FileStateCache>,
+}
 
 impl EditTools {
     pub fn new() -> Self {
-        Self
+        Self {
+            file_cache: Mutex::new(FileStateCache::new()),
+        }
     }
 
     pub fn file_read_with_cwd(
@@ -45,8 +53,23 @@ impl EditTools {
     ) -> CallToolResult {
         let path = resolve_path(&params.path, working_dir);
 
-        match fs::read_to_string(&path) {
-            Ok(content) => {
+        match fs::read(&path) {
+            Ok(bytes) => {
+                {
+                    let mut cache = self.file_cache.lock().unwrap();
+                    if let super::file_cache::CacheStatus::Unchanged { len } =
+                        cache.check(&path, &bytes)
+                    {
+                        let lines = bytes.iter().filter(|&&b| b == b'\n').count();
+                        return CallToolResult::success(vec![Content::text(format!(
+                            "{} ({} bytes, {} lines)",
+                            UNCHANGED_FILE_STUB, len, lines,
+                        ))
+                        .with_priority(0.0)]);
+                    }
+                }
+
+                let content = String::from_utf8_lossy(&bytes).into_owned();
                 let content = apply_line_limit(&content, params.line, params.limit);
                 CallToolResult::success(vec![Content::text(content).with_priority(0.0)])
             }
@@ -83,6 +106,8 @@ impl EditTools {
         }
 
         let is_new = !path.exists();
+
+        self.file_cache.lock().unwrap().invalidate(&path);
 
         match fs::write(path, &params.content) {
             Ok(()) => {
@@ -132,6 +157,8 @@ impl EditTools {
         };
         match fs::write(&path, &new_content) {
             Ok(()) => {
+                self.file_cache.lock().unwrap().invalidate(&path);
+
                 let old_lines = params.before.lines().count();
                 let new_lines = params.after.lines().count();
                 CallToolResult::success(vec![Content::text(format!(
@@ -509,5 +536,149 @@ mod tests {
             fs::read_to_string(dir.path().join("relative-edit.txt")).unwrap(),
             "after"
         );
+    }
+
+    #[test]
+    fn test_file_read_cache_unchanged_returns_stub() {
+        let dir = setup();
+        let path = dir.path().join("cached.txt");
+        fs::write(&path, "line1\nline2\nline3").unwrap();
+        let tools = EditTools::new();
+        let path_str = path.to_string_lossy().to_string();
+
+        // First read — returns full content, caches the hash
+        let result = tools.file_read_with_cwd(
+            FileReadParams {
+                path: path_str.clone(),
+                line: None,
+                limit: None,
+            },
+            None,
+        );
+        assert!(!result.is_error.unwrap_or(false));
+        assert_eq!(extract_text(&result), "line1\nline2\nline3");
+
+        // Second read — file unchanged, should return stub
+        let result = tools.file_read_with_cwd(
+            FileReadParams {
+                path: path_str.clone(),
+                line: None,
+                limit: None,
+            },
+            None,
+        );
+        assert!(!result.is_error.unwrap_or(false));
+        let text = extract_text(&result);
+        assert!(
+            text.starts_with("[file unchanged since last read]"),
+            "expected stub, got: {text}"
+        );
+    }
+
+    #[test]
+    fn test_file_read_cache_changed_returns_content() {
+        let dir = setup();
+        let path = dir.path().join("changing.txt");
+        fs::write(&path, "version 1").unwrap();
+        let tools = EditTools::new();
+        let path_str = path.to_string_lossy().to_string();
+
+        // First read
+        let result = tools.file_read_with_cwd(
+            FileReadParams {
+                path: path_str.clone(),
+                line: None,
+                limit: None,
+            },
+            None,
+        );
+        assert_eq!(extract_text(&result), "version 1");
+
+        // Modify the file
+        fs::write(&path, "version 2").unwrap();
+
+        // Second read — file changed, should return new content
+        let result = tools.file_read_with_cwd(
+            FileReadParams {
+                path: path_str.clone(),
+                line: None,
+                limit: None,
+            },
+            None,
+        );
+        assert_eq!(extract_text(&result), "version 2");
+    }
+
+    #[test]
+    fn test_file_write_invalidates_cache() {
+        let dir = setup();
+        let path = dir.path().join("write_invalidate.txt");
+        fs::write(&path, "original").unwrap();
+        let tools = EditTools::new();
+        let path_str = path.to_string_lossy().to_string();
+
+        // First read — caches "original"
+        tools.file_read_with_cwd(
+            FileReadParams {
+                path: path_str.clone(),
+                line: None,
+                limit: None,
+            },
+            None,
+        );
+
+        // Write new content — should invalidate cache
+        tools.file_write(FileWriteParams {
+            path: path_str.clone(),
+            content: "updated".to_string(),
+        });
+
+        // Read again — should return full content, not stub
+        let result = tools.file_read_with_cwd(
+            FileReadParams {
+                path: path_str.clone(),
+                line: None,
+                limit: None,
+            },
+            None,
+        );
+        assert_eq!(extract_text(&result), "updated");
+    }
+
+    #[test]
+    fn test_file_edit_invalidates_cache() {
+        let dir = setup();
+        let path = dir.path().join("edit_invalidate.txt");
+        fs::write(&path, "old text").unwrap();
+        let tools = EditTools::new();
+        let path_str = path.to_string_lossy().to_string();
+
+        // First read — caches "old text"
+        tools.file_read_with_cwd(
+            FileReadParams {
+                path: path_str.clone(),
+                line: None,
+                limit: None,
+            },
+            None,
+        );
+
+        // Edit — should invalidate cache
+        tools.file_edit(FileEditParams {
+            path: path_str.clone(),
+            before: "old".to_string(),
+            after: "new".to_string(),
+        });
+
+        // Read again — should return full content, not stub
+        let result = tools.file_read_with_cwd(
+            FileReadParams {
+                path: path_str.clone(),
+                line: None,
+                limit: None,
+            },
+            None,
+        );
+        assert_eq!(extract_text(&result), "new text");
     }
 }
