@@ -707,7 +707,46 @@ fn render_text_editor_request(call: &CallToolRequestParams, debug: bool) {
     // Check if this is a edit or write operation
     let tool_name = call.name.split("__").last().unwrap_or(&call.name);
     if matches!(tool_name, "edit" | "write") {
-        // ... existing diff code ...
+        // Get the proposed content
+        let proposed_content = if tool_name == "edit" {
+            args.get("after").and_then(|v| v.as_str()).unwrap_or("")
+        } else {
+            args.get("content").and_then(|v| v.as_str()).unwrap_or("")
+        };
+
+        // Get the before content for line offset calculation
+        let before_content = if tool_name == "edit" {
+            args.get("before").and_then(|v| v.as_str()).unwrap_or("")
+        } else {
+            ""
+        };
+
+        // Get current file content for line offset calculation
+        if let Some((current_content, is_binary)) = crate::session::diff::read_file_safe(path) {
+            if is_binary {
+                if !proposed_content.is_empty() {
+                    println!(
+                        "    {} {}",
+                        style("content").dim(),
+                        style("[binary content]").dim()
+                    );
+                }
+                return;
+            }
+
+            let line_offset = crate::session::diff::DiffPreview::find_line_offset(
+                &current_content,
+                before_content,
+            );
+            let preview =
+                crate::session::diff::DiffPreview::new(path, before_content, proposed_content);
+            preview.render_inline(before_content, proposed_content, line_offset);
+            println!("{}", preview.summary());
+        } else {
+            let preview = crate::session::diff::DiffPreview::new(path, "", proposed_content);
+            preview.render_inline("", proposed_content, 0);
+            println!("{}", preview.summary());
+        }
     } else if matches!(tool_name, "read") {
         // Show file content with line numbers
         if let Some((content, is_binary)) = crate::session::diff::read_file_safe(path) {
@@ -721,7 +760,7 @@ fn render_text_editor_request(call: &CallToolRequestParams, debug: bool) {
                 let lines: Vec<&str> = content.lines().collect();
                 let w = crate::session::diff::line_num_width(lines.len());
                 for (i, line) in lines.iter().enumerate() {
-                    println!("    {:>w$}| {}", i + 1, line, w = w);
+                    println!("    {:<w$}| {}", i + 1, line, w = w);
                 }
             }
         }

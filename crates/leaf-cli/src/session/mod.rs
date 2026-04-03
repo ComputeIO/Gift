@@ -1850,11 +1850,8 @@ fn prompt_tool_confirmation(
                     &current_content,
                     before_content,
                 );
-                let preview = crate::session::diff::DiffPreview::new(
-                    path,
-                    before_content,
-                    proposed_content,
-                );
+                let preview =
+                    crate::session::diff::DiffPreview::new(path, before_content, proposed_content);
                 preview.render_inline(before_content, proposed_content, line_offset);
                 println!("{}", preview.summary());
                 println!();

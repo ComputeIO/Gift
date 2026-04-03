@@ -54,7 +54,7 @@ impl DiffPreview {
                 ChangeTag::Delete => {
                     old_line += 1;
                     println!(
-                        "\x1b[31m    {:>w$} {:>w$}| -{}\x1b[0m",
+                        "\x1b[31m    {:<w$} {:<w$}| -{}\x1b[0m",
                         old_line,
                         "",
                         content,
@@ -64,7 +64,7 @@ impl DiffPreview {
                 ChangeTag::Insert => {
                     new_line += 1;
                     println!(
-                        "\x1b[32m    {:>w$} {:>w$}| +{}\x1b[0m",
+                        "\x1b[32m    {:<w$} {:<w$}| +{}\x1b[0m",
                         "",
                         new_line,
                         content,
@@ -74,7 +74,7 @@ impl DiffPreview {
                 ChangeTag::Equal => {
                     old_line += 1;
                     new_line += 1;
-                    println!("    {:>w$} {:>w$}|  {}", old_line, new_line, content, w = w);
+                    println!("    {:<w$} {:<w$}|  {}", old_line, new_line, content, w = w);
                 }
             }
         }
