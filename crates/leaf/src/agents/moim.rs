@@ -121,6 +121,7 @@ mod tests {
                 Ok(rmcp::model::CallToolResult::success(vec![])),
                 None,
                 Some(String::from("search")),
+                None,
             ),
             Message::assistant()
                 .with_text("I need to search more")
@@ -130,6 +131,7 @@ mod tests {
                 Ok(rmcp::model::CallToolResult::success(vec![])),
                 None,
                 Some(String::from("search")),
+                None,
             ),
         ]);
 

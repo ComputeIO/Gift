@@ -120,6 +120,8 @@ pub struct ToolResponse {
     pub metadata: Option<ProviderMetadata>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tool_args: Option<JsonObject>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -315,6 +317,7 @@ impl MessageContent {
                     tool_result: Ok(tool_result),
                     metadata: res.metadata.clone(),
                     tool_name: res.tool_name.clone(),
+                    tool_args: res.tool_args.clone(),
                 }))
             }
             MessageContent::Thinking(_) | MessageContent::RedactedThinking(_) => None,
@@ -364,6 +367,7 @@ impl MessageContent {
             tool_result,
             metadata: None,
             tool_name: None,
+            tool_args: None,
         })
     }
 
@@ -378,6 +382,7 @@ impl MessageContent {
             tool_result,
             metadata: metadata.cloned(),
             tool_name,
+            tool_args: None,
         })
     }
 
@@ -786,10 +791,15 @@ impl Message {
         result: ToolResult<CallToolResult>,
         metadata: Option<&ProviderMetadata>,
         tool_name: Option<String>,
+        tool_args: Option<JsonObject>,
     ) -> Self {
-        self.with_content(MessageContent::tool_response_with_metadata(
-            id, result, metadata, tool_name,
-        ))
+        self.with_content(MessageContent::ToolResponse(ToolResponse {
+            id: id.into(),
+            tool_result: result,
+            metadata: metadata.cloned(),
+            tool_name,
+            tool_args,
+        }))
     }
 
     pub fn add_tool_response_with_metadata<S: Into<String>>(
@@ -798,11 +808,16 @@ impl Message {
         result: ToolResult<CallToolResult>,
         metadata: Option<&ProviderMetadata>,
         tool_name: Option<String>,
+        tool_args: Option<JsonObject>,
     ) {
         self.content
-            .push(MessageContent::tool_response_with_metadata(
-                id, result, metadata, tool_name,
-            ));
+            .push(MessageContent::ToolResponse(ToolResponse {
+                id: id.into(),
+                tool_result: result,
+                metadata: metadata.cloned(),
+                tool_name,
+                tool_args,
+            }));
     }
 
     /// Add an action required message for tool confirmation

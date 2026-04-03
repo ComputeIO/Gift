@@ -581,6 +581,7 @@ mod tests {
                     ])),
                     None,
                     Some(String::from(tool_name)),
+                    None,
                 )
                 .with_id(response_id),
         ]
@@ -675,6 +676,7 @@ mod tests {
                 ])),
                 None,
                 Some(String::from("read_file")),
+                None,
             ),
         ];
 
@@ -710,6 +712,7 @@ mod tests {
                 ])),
                 None,
                 Some(String::from("read_file")),
+                None,
             ));
         }
 

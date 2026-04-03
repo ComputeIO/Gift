@@ -582,6 +582,7 @@ mod tests {
                 text_content.raw.text,
             )])),
             tool_name: None,
+            tool_args: None,
         };
 
         let result = tool_response_to_markdown(&tool_response, true);
@@ -606,6 +607,7 @@ mod tests {
                 text_content.raw.text,
             )])),
             tool_name: None,
+            tool_args: None,
         };
 
         let result = tool_response_to_markdown(&tool_response, true);
@@ -712,6 +714,7 @@ if __name__ == "__main__":
                 text_content.raw.text,
             )])),
             tool_name: None,
+            tool_args: None,
         };
 
         let request_result = tool_request_to_markdown(&tool_request, true);
@@ -755,6 +758,7 @@ if __name__ == "__main__":
                 text_content.raw.text,
             )])),
             tool_name: None,
+            tool_args: None,
         };
 
         let request_result = tool_request_to_markdown(&tool_request, true);
@@ -806,6 +810,7 @@ warning: unused variable `x`
                 text_content.raw.text,
             )])),
             tool_name: None,
+            tool_args: None,
         };
 
         let response_result = tool_response_to_markdown(&tool_response, true);
@@ -855,6 +860,7 @@ warning: unused variable `x`
                 text_content.raw.text,
             )])),
             tool_name: None,
+            tool_args: None,
         };
 
         let response_result = tool_response_to_markdown(&tool_response, true);
@@ -893,6 +899,7 @@ warning: unused variable `x`
                 text_content.raw.text,
             )])),
             tool_name: None,
+            tool_args: None,
         };
 
         let request_result = tool_request_to_markdown(&tool_request, true);
@@ -938,6 +945,7 @@ Command failed with exit code 2"#;
                 text_content.raw.text,
             )])),
             tool_name: None,
+            tool_args: None,
         };
 
         let response_result = tool_response_to_markdown(&tool_response, true);
@@ -981,6 +989,7 @@ Command failed with exit code 2"#;
                 text_content.raw.text,
             )])),
             tool_name: None,
+            tool_args: None,
         };
 
         let request_result = tool_request_to_markdown(&tool_request, true);
@@ -1030,6 +1039,7 @@ drwx------   3 user  staff    96 Dec  6 16:20 com.apple.launchd.abc
                 text_content.raw.text,
             )])),
             tool_name: None,
+            tool_args: None,
         };
 
         let request_result = tool_request_to_markdown(&_tool_request, true);
@@ -1075,6 +1085,7 @@ src/middleware.rs:12:async fn auth_middleware(req: Request, next: Next) -> Resul
                 text_content.raw.text,
             )])),
             tool_name: None,
+            tool_args: None,
         };
 
         let request_result = tool_request_to_markdown(&tool_request, true);
@@ -1117,6 +1128,7 @@ src/middleware.rs:12:async fn auth_middleware(req: Request, next: Next) -> Resul
                 text_content.raw.text,
             )])),
             tool_name: None,
+            tool_args: None,
         };
 
         let response_result = tool_response_to_markdown(&tool_response, true);
@@ -1160,6 +1172,7 @@ found 0 vulnerabilities"#;
                 text_content.raw.text,
             )])),
             tool_name: None,
+            tool_args: None,
         };
 
         let request_result = tool_request_to_markdown(&tool_request, true);

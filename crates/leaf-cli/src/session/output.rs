@@ -522,8 +522,21 @@ fn render_tool_response(resp: &ToolResponse, debug: bool) {
                     }
                 }
 
-                // Just ignore read response since we've printed read content with line numbers
+                // For read tool, render response content with line numbers
                 if resp.tool_name.as_ref().is_some_and(|tool| tool == "read") {
+                    if let Some(text) = content.as_text() {
+                        let start_line = resp
+                            .tool_args
+                            .as_ref()
+                            .and_then(|args| args.get("line"))
+                            .and_then(|v| v.as_u64())
+                            .unwrap_or(1) as usize;
+                        let lines: Vec<&str> = text.text.lines().collect();
+                        let w = crate::session::diff::line_num_width(start_line - 1 + lines.len());
+                        for (i, line) in lines.iter().enumerate() {
+                            println!("    {:<w$}| {}", start_line + i, line, w = w);
+                        }
+                    }
                     continue;
                 }
 
@@ -756,24 +769,6 @@ fn render_text_editor_request(call: &CallToolRequestParams, debug: bool) {
             let preview = crate::session::diff::DiffPreview::new(path, "", proposed_content);
             preview.render_inline("", proposed_content, 0);
             println!("{}", preview.summary());
-        }
-    } else if matches!(tool_name, "read") {
-        // Show file content with line numbers
-        if let Some((content, is_binary)) = crate::session::diff::read_file_safe(path) {
-            if is_binary {
-                println!(
-                    "    {} {}",
-                    style("[binary file]").dim(),
-                    style(&path_display).dim()
-                );
-            } else {
-                println!();
-                let lines: Vec<&str> = content.lines().collect();
-                let w = crate::session::diff::line_num_width(lines.len());
-                for (i, line) in lines.iter().enumerate() {
-                    println!("    {:<w$}| {}", i + 1, line, w = w);
-                }
-            }
         }
     } else {
         // For other text editor operations, show params as before

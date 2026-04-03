@@ -1127,6 +1127,7 @@ mod tests {
                 )),
                 None,
                 Some(String::from("calculator")),
+                None,
             ),
         ];
 
@@ -1162,6 +1163,7 @@ mod tests {
                 Ok(rmcp::model::CallToolResult::success(vec![])),
                 None,
                 Some(String::from("search")),
+                None,
             ),
         ];
 
@@ -1194,6 +1196,7 @@ mod tests {
                 Ok(CallToolResult::success(vec![resource_content])),
                 None,
                 Some(String::from("view_file")),
+                None,
             ),
         ];
 
@@ -1230,6 +1233,7 @@ mod tests {
                 ])),
                 None,
                 Some(String::from("view_file")),
+                None,
             ),
         ];
 
