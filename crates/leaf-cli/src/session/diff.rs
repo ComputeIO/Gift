@@ -41,20 +41,23 @@ impl DiffPreview {
     pub fn render_inline(&self, current: &str, proposed: &str, line_offset: usize) {
         let diff = TextDiff::from_lines(current, proposed);
         let mut old_line = line_offset;
+        let mut new_line = line_offset;
         println!();
         for change in diff.iter_all_changes() {
             let content = change.value().trim_end_matches('\n');
             match change.tag() {
                 ChangeTag::Delete => {
                     old_line += 1;
-                    println!("\x1b[31m{:>4}| -{}\x1b[0m", old_line, content);
+                    println!("\x1b[31m    {:>4} {:>4}| -{}\x1b[0m", old_line, "", content);
                 }
                 ChangeTag::Insert => {
-                    println!("\x1b[32m    | +{}\x1b[0m", content);
+                    new_line += 1;
+                    println!("\x1b[32m    {:>4} {:>4}| +{}\x1b[0m", "", new_line, content);
                 }
                 ChangeTag::Equal => {
                     old_line += 1;
-                    println!("{:>4}|  {}", old_line, content);
+                    new_line += 1;
+                    println!("    {:>4} {:>4}|  {}", old_line, new_line, content);
                 }
             }
         }
