@@ -1852,10 +1852,10 @@ fn prompt_tool_confirmation(
                 );
                 let preview = crate::session::diff::DiffPreview::new(
                     path,
-                    &current_content,
+                    before_content,
                     proposed_content,
                 );
-                preview.render_inline(&current_content, proposed_content, line_offset);
+                preview.render_inline(before_content, proposed_content, line_offset);
                 println!("{}", preview.summary());
                 println!();
             }
