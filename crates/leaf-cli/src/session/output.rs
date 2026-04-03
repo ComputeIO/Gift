@@ -20,7 +20,6 @@ use std::path::Path;
 use std::sync::LazyLock;
 use std::time::Duration;
 
-use super::diff;
 use super::streaming_buffer::MarkdownBuffer;
 
 pub const DEFAULT_MIN_PRIORITY: f32 = 0.0;
@@ -705,19 +704,19 @@ fn render_text_editor_request(call: &CallToolRequestParams, debug: bool) {
     let path_display = shorten_path(path, debug);
     println!("    {} {}", style("path").dim(), style(&path_display).dim());
 
-    // Check if this is a file_edit or file_write operation
+    // Check if this is a edit or write operation
     let tool_name = call.name.split("__").last().unwrap_or(&call.name);
-    if matches!(tool_name, "file_edit" | "file_write") {
+    if matches!(tool_name, "edit" | "write") {
         // Get the proposed content
-        let proposed_content = if tool_name == "file_edit" {
+        let proposed_content = if tool_name == "edit" {
             args.get("after").and_then(|v| v.as_str()).unwrap_or("")
         } else {
             args.get("content").and_then(|v| v.as_str()).unwrap_or("")
         };
 
         // Get current file content for diff (if exists)
-        let current_content = if let Some((content, _)) = diff::read_file_safe(path) {
-            if content.contains("Binary file") {
+        if let Some((current_content, is_binary)) = crate::session::diff::read_file_safe(path) {
+            if is_binary {
                 // For binary files, just show the content
                 if !proposed_content.is_empty() {
                     println!(
@@ -728,15 +727,18 @@ fn render_text_editor_request(call: &CallToolRequestParams, debug: bool) {
                 }
                 return;
             }
-            content
-        } else {
-            String::new()
-        };
 
-        // Show unified diff
-        let preview = diff::DiffPreview::new(path, &current_content, proposed_content);
-        preview.render();
-        println!("{}", preview.summary());
+            // Show side-by-side diff
+            let preview =
+                crate::session::diff::DiffPreview::new(path, &current_content, proposed_content);
+            preview.render_inline(&current_content, proposed_content);
+            println!("{}", preview.summary());
+        } else {
+            // File doesn't exist - treat as new file
+            let preview = crate::session::diff::DiffPreview::new(path, "", proposed_content);
+            preview.render_inline("", proposed_content);
+            println!("{}", preview.summary());
+        }
     } else {
         // For other text editor operations, show params as before
         let mut other_args = serde_json::Map::new();

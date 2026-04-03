@@ -1,6 +1,6 @@
 mod builder;
 mod completion;
-mod diff;
+pub(crate) mod diff;
 mod editor;
 mod elicitation;
 mod export;
@@ -1823,22 +1823,34 @@ fn prompt_tool_confirmation(
     output::hide_thinking();
 
     // Show diff preview for file operations
-    if matches!(tool_name, "file_edit" | "file_write") {
-        if let Some((current_content, _)) = diff::read_file_safe(path) {
-            let proposed_content = if tool_name == "file_edit" {
-                arguments
-                    .get("after")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("")
-            } else {
-                arguments
-                    .get("content")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("")
-            };
+    if matches!(tool_name, "edit" | "write") {
+        let proposed_content = if tool_name == "edit" {
+            arguments
+                .get("after")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+        } else {
+            arguments
+                .get("content")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+        };
 
-            let preview = diff::DiffPreview::new(path, &current_content, proposed_content);
-            preview.render();
+        if let Some((current_content, is_binary)) = crate::session::diff::read_file_safe(path) {
+            if !is_binary {
+                let preview = crate::session::diff::DiffPreview::new(
+                    path,
+                    &current_content,
+                    proposed_content,
+                );
+                preview.render_inline(&current_content, proposed_content);
+                println!("{}", preview.summary());
+                println!();
+            }
+        } else {
+            // New file
+            let preview = crate::session::diff::DiffPreview::new(path, "", proposed_content);
+            preview.render_inline("", proposed_content);
             println!("{}", preview.summary());
             println!();
         }

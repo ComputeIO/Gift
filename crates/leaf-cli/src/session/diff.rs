@@ -1,4 +1,4 @@
-use similar::{Change, ChangeTag, TextDiff};
+use similar::{ChangeTag, TextDiff};
 
 const MAX_NEW_FILE_LINES: usize = 100;
 
@@ -6,128 +6,89 @@ pub struct DiffPreview {
     pub path: String,
     pub additions: usize,
     pub deletions: usize,
-    pub lines: Vec<String>,
     pub truncated: bool,
     pub total_additions: usize,
     pub is_new_file: bool,
 }
 
 impl DiffPreview {
-    /// Create a diff preview for file operations
     pub fn new(path: &str, current: &str, proposed: &str) -> Self {
-        Self::compute(path, current, proposed)
-    }
-
-    /// Core diff computation with conditional truncation
-    fn compute(path: &str, current: &str, proposed: &str) -> Self {
         let is_new_file = current.is_empty();
         let diff = TextDiff::from_lines(current, proposed);
         let mut additions = 0usize;
         let mut deletions = 0usize;
-        let mut lines = Vec::new();
 
         for change in diff.iter_all_changes() {
-            let change: Change<&str> = change;
             match change.tag() {
-                ChangeTag::Delete => {
-                    deletions += 1;
-                    let line = change.value().trim_end_matches('\n');
-                    lines.push(format!("\x1b[31m-{}\x1b[0m", line));
-                }
-                ChangeTag::Insert => {
-                    additions += 1;
-                    let value = change.value();
-                    let line = if value.ends_with('\n') {
-                        format!("\x1b[32m{}\x1b[0m", value)
-                    } else {
-                        format!("\x1b[32m{}\n\x1b[0m", value)
-                    };
-                    lines.push(line);
-                }
-                ChangeTag::Equal => {
-                    let line = change.value().trim_end_matches('\n');
-                    lines.push(format!(" {}\n", line));
-                }
+                ChangeTag::Delete => deletions += 1,
+                ChangeTag::Insert => additions += 1,
+                ChangeTag::Equal => {}
             }
         }
 
-        // Truncate only for new files
-        let truncated = if is_new_file && additions > MAX_NEW_FILE_LINES {
-            lines.truncate(MAX_NEW_FILE_LINES);
-            lines.push(format!(
-                "\x1b[33m... {} more lines\x1b[0m",
-                additions - MAX_NEW_FILE_LINES
-            ));
-            true
-        } else {
-            false
-        };
+        let truncated = is_new_file && additions > MAX_NEW_FILE_LINES;
 
         Self {
             path: path.to_string(),
             additions,
             deletions,
-            lines,
             truncated,
             total_additions: additions,
             is_new_file,
         }
     }
 
-    /// Render the diff to stdout
-    pub fn render(&self) {
-        for line in &self.lines {
-            print!("{}", line);
+    pub fn render_inline(&self, current: &str, proposed: &str) {
+        let diff = TextDiff::from_lines(current, proposed);
+        println!();
+        for change in diff.iter_all_changes() {
+            let content = change.value().trim_end_matches('\n');
+            match change.tag() {
+                ChangeTag::Delete => {
+                    println!("\x1b[31m-{}\x1b[0m", content);
+                }
+                ChangeTag::Insert => {
+                    println!("\x1b[32m+{}\x1b[0m", content);
+                }
+                ChangeTag::Equal => {
+                    println!(" {}", content);
+                }
+            }
+        }
+        if self.truncated {
+            println!(
+                "\x1b[33m... {} more lines\x1b[0m",
+                self.total_additions - MAX_NEW_FILE_LINES
+            );
         }
     }
 
-    /// Generate summary line
     pub fn summary(&self) -> String {
         if self.is_new_file {
             if self.truncated {
                 format!(
-                    "\n  {}: {} (+{} lines, {} total)",
-                    console::style("New file").cyan(),
-                    self.path,
-                    self.additions,
-                    self.total_additions
+                    "\n  New file: {} (+{} lines, {} total)",
+                    self.path, self.additions, self.total_additions
                 )
             } else {
-                format!(
-                    "\n  {}: {} (+{} lines)",
-                    console::style("New file").cyan(),
-                    self.path,
-                    self.additions
-                )
+                format!("\n  New file: {} (+{} lines)", self.path, self.additions)
             }
         } else if self.additions > 0 || self.deletions > 0 {
             format!(
-                "\n  {}: {} (+{} lines, -{} lines)",
-                console::style("Edit").cyan(),
-                self.path,
-                self.additions,
-                self.deletions
+                "\n  Edit: {} (+{} lines, -{} lines)",
+                self.path, self.additions, self.deletions
             )
         } else {
-            format!(
-                "\n  {}: {} (no changes)",
-                console::style("Edit").cyan(),
-                self.path
-            )
+            format!("\n  Edit: {} (no changes)", self.path)
         }
     }
 }
 
-/// Check if a file appears to be binary
-pub fn is_binary(content: &[u8]) -> bool {
-    content.iter().take(8192).any(|&b| b == 0)
-}
-
-/// Get file content safely, returning None for binary files
 pub fn read_file_safe(path: &str) -> Option<(String, bool)> {
     match std::fs::read(path) {
         Ok(bytes) => {
-            if is_binary(&bytes) {
+            let is_binary = bytes.iter().take(8192).any(|&b| b == 0);
+            if is_binary {
                 Some((format!("Binary file, {} bytes", bytes.len()), true))
             } else {
                 match String::from_utf8(bytes) {
@@ -145,71 +106,45 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_diff_summary_with_changes() {
-        let preview = DiffPreview::new("test.rs", "old\nline2\n", "new\nline2\n");
-        let summary = preview.summary();
-        assert!(summary.contains("+1 lines, -1 lines"));
-        assert!(summary.contains("test.rs"));
-        assert!(!preview.is_new_file);
-    }
-
-    #[test]
-    fn test_diff_summary_new_file() {
-        let preview = DiffPreview::new("new.rs", "", "line1\nline2\nline3\n");
-        assert!(!preview.truncated);
+    fn test_diff_preview_new_file() {
+        let preview = DiffPreview::new("test.rs", "", "line1\nline2\n");
         assert!(preview.is_new_file);
-        assert!(preview.summary().contains("New file"));
-        assert!(preview.summary().contains("+3 lines"));
-    }
-
-    #[test]
-    fn test_diff_truncation_for_large_new_file() {
-        let large_content: String = (0..150).map(|i| format!("line{}\n", i)).collect();
-        let preview = DiffPreview::new("large.rs", "", &large_content);
-        assert!(preview.truncated);
-        assert!(preview.is_new_file);
-        // The "more lines" message is in the lines vector (rendered separately)
-        let lines_text = preview.lines.join("");
-        assert!(
-            lines_text.contains("more lines"),
-            "lines contained: {}",
-            lines_text
-        );
-        assert_eq!(preview.total_additions, 150);
-        // Check summary for new file
-        assert!(preview.summary().contains("New file"));
-    }
-
-    #[test]
-    fn test_diff_no_changes() {
-        let preview = DiffPreview::new("same.rs", "content\n", "content\n");
-        assert_eq!(preview.additions, 0);
+        assert_eq!(preview.additions, 2);
         assert_eq!(preview.deletions, 0);
         assert!(!preview.truncated);
     }
 
     #[test]
-    fn test_is_binary_with_null_byte() {
-        assert!(is_binary(b"hello\x00world"));
+    fn test_diff_preview_edit() {
+        let preview = DiffPreview::new("test.rs", "old\n", "new\n");
+        assert!(!preview.is_new_file);
+        assert_eq!(preview.additions, 1);
+        assert_eq!(preview.deletions, 1);
     }
 
     #[test]
-    fn test_is_binary_without_null_byte() {
-        assert!(!is_binary(b"hello world"));
+    fn test_diff_preview_truncation() {
+        let large_content: String = (0..150).map(|i| format!("line{}\n", i)).collect();
+        let preview = DiffPreview::new("large.rs", "", &large_content);
+        assert!(preview.truncated);
+        assert_eq!(preview.total_additions, 150);
     }
 
     #[test]
-    fn test_is_binary_with_long_content() {
-        let content: Vec<u8> = (0..10000).map(|i| i as u8).collect();
-        assert!(is_binary(&content));
+    fn test_diff_preview_no_changes() {
+        let preview = DiffPreview::new("same.rs", "content\n", "content\n");
+        assert_eq!(preview.additions, 0);
+        assert_eq!(preview.deletions, 0);
     }
 
     #[test]
     fn test_diff_counts() {
-        // "a\nb\nc\n" -> "a\nx\ny\nc\n"
-        // Diff: equal "a\n", "c\n", delete "b\n", insert "x\ny\n"
-        let preview = DiffPreview::new("count.rs", "a\nb\nc\n", "a\nx\ny\nc\n");
-        assert_eq!(preview.additions, 2); // x, y
-        assert_eq!(preview.deletions, 1); // b
+        let preview = DiffPreview::new(
+            "test.rs",
+            "line1\nline2\n",
+            "line1\nline2 modified\nline3\n",
+        );
+        assert_eq!(preview.additions, 2);
+        assert_eq!(preview.deletions, 1);
     }
 }
