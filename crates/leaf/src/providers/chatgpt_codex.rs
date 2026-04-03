@@ -1052,6 +1052,8 @@ mod tests {
             Message::user().with_tool_response(
                 "call-1",
                 Ok(CallToolResult::success(vec![Content::text("tool output")])),
+                None,
+                Some(String::from("tool_name")),
             ),
             Message::assistant().with_text("assistant follow-up"),
         ],
@@ -1074,6 +1076,8 @@ mod tests {
             Message::user().with_tool_response(
                 "call-1",
                 Ok(CallToolResult::success(vec![Content::text("tool output")])),
+                None,
+                Some(String::from("tool_name")),
             ),
             Message::assistant().with_text("assistant follow-up"),
         ],
@@ -1095,6 +1099,8 @@ mod tests {
             Message::user().with_tool_response(
                 "call-1",
                 Err(ErrorData::new(ErrorCode::INTERNAL_ERROR, "boom", None)),
+                None,
+                Some(String::from("tool_name")),
             ),
         ],
         vec![

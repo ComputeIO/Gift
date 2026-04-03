@@ -1810,6 +1810,7 @@ print(\"hello, world\")
             id: "req_1".to_string(),
             tool_result: Ok(CallToolResult::success(vec![RmcpContent::text("")])),
             metadata: None,
+            tool_name: None,
         }
         => vec![(PathBuf::from("/tmp/f.txt"), Some(5))]
         ; "read returns requested line"
@@ -1824,6 +1825,7 @@ print(\"hello, world\")
             id: "req_1".to_string(),
             tool_result: Ok(CallToolResult::success(vec![RmcpContent::text("")])),
             metadata: None,
+            tool_name: None,
         }
         => vec![(PathBuf::from("/tmp/f.txt"), None)]
         ; "read without line"
@@ -1838,6 +1840,7 @@ print(\"hello, world\")
             id: "req_1".to_string(),
             tool_result: Ok(CallToolResult::success(vec![RmcpContent::text("")])),
             metadata: None,
+            tool_name: None,
         }
         => vec![(PathBuf::from("/tmp/f.txt"), Some(1))]
         ; "write returns line 1"
@@ -1852,6 +1855,7 @@ print(\"hello, world\")
             id: "req_1".to_string(),
             tool_result: Ok(CallToolResult::success(vec![RmcpContent::text("")])),
             metadata: None,
+            tool_name: None,
         }
         => vec![(PathBuf::from("/tmp/f.txt"), Some(1))]
         ; "edit returns line 1"
@@ -1866,6 +1870,7 @@ print(\"hello, world\")
             id: "req_1".to_string(),
             tool_result: Ok(CallToolResult::success(vec![RmcpContent::text("")])),
             metadata: None,
+            tool_name: None,
         }
         => Vec::<(PathBuf, Option<u32>)>::new()
         ; "non file tool returns empty"
@@ -1887,6 +1892,7 @@ print(\"hello, world\")
             id: "req_1".to_string(),
             tool_result: Ok(result),
             metadata: None,
+            tool_name: None,
         }
     }
 

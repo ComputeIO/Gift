@@ -581,6 +581,7 @@ mod tests {
             tool_result: Ok(rmcp::model::CallToolResult::success(vec![Content::text(
                 text_content.raw.text,
             )])),
+            tool_name: None,
         };
 
         let result = tool_response_to_markdown(&tool_response, true);
@@ -604,6 +605,7 @@ mod tests {
             tool_result: Ok(rmcp::model::CallToolResult::success(vec![Content::text(
                 text_content.raw.text,
             )])),
+            tool_name: None,
         };
 
         let result = tool_response_to_markdown(&tool_response, true);
@@ -692,7 +694,7 @@ mod tests {
         let python_code = r#"#!/usr/bin/env python3
 def hello_world():
     print("Hello, World!")
-    
+
 if __name__ == "__main__":
     hello_world()"#;
 
@@ -709,6 +711,7 @@ if __name__ == "__main__":
             tool_result: Ok(rmcp::model::CallToolResult::success(vec![Content::text(
                 text_content.raw.text,
             )])),
+            tool_name: None,
         };
 
         let request_result = tool_request_to_markdown(&tool_request, true);
@@ -751,6 +754,7 @@ if __name__ == "__main__":
             tool_result: Ok(rmcp::model::CallToolResult::success(vec![Content::text(
                 text_content.raw.text,
             )])),
+            tool_name: None,
         };
 
         let request_result = tool_request_to_markdown(&tool_request, true);
@@ -801,6 +805,7 @@ warning: unused variable `x`
             tool_result: Ok(rmcp::model::CallToolResult::success(vec![Content::text(
                 text_content.raw.text,
             )])),
+            tool_name: None,
         };
 
         let response_result = tool_response_to_markdown(&tool_response, true);
@@ -849,6 +854,7 @@ warning: unused variable `x`
             tool_result: Ok(rmcp::model::CallToolResult::success(vec![Content::text(
                 text_content.raw.text,
             )])),
+            tool_name: None,
         };
 
         let response_result = tool_response_to_markdown(&tool_response, true);
@@ -886,6 +892,7 @@ warning: unused variable `x`
             tool_result: Ok(rmcp::model::CallToolResult::success(vec![Content::text(
                 text_content.raw.text,
             )])),
+            tool_name: None,
         };
 
         let request_result = tool_request_to_markdown(&tool_request, true);
@@ -930,6 +937,7 @@ Command failed with exit code 2"#;
             tool_result: Ok(rmcp::model::CallToolResult::success(vec![Content::text(
                 text_content.raw.text,
             )])),
+            tool_name: None,
         };
 
         let response_result = tool_response_to_markdown(&tool_response, true);
@@ -972,6 +980,7 @@ Command failed with exit code 2"#;
             tool_result: Ok(rmcp::model::CallToolResult::success(vec![Content::text(
                 text_content.raw.text,
             )])),
+            tool_name: None,
         };
 
         let request_result = tool_request_to_markdown(&tool_request, true);
@@ -1020,6 +1029,7 @@ drwx------   3 user  staff    96 Dec  6 16:20 com.apple.launchd.abc
             tool_result: Ok(rmcp::model::CallToolResult::success(vec![Content::text(
                 text_content.raw.text,
             )])),
+            tool_name: None,
         };
 
         let request_result = tool_request_to_markdown(&_tool_request, true);
@@ -1064,6 +1074,7 @@ src/middleware.rs:12:async fn auth_middleware(req: Request, next: Next) -> Resul
             tool_result: Ok(rmcp::model::CallToolResult::success(vec![Content::text(
                 text_content.raw.text,
             )])),
+            tool_name: None,
         };
 
         let request_result = tool_request_to_markdown(&tool_request, true);
@@ -1105,6 +1116,7 @@ src/middleware.rs:12:async fn auth_middleware(req: Request, next: Next) -> Resul
             tool_result: Ok(rmcp::model::CallToolResult::success(vec![Content::text(
                 text_content.raw.text,
             )])),
+            tool_name: None,
         };
 
         let response_result = tool_response_to_markdown(&tool_response, true);
@@ -1147,6 +1159,7 @@ found 0 vulnerabilities"#;
             tool_result: Ok(rmcp::model::CallToolResult::success(vec![Content::text(
                 text_content.raw.text,
             )])),
+            tool_name: None,
         };
 
         let request_result = tool_request_to_markdown(&tool_request, true);

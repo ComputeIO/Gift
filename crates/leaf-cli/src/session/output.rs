@@ -522,6 +522,11 @@ fn render_tool_response(resp: &ToolResponse, debug: bool) {
                     }
                 }
 
+                // Just ignore read response since we've printed read content with line numbers
+                if resp.tool_name.as_ref().is_some_and(|tool| tool == "read") {
+                    continue;
+                }
+
                 let min_priority = config
                     .get_param::<f32>("LEAF_CLI_MIN_PRIORITY")
                     .ok()
@@ -762,6 +767,7 @@ fn render_text_editor_request(call: &CallToolRequestParams, debug: bool) {
                     style(&path_display).dim()
                 );
             } else {
+                println!();
                 let lines: Vec<&str> = content.lines().collect();
                 let w = crate::session::diff::line_num_width(lines.len());
                 for (i, line) in lines.iter().enumerate() {

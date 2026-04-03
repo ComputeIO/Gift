@@ -118,6 +118,8 @@ pub struct ToolResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[schema(value_type = Object)]
     pub metadata: Option<ProviderMetadata>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tool_name: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -312,6 +314,7 @@ impl MessageContent {
                     id: res.id.clone(),
                     tool_result: Ok(tool_result),
                     metadata: res.metadata.clone(),
+                    tool_name: res.tool_name.clone(),
                 }))
             }
             MessageContent::Thinking(_) | MessageContent::RedactedThinking(_) => None,
@@ -360,6 +363,7 @@ impl MessageContent {
             id: id.into(),
             tool_result,
             metadata: None,
+            tool_name: None,
         })
     }
 
@@ -367,11 +371,13 @@ impl MessageContent {
         id: S,
         tool_result: ToolResult<CallToolResult>,
         metadata: Option<&ProviderMetadata>,
+        tool_name: Option<String>,
     ) -> Self {
         MessageContent::ToolResponse(ToolResponse {
             id: id.into(),
             tool_result,
             metadata: metadata.cloned(),
+            tool_name,
         })
     }
 
@@ -778,8 +784,12 @@ impl Message {
         self,
         id: S,
         result: ToolResult<CallToolResult>,
+        metadata: Option<&ProviderMetadata>,
+        tool_name: Option<String>,
     ) -> Self {
-        self.with_content(MessageContent::tool_response(id, result))
+        self.with_content(MessageContent::tool_response_with_metadata(
+            id, result, metadata, tool_name,
+        ))
     }
 
     pub fn add_tool_response_with_metadata<S: Into<String>>(
@@ -787,10 +797,11 @@ impl Message {
         id: S,
         result: ToolResult<CallToolResult>,
         metadata: Option<&ProviderMetadata>,
+        tool_name: Option<String>,
     ) {
         self.content
             .push(MessageContent::tool_response_with_metadata(
-                id, result, metadata,
+                id, result, metadata, tool_name,
             ));
     }
 

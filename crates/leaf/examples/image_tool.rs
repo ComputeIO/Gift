@@ -41,6 +41,8 @@ async fn main() -> Result<()> {
                     base64_image,
                     "image/png",
                 )])),
+                None,
+                None,
             ),
         ];
 
