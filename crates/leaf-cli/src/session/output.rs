@@ -714,10 +714,16 @@ fn render_text_editor_request(call: &CallToolRequestParams, debug: bool) {
             args.get("content").and_then(|v| v.as_str()).unwrap_or("")
         };
 
+        // Get the before content for line offset calculation
+        let before_content = if tool_name == "edit" {
+            args.get("before").and_then(|v| v.as_str()).unwrap_or("")
+        } else {
+            ""
+        };
+
         // Get current file content for diff (if exists)
         if let Some((current_content, is_binary)) = crate::session::diff::read_file_safe(path) {
             if is_binary {
-                // For binary files, just show the content
                 if !proposed_content.is_empty() {
                     println!(
                         "    {} {}",
@@ -728,15 +734,17 @@ fn render_text_editor_request(call: &CallToolRequestParams, debug: bool) {
                 return;
             }
 
-            // Show side-by-side diff
+            let line_offset = crate::session::diff::DiffPreview::find_line_offset(
+                &current_content,
+                before_content,
+            );
             let preview =
                 crate::session::diff::DiffPreview::new(path, &current_content, proposed_content);
-            preview.render_inline(&current_content, proposed_content);
+            preview.render_inline(&current_content, proposed_content, line_offset);
             println!("{}", preview.summary());
         } else {
-            // File doesn't exist - treat as new file
             let preview = crate::session::diff::DiffPreview::new(path, "", proposed_content);
-            preview.render_inline("", proposed_content);
+            preview.render_inline("", proposed_content, 0);
             println!("{}", preview.summary());
         }
     } else {

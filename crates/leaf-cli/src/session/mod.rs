@@ -1835,22 +1835,33 @@ fn prompt_tool_confirmation(
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
         };
+        let before_content = if tool_name == "edit" {
+            arguments
+                .get("before")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+        } else {
+            ""
+        };
 
         if let Some((current_content, is_binary)) = crate::session::diff::read_file_safe(path) {
             if !is_binary {
+                let line_offset = crate::session::diff::DiffPreview::find_line_offset(
+                    &current_content,
+                    before_content,
+                );
                 let preview = crate::session::diff::DiffPreview::new(
                     path,
                     &current_content,
                     proposed_content,
                 );
-                preview.render_inline(&current_content, proposed_content);
+                preview.render_inline(&current_content, proposed_content, line_offset);
                 println!("{}", preview.summary());
                 println!();
             }
         } else {
-            // New file
             let preview = crate::session::diff::DiffPreview::new(path, "", proposed_content);
-            preview.render_inline("", proposed_content);
+            preview.render_inline("", proposed_content, 0);
             println!("{}", preview.summary());
             println!();
         }

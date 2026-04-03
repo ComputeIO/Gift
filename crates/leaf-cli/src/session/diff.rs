@@ -38,20 +38,23 @@ impl DiffPreview {
         }
     }
 
-    pub fn render_inline(&self, current: &str, proposed: &str) {
+    pub fn render_inline(&self, current: &str, proposed: &str, line_offset: usize) {
         let diff = TextDiff::from_lines(current, proposed);
+        let mut old_line = line_offset;
         println!();
         for change in diff.iter_all_changes() {
             let content = change.value().trim_end_matches('\n');
             match change.tag() {
                 ChangeTag::Delete => {
-                    println!("\x1b[31m-{}\x1b[0m", content);
+                    old_line += 1;
+                    println!("\x1b[31m{:>4}| -{}\x1b[0m", old_line, content);
                 }
                 ChangeTag::Insert => {
-                    println!("\x1b[32m+{}\x1b[0m", content);
+                    println!("\x1b[32m    | +{}\x1b[0m", content);
                 }
                 ChangeTag::Equal => {
-                    println!(" {}", content);
+                    old_line += 1;
+                    println!("{:>4}|  {}", old_line, content);
                 }
             }
         }
@@ -81,6 +84,17 @@ impl DiffPreview {
         } else {
             format!("\n  Edit: {} (no changes)", self.path)
         }
+    }
+
+    #[allow(clippy::string_slice)]
+    pub fn find_line_offset(haystack: &str, needle: &str) -> usize {
+        if needle.is_empty() {
+            return 1;
+        }
+        haystack
+            .find(needle)
+            .map(|pos| haystack[..pos].lines().count())
+            .unwrap_or(0)
     }
 }
 
@@ -146,5 +160,24 @@ mod tests {
         );
         assert_eq!(preview.additions, 2);
         assert_eq!(preview.deletions, 1);
+    }
+
+    #[test]
+    fn test_find_line_offset() {
+        let file = "line1\nline2\nline3\nline4\n";
+        assert_eq!(DiffPreview::find_line_offset(file, "line1"), 0);
+        assert_eq!(DiffPreview::find_line_offset(file, "line2"), 1);
+        assert_eq!(DiffPreview::find_line_offset(file, "line3"), 2);
+        assert_eq!(DiffPreview::find_line_offset(file, "line4"), 3);
+    }
+
+    #[test]
+    fn test_find_line_offset_empty_needle() {
+        assert_eq!(DiffPreview::find_line_offset("content", ""), 1);
+    }
+
+    #[test]
+    fn test_find_line_offset_not_found() {
+        assert_eq!(DiffPreview::find_line_offset("content", "xyz"), 0);
     }
 }
