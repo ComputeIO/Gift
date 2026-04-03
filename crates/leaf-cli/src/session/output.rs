@@ -498,6 +498,7 @@ fn render_tool_request(req: &ToolRequest, theme: Theme, debug: bool) {
         Ok(call) => match call.name.to_string().as_str() {
             name if is_shell_tool_name(name) => render_shell_request(call, debug),
             name if is_file_tool_name(name) => render_text_editor_request(call, debug),
+            name if is_read_tool_name(name) => render_text_editor_request(call, debug),
             "execute_typescript" | "execute_code" => render_execute_code_request(call, debug),
             "delegate" => render_delegate_request(call, debug),
             "subagent" => render_delegate_request(call, debug),
@@ -592,6 +593,10 @@ fn is_shell_tool_name(name: &str) -> bool {
 
 fn is_file_tool_name(name: &str) -> bool {
     matches!(name, "write" | "edit")
+}
+
+fn is_read_tool_name(name: &str) -> bool {
+    name == "read"
 }
 
 pub fn render_error(message: &str) {
