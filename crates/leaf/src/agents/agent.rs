@@ -773,6 +773,71 @@ impl Agent {
         Ok(())
     }
 
+    /// Load multiple extensions in parallel, persisting state once at the end.
+    ///
+    /// Unlike `add_extension`, this avoids per-extension persistence and acquires
+    /// the container lock once upfront to prevent serialisation of the parallel futures.
+    pub async fn add_extensions_bulk(
+        self: &Arc<Self>,
+        extensions: Vec<ExtensionConfig>,
+        session_id: &str,
+    ) -> anyhow::Result<Vec<ExtensionLoadResult>> {
+        let working_dir = match self
+            .config
+            .session_manager
+            .get_session(session_id, false)
+            .await
+        {
+            Ok(session) => Some(session.working_dir),
+            Err(e) => {
+                warn!("Failed to get session for bulk load: {}", e);
+                None
+            }
+        };
+        let container = self.container.lock().await.clone();
+
+        let extension_futures = extensions
+            .into_iter()
+            .map(|config| {
+                let ext_manager = Arc::clone(&self.extension_manager);
+                let working_dir = working_dir.clone();
+                let container = container.clone();
+                let sid = session_id.to_string();
+
+                async move {
+                    let name = config.name().to_string();
+                    match ext_manager
+                        .add_extension(config, working_dir, container.as_ref(), Some(&sid))
+                        .await
+                    {
+                        Ok(_) => ExtensionLoadResult {
+                            name,
+                            success: true,
+                            error: None,
+                        },
+                        Err(e) => {
+                            let error_msg = e.to_string();
+                            warn!("Failed to load extension {}: {}", name, error_msg);
+                            ExtensionLoadResult {
+                                name,
+                                success: false,
+                                error: Some(error_msg),
+                            }
+                        }
+                    }
+                }
+            })
+            .collect::<Vec<_>>();
+
+        let results = futures::future::join_all(extension_futures).await;
+
+        if results.iter().any(|r| r.success) {
+            self.persist_extension_state(session_id).await?;
+        }
+
+        Ok(results)
+    }
+
     async fn add_extension_inner(
         &self,
         extension: ExtensionConfig,
