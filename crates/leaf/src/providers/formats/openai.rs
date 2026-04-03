@@ -1145,6 +1145,7 @@ mod tests {
             Ok(CallToolResult::success(vec![Content::text("Result")])),
             None,
             Some(String::from("tool1")),
+            None,
         ));
 
         let spec = format_messages(&messages, &ImageFormat::OpenAi);
@@ -1182,6 +1183,7 @@ mod tests {
             Ok(CallToolResult::success(vec![Content::text("Result")])),
             None,
             Some(String::from("tool1")),
+            None,
         ));
 
         let spec = format_messages(&messages, &ImageFormat::OpenAi);

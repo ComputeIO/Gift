@@ -346,6 +346,7 @@ impl ProviderFixture {
             Ok(result),
             None,
             Some(params_name.to_string()),
+            None,
         );
 
         let (response2, _) = self

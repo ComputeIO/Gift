@@ -641,6 +641,7 @@ mod tests {
                         .no_annotation()])),
                         None,
                         Some(String::from("read_file")),
+                        None,
                     )
                     .with_generated_id();
                 session_manager.add_message(&session.id, &resp_msg).await?;

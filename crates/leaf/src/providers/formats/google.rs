@@ -1018,6 +1018,7 @@ mod tests {
             Ok(tool_result("output")),
             req1.metadata.as_ref(),
             None,
+            None,
         );
         let user_prompt = set_up_text_message("List files", Role::User);
         let google_out =

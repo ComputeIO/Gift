@@ -54,8 +54,8 @@ use crate::tool_monitor::RepetitionInspector;
 use crate::utils::is_token_cancelled;
 use regex::Regex;
 use rmcp::model::{
-    CallToolRequestParams, CallToolResult, Content, ErrorCode, ErrorData, GetPromptResult, Prompt,
-    ServerNotification, Tool,
+    CallToolRequestParams, CallToolResult, Content, ErrorCode, ErrorData, GetPromptResult,
+    JsonObject, Prompt, ServerNotification, Tool,
 };
 use serde_json::Value;
 use tokio::sync::{mpsc, Mutex};
@@ -468,6 +468,10 @@ impl Agent {
                     request.metadata.as_ref(),
                     match request.tool_call {
                         Ok(ref call) => Some(call.name.to_string()),
+                        Err(_) => None,
+                    },
+                    match request.tool_call {
+                        Ok(ref call) => call.arguments.clone(),
                         Err(_) => None,
                     },
                 );
@@ -1268,11 +1272,15 @@ impl Agent {
                                 let mut request_to_response_map = HashMap::new();
                                 let mut request_metadata: HashMap<String, Option<ProviderMetadata>> = HashMap::new();
                                 let mut request_tool_names: HashMap<String, String> = HashMap::new();
+                                let mut request_tool_args: HashMap<String, JsonObject> = HashMap::new();
                                 for request in frontend_requests.iter().chain(remaining_requests.iter()) {
                                     request_to_response_map.insert(request.id.clone(), Message::user().with_generated_id());
                                     request_metadata.insert(request.id.clone(), request.metadata.clone());
                                     if let Ok(ref call) = request.tool_call {
                                         request_tool_names.insert(request.id.clone(), call.name.to_string());
+                                        if let Some(ref args) = call.arguments {
+                                            request_tool_args.insert(request.id.clone(), args.clone());
+                                        };
                                     }
                                 }
 
@@ -1297,6 +1305,10 @@ impl Agent {
                                                 request.metadata.as_ref(),
                                                 match request.tool_call {
                                                     Ok(ref call) => Some(String::from(call.name.clone())),
+                                                    Err(_) => None,
+                                                },
+                                                match request.tool_call {
+                                                    Ok(ref call) => call.arguments.clone(),
                                                     Err(_) => None,
                                                 },
                                             );
@@ -1412,7 +1424,8 @@ impl Agent {
                                                                 if let Some(response) = request_to_response_map.get_mut(&request_id) {
                                                                     let metadata = request_metadata.get(&request_id).and_then(|m| m.as_ref());
                                                                     let tool_name = request_tool_names.get(&request_id).cloned();
-                                                                    response.add_tool_response_with_metadata(request_id, output, metadata, tool_name);
+                                                                    let tool_args = request_tool_args.get(&request_id).cloned();
+                                                                    response.add_tool_response_with_metadata(request_id, output, metadata, tool_name, tool_args);
                                                                 }
                                                             }
                                                             ToolStreamItem::Message(msg) => {

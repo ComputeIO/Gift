@@ -807,6 +807,7 @@ mod tests {
             Ok(CallToolResult::success(vec![Content::text("Result")])),
             None,
             Some(String::from("tool1")),
+            None,
         ));
 
         let as_value =
@@ -845,6 +846,7 @@ mod tests {
             Ok(CallToolResult::success(vec![Content::text("Result")])),
             None,
             Some(String::from("tool1")),
+            None,
         ));
 
         let as_value =
