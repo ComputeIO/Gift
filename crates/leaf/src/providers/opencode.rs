@@ -9,7 +9,7 @@ use crate::config::declarative_providers::{
     register_declarative_provider, DeclarativeProviderConfig, ProviderEngine,
 };
 use crate::providers::base::{ModelInfo, ProviderType};
-use crate::providers::init::get_static_registry;
+use crate::providers::init::get_registry_optional;
 use crate::providers::provider_registry::ProviderRegistry;
 
 const MODELS_DEV_URL: &str = "https://models.dev/api.json";
@@ -273,12 +273,22 @@ pub async fn register_opencode_providers(registry: &mut ProviderRegistry) -> Res
 
         // Refresh in background if cache is stale
         if is_cache_stale() {
-            let registry = get_static_registry();
             tokio::spawn(async move {
-                info!("Refreshing OpenCode provider catalog in background");
-                match refresh_catalog(registry).await {
-                    Ok(()) => info!("OpenCode provider catalog refreshed"),
-                    Err(e) => warn!("Failed to refresh catalog: {}", e),
+                loop {
+                    let opt = get_registry_optional();
+                    match opt {
+                        Some(registry) => {
+                            info!("Refreshing OpenCode provider catalog in background");
+                            match refresh_catalog(registry).await {
+                                Ok(()) => info!("OpenCode provider catalog refreshed"),
+                                Err(e) => warn!("Failed to refresh catalog: {}", e),
+                            }
+                            break;
+                        }
+                        None => {
+                            std::thread::sleep(std::time::Duration::from_millis(500));
+                        }
+                    }
                 }
             });
         }
