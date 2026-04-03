@@ -40,6 +40,11 @@ impl DiffPreview {
 
     pub fn render_inline(&self, current: &str, proposed: &str, line_offset: usize) {
         let diff = TextDiff::from_lines(current, proposed);
+        let current_lines = current.lines().count().max(1);
+        let proposed_lines = proposed.lines().count().max(1);
+        let max_old = line_offset + current_lines;
+        let max_new = line_offset + proposed_lines;
+        let w = line_num_width(max_old.max(max_new));
         let mut old_line = line_offset;
         let mut new_line = line_offset;
         println!();
@@ -48,16 +53,28 @@ impl DiffPreview {
             match change.tag() {
                 ChangeTag::Delete => {
                     old_line += 1;
-                    println!("\x1b[31m    {:>4} {:>4}| -{}\x1b[0m", old_line, "", content);
+                    println!(
+                        "\x1b[31m    {:>w$} {:>w$}| -{}\x1b[0m",
+                        old_line,
+                        "",
+                        content,
+                        w = w
+                    );
                 }
                 ChangeTag::Insert => {
                     new_line += 1;
-                    println!("\x1b[32m    {:>4} {:>4}| +{}\x1b[0m", "", new_line, content);
+                    println!(
+                        "\x1b[32m    {:>w$} {:>w$}| +{}\x1b[0m",
+                        "",
+                        new_line,
+                        content,
+                        w = w
+                    );
                 }
                 ChangeTag::Equal => {
                     old_line += 1;
                     new_line += 1;
-                    println!("    {:>4} {:>4}|  {}", old_line, new_line, content);
+                    println!("    {:>w$} {:>w$}|  {}", old_line, new_line, content, w = w);
                 }
             }
         }
@@ -73,19 +90,19 @@ impl DiffPreview {
         if self.is_new_file {
             if self.truncated {
                 format!(
-                    "\n  New file: {} (+{} lines, {} total)",
+                    "\n    New file: {} (+{} lines, {} total)",
                     self.path, self.additions, self.total_additions
                 )
             } else {
-                format!("\n  New file: {} (+{} lines)", self.path, self.additions)
+                format!("\n    New file: {} (+{} lines)", self.path, self.additions)
             }
         } else if self.additions > 0 || self.deletions > 0 {
             format!(
-                "\n  Edit: {} (+{} lines, -{} lines)",
+                "\n    Edit: {} (+{} lines, -{} lines)",
                 self.path, self.additions, self.deletions
             )
         } else {
-            format!("\n  Edit: {} (no changes)", self.path)
+            format!("\n    Edit: {} (no changes)", self.path)
         }
     }
 
@@ -99,6 +116,14 @@ impl DiffPreview {
             .map(|pos| haystack[..pos].lines().count())
             .unwrap_or(0)
     }
+}
+
+/// Calculate the width needed for line number display.
+pub fn line_num_width(total_lines: usize) -> usize {
+    if total_lines == 0 {
+        return 1;
+    }
+    (total_lines as f64).log10().floor() as usize + 1
 }
 
 pub fn read_file_safe(path: &str) -> Option<(String, bool)> {
