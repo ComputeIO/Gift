@@ -606,6 +606,8 @@ mod tests {
                 Ok(rmcp::model::CallToolResult::success(vec![Content::text(
                     "Search results here",
                 )])),
+                None,
+                Some(String::from("web_search")),
             ),
             Message::assistant().with_text("Based on the search results, here's what I found..."),
         ];
@@ -650,6 +652,8 @@ mod tests {
                     Ok(rmcp::model::CallToolResult::success(vec![Content::text(
                         "result",
                     )])),
+                    None,
+                    None,
                 ), // Wrong role
             Message::assistant().with_thinking("Let me think", "sig"),
             Message::user()
@@ -701,6 +705,8 @@ mod tests {
                 Ok(rmcp::model::CallToolResult::success(vec![Content::text(
                     "result",
                 )])),
+                None,
+                None,
             ),
             Message::assistant().with_tool_request(
                 "search_2",
@@ -745,7 +751,9 @@ mod tests {
                 .with_tool_request("toolu_bdrk_01KgDYHs4fAodi22NqxRzmwx", Ok(CallToolRequestParams::new("developer__shell").with_arguments(object!({"command": "wc slack.yaml"})))),
 
             Message::user()
-                .with_tool_response("toolu_bdrk_01KgDYHs4fAodi22NqxRzmwx", Ok(rmcp::model::CallToolResult::success(vec![Content::text("0 0 0 slack.yaml")]))),
+                .with_tool_response("toolu_bdrk_01KgDYHs4fAodi22NqxRzmwx", Ok(rmcp::model::CallToolResult::success(vec![Content::text("0 0 0 slack.yaml")])),
+                    None,
+                    None),
 
             Message::assistant()
                 .with_text("I ran `ls -la` in the current directory and found several files. Looking at the file sizes, I can see that both `slack.yaml` and `subrecipes.yaml` are 0 bytes (the smallest files). I ran a word count on `slack.yaml` which shows: **0 lines**, **0 words**, **0 characters**"),
@@ -780,6 +788,8 @@ mod tests {
                 Ok(rmcp::model::CallToolResult::success(vec![Content::text(
                     "search results",
                 )])),
+                None,
+                Some(String::from("search")),
             ),
             Message::user().with_text("Thanks!"),
         ];
@@ -1151,6 +1161,8 @@ mod tests {
             Message::user().with_tool_response(
                 "search_1",
                 Ok(rmcp::model::CallToolResult::success(vec![])), // Empty content - this should get a placeholder
+                None,
+                Some(String::from("search")),
             ),
             Message::user().with_text("Thanks!"),
         ];

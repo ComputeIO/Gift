@@ -1125,6 +1125,8 @@ mod tests {
                     "Tool failed".to_string(),
                     None,
                 )),
+                None,
+                Some(String::from("calculator")),
             ),
         ];
 
@@ -1155,8 +1157,12 @@ mod tests {
                 "tool_1",
                 Ok(CallToolRequestParams::new("search").with_arguments(object!({"query": "test"}))),
             ),
-            Message::user()
-                .with_tool_response("tool_1", Ok(rmcp::model::CallToolResult::success(vec![]))),
+            Message::user().with_tool_response(
+                "tool_1",
+                Ok(rmcp::model::CallToolResult::success(vec![])),
+                None,
+                Some(String::from("search")),
+            ),
         ];
 
         let spec = format_messages(&messages);
@@ -1186,6 +1192,8 @@ mod tests {
             Message::user().with_tool_response(
                 "tool_1",
                 Ok(CallToolResult::success(vec![resource_content])),
+                None,
+                Some(String::from("view_file")),
             ),
         ];
 
@@ -1220,6 +1228,8 @@ mod tests {
                     text_content,
                     resource_content,
                 ])),
+                None,
+                Some(String::from("view_file")),
             ),
         ];
 

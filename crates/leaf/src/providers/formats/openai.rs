@@ -1143,6 +1143,8 @@ mod tests {
         messages.push(Message::user().with_tool_response(
             tool_id,
             Ok(CallToolResult::success(vec![Content::text("Result")])),
+            None,
+            Some(String::from("tool1")),
         ));
 
         let spec = format_messages(&messages, &ImageFormat::OpenAi);
@@ -1178,6 +1180,8 @@ mod tests {
         messages.push(Message::user().with_tool_response(
             tool_id,
             Ok(CallToolResult::success(vec![Content::text("Result")])),
+            None,
+            Some(String::from("tool1")),
         ));
 
         let spec = format_messages(&messages, &ImageFormat::OpenAi);

@@ -326,6 +326,7 @@ impl ProviderFixture {
         };
 
         let params = tool_req.tool_call.as_ref().unwrap().clone();
+        let params_name = params.name.clone();
         let ctx = leaf::agents::ToolCallContext::new(
             self.session_id.to_string(),
             None,
@@ -340,7 +341,12 @@ impl ProviderFixture {
             .result
             .await
             .unwrap();
-        let tool_response = Message::user().with_tool_response(&tool_req.id, Ok(result));
+        let tool_response = Message::user().with_tool_response(
+            &tool_req.id,
+            Ok(result),
+            None,
+            Some(params_name.to_string()),
+        );
 
         let (response2, _) = self
             .provider

@@ -579,6 +579,8 @@ mod tests {
                     Ok(rmcp::model::CallToolResult::success(vec![
                         RawContent::text(response_text).no_annotation(),
                     ])),
+                    None,
+                    Some(String::from(tool_name)),
                 )
                 .with_id(response_id),
         ]
@@ -671,6 +673,8 @@ mod tests {
                 Ok(rmcp::model::CallToolResult::success(vec![
                     RawContent::text("hello, world").no_annotation(),
                 ])),
+                None,
+                Some(String::from("read_file")),
             ),
         ];
 
@@ -704,6 +708,8 @@ mod tests {
                 Ok(rmcp::model::CallToolResult::success(vec![
                     RawContent::text(format!("response{}", i)).no_annotation(),
                 ])),
+                None,
+                Some(String::from("read_file")),
             ));
         }
 

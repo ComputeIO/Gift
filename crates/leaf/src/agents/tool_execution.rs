@@ -146,6 +146,7 @@ impl Agent {
                             request.id.clone(),
                             Ok(CallToolResult::error(vec![Content::text(DECLINED_RESPONSE)])),
                             request.metadata.as_ref(),
+                            Some(tool_call.name.to_string()),
                         );
                     }
 
@@ -178,6 +179,7 @@ impl Agent {
                                 id,
                                 result,
                                 tool_request.metadata.as_ref(),
+                                Some(tool_call.name.to_string()),
                             );
                         }
                     }
