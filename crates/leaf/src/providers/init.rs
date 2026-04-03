@@ -90,6 +90,11 @@ fn load_custom_providers_into_registry(registry: &mut ProviderRegistry) -> Resul
     register_declarative_providers(registry)
 }
 
+pub fn get_static_registry() -> &'static RwLock<ProviderRegistry> {
+    // Must be called after init_registry has completed
+    REGISTRY.get().expect("Provider registry not initialized")
+}
+
 async fn get_registry() -> &'static RwLock<ProviderRegistry> {
     REGISTRY.get_or_init(init_registry).await
 }

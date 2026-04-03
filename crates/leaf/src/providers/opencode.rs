@@ -1,6 +1,7 @@
 use anyhow::Result;
 use std::collections::HashMap;
 use std::fs;
+use std::sync::RwLock;
 use std::time::{Duration, SystemTime};
 use tracing::{info, warn};
 
@@ -8,10 +9,12 @@ use crate::config::declarative_providers::{
     register_declarative_provider, DeclarativeProviderConfig, ProviderEngine,
 };
 use crate::providers::base::{ModelInfo, ProviderType};
+use crate::providers::init::get_static_registry;
 use crate::providers::provider_registry::ProviderRegistry;
 
 const MODELS_DEV_URL: &str = "https://models.dev/api.json";
 const CACHE_DIR: &str = "leaf/opencode";
+const CACHE_TTL: Duration = Duration::from_secs(1800);
 
 /// Default API URLs for npm packages that don't have an `api` field in models.dev.
 /// These match the hardcoded defaults in each @ai-sdk/* package.
@@ -79,8 +82,16 @@ pub struct LimitInfo {
     pub output: usize,
 }
 
+fn build_http_client() -> Result<reqwest::Client> {
+    Ok(reqwest::Client::builder()
+        .timeout(Duration::from_secs(30))
+        .connect_timeout(Duration::from_secs(10))
+        .build()?)
+}
+
 async fn fetch_catalog_from_network() -> Result<ProviderCatalog> {
-    let response = reqwest::get(MODELS_DEV_URL).await?;
+    let client = build_http_client()?;
+    let response = client.get(MODELS_DEV_URL).send().await?;
     let json: serde_json::Value = response.json().await?;
     let catalog: ProviderCatalog = serde_json::from_value(json)?;
     Ok(catalog)
@@ -97,19 +108,27 @@ async fn get_cached_catalog() -> Option<ProviderCatalog> {
         return None;
     }
 
-    if let Ok(time) = fs::metadata(&path).ok()?.modified() {
-        if SystemTime::now()
-            .duration_since(time)
-            .unwrap_or(Duration::from_secs(u64::MAX))
-            > Duration::from_secs(1800)
-        {
-            return None;
-        }
-    }
-
     let content = tokio::fs::read_to_string(&path).await.ok()?;
     let catalog: ProviderCatalog = serde_json::from_str(&content).ok()?;
     Some(catalog)
+}
+
+fn is_cache_stale() -> bool {
+    let path = get_cache_path();
+    if !path.exists() {
+        return true;
+    }
+
+    fs::metadata(&path)
+        .ok()
+        .and_then(|m| m.modified().ok())
+        .map(|time| {
+            SystemTime::now()
+                .duration_since(time)
+                .unwrap_or(Duration::from_secs(u64::MAX))
+                > CACHE_TTL
+        })
+        .unwrap_or(true)
 }
 
 async fn cache_catalog(catalog: &ProviderCatalog) -> Result<()> {
@@ -120,18 +139,6 @@ async fn cache_catalog(catalog: &ProviderCatalog) -> Result<()> {
     let json = serde_json::to_string_pretty(catalog)?;
     tokio::fs::write(&path, json).await?;
     Ok(())
-}
-
-async fn fetch_catalog() -> Result<ProviderCatalog> {
-    if let Some(cached) = get_cached_catalog().await {
-        info!("Using cached OpenCode provider catalog");
-        return Ok(cached);
-    }
-
-    info!("Fetching OpenCode provider catalog from models.dev");
-    let catalog = fetch_catalog_from_network().await?;
-    cache_catalog(&catalog).await?;
-    Ok(catalog)
 }
 
 fn get_model_npm(provider_npm: Option<&str>, model: &ModelDetail) -> String {
@@ -257,7 +264,37 @@ fn register_providers_from_catalog(
 }
 
 pub async fn register_opencode_providers(registry: &mut ProviderRegistry) -> Result<()> {
-    let catalog = fetch_catalog().await?;
+    // Try cache first for fast startup
+    if let Some(cached) = get_cached_catalog().await {
+        info!("Using cached OpenCode provider catalog");
+        register_providers_from_catalog(registry, cached)?;
+
+        // Refresh in background if cache is stale
+        if is_cache_stale() {
+            let registry = get_static_registry();
+            tokio::spawn(async move {
+                info!("Refreshing OpenCode provider catalog in background");
+                match refresh_catalog(registry).await {
+                    Ok(()) => info!("OpenCode provider catalog refreshed"),
+                    Err(e) => warn!("Failed to refresh catalog: {}", e),
+                }
+            });
+        }
+        return Ok(());
+    }
+
+    // No cache — must fetch from network
+    info!("Fetching OpenCode provider catalog from models.dev");
+    let catalog = fetch_catalog_from_network().await?;
+    cache_catalog(&catalog).await?;
     register_providers_from_catalog(registry, catalog)?;
+    Ok(())
+}
+
+async fn refresh_catalog(registry: &RwLock<ProviderRegistry>) -> Result<()> {
+    let catalog = fetch_catalog_from_network().await?;
+    cache_catalog(&catalog).await?;
+    let mut reg = registry.write().unwrap();
+    register_providers_from_catalog(&mut reg, catalog)?;
     Ok(())
 }
