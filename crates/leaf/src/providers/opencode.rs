@@ -137,7 +137,9 @@ async fn cache_catalog(catalog: &ProviderCatalog) -> Result<()> {
         tokio::fs::create_dir_all(parent).await?;
     }
     let json = serde_json::to_string_pretty(catalog)?;
-    tokio::fs::write(&path, json).await?;
+    let tmp_path = path.with_extension("json.tmp");
+    tokio::fs::write(&tmp_path, &json).await?;
+    tokio::fs::rename(&tmp_path, &path).await?;
     Ok(())
 }
 
