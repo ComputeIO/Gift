@@ -721,7 +721,7 @@ fn render_text_editor_request(call: &CallToolRequestParams, debug: bool) {
             ""
         };
 
-        // Get current file content for diff (if exists)
+        // Get current file content for line offset calculation
         if let Some((current_content, is_binary)) = crate::session::diff::read_file_safe(path) {
             if is_binary {
                 if !proposed_content.is_empty() {
@@ -739,8 +739,8 @@ fn render_text_editor_request(call: &CallToolRequestParams, debug: bool) {
                 before_content,
             );
             let preview =
-                crate::session::diff::DiffPreview::new(path, &current_content, proposed_content);
-            preview.render_inline(&current_content, proposed_content, line_offset);
+                crate::session::diff::DiffPreview::new(path, before_content, proposed_content);
+            preview.render_inline(before_content, proposed_content, line_offset);
             println!("{}", preview.summary());
         } else {
             let preview = crate::session::diff::DiffPreview::new(path, "", proposed_content);
