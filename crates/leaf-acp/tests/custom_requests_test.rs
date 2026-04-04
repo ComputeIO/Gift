@@ -49,7 +49,7 @@ fn test_custom_get_tools() {
 
         let result = send_custom(
             conn.cx(),
-            "_leaf/tools",
+            "_goose/tools",
             serde_json::json!({ "sessionId": session_id }),
         )
         .await;
@@ -67,7 +67,8 @@ fn test_custom_get_extensions() {
         let openai = OpenAiFixture::new(vec![], Arc::new(EnforceSessionId::default())).await;
         let conn = AcpServerConnection::new(TestConnectionConfig::default(), openai).await;
 
-        let result = send_custom(conn.cx(), "_leaf/config/extensions", serde_json::json!({})).await;
+        let result =
+            send_custom(conn.cx(), "_goose/config/extensions", serde_json::json!({})).await;
         assert!(result.is_ok(), "expected ok, got: {:?}", result);
 
         let response = result.unwrap();
