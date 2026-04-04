@@ -195,4 +195,9 @@ ignored = [
     "winapi",
     # Used to provide extras imports for sacp
     "agent-client-protocol-schema",
+    # Used only with native-tls feature
+    "pem",
+    "pkcs1",
+    "pkcs8",
+    "sec1",
 ]
