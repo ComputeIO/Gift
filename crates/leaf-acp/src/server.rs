@@ -856,7 +856,7 @@ impl LeafAcpAgent {
             .create_session(
                 args.cwd.clone(),
                 "ACP Session".to_string(),
-                SessionType::User,
+                SessionType::Acp,
                 self.leaf_mode,
             )
             .await
