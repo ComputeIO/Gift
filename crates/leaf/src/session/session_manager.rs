@@ -1989,7 +1989,7 @@ mod tests {
             .unwrap();
 
         sqlx::query(
-            "INSERT INTO sessions (id, name, user_set_name, session_type, working_dir, extension_data, goose_mode)
+            "INSERT INTO sessions (id, name, user_set_name, session_type, working_dir, extension_data, leaf_mode)
              VALUES (?, ?, ?, ?, ?, ?, ?)",
         )
         .bind("user_id")
