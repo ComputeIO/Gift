@@ -26,30 +26,37 @@ use leaf::session::{Session, SessionManager};
 use leaf_acp_macros::custom_methods;
 use rmcp::model::{CallToolResult, RawContent, ResourceContents, Role};
 use sacp::schema::{
-    AgentCapabilities, AuthMethod, AuthenticateRequest, AuthenticateResponse, BlobResourceContents,
-    CancelNotification, Content, ContentBlock, ContentChunk, CurrentModeUpdate, EmbeddedResource,
-    EmbeddedResourceResource, FileSystemCapability, ImageContent, InitializeRequest,
-    InitializeResponse, ListSessionsResponse, LoadSessionRequest, LoadSessionResponse,
-    McpCapabilities, McpServer, ModelId, ModelInfo, NewSessionRequest, NewSessionResponse,
-    PermissionOption, PermissionOptionKind, PromptCapabilities, PromptRequest, PromptResponse,
-    RequestPermissionOutcome, RequestPermissionRequest, ResourceLink, SessionCapabilities,
-    SessionId, SessionInfo, SessionListCapabilities, SessionMode, SessionModeId, SessionModeState,
-    SessionModelState, SessionNotification, SessionUpdate, SetSessionModeRequest,
-    SetSessionModeResponse, SetSessionModelRequest, SetSessionModelResponse, StopReason,
-    TextContent, TextResourceContents, ToolCall, ToolCallContent, ToolCallId, ToolCallLocation,
-    ToolCallStatus, ToolCallUpdate, ToolCallUpdateFields, ToolKind,
+    AgentCapabilities, AuthMethod, AuthMethodAgent, AuthenticateRequest, AuthenticateResponse,
+    BlobResourceContents, CancelNotification, CloseSessionRequest, CloseSessionResponse,
+    ConfigOptionUpdate, Content, ContentBlock, ContentChunk, CurrentModeUpdate, EmbeddedResource,
+    EmbeddedResourceResource, FileSystemCapabilities, ImageContent, InitializeRequest,
+    InitializeResponse, ListSessionsRequest, ListSessionsResponse, LoadSessionRequest,
+    LoadSessionResponse, McpCapabilities, McpServer, ModelId, ModelInfo, NewSessionRequest,
+    NewSessionResponse, PermissionOption, PermissionOptionKind, PromptCapabilities, PromptRequest,
+    PromptResponse, RequestPermissionOutcome, RequestPermissionRequest, ResourceLink,
+    SessionCapabilities, SessionCloseCapabilities, SessionConfigOption,
+    SessionConfigOptionCategory, SessionConfigSelectOption, SessionId, SessionInfo,
+    SessionListCapabilities, SessionMode, SessionModeId, SessionModeState, SessionModelState,
+    SessionNotification, SessionUpdate, SetSessionConfigOptionRequest,
+    SetSessionConfigOptionResponse, SetSessionModeRequest, SetSessionModeResponse,
+    SetSessionModelRequest, SetSessionModelResponse, StopReason, TextContent, TextResourceContents,
+    ToolCall, ToolCallContent, ToolCallId, ToolCallLocation, ToolCallStatus, ToolCallUpdate,
+    ToolCallUpdateFields, ToolKind,
 };
-use sacp::{AgentToClient, ByteStreams, Handled, JrConnectionCx, JrMessageHandler, MessageCx};
+use sacp::util::MatchDispatchFrom;
+use sacp::{
+    Agent as SacpAgent, ByteStreams, Client, ConnectionTo, Dispatch, HandleDispatchFrom, Handled,
+    Responder,
+};
 use std::collections::HashMap;
 use std::sync::Arc;
+use strum::{EnumMessage, VariantNames};
 use tokio::sync::{Mutex, OnceCell};
 use tokio_util::compat::{TokioAsyncReadCompatExt as _, TokioAsyncWriteCompatExt as _};
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, error, info, warn};
 use url::Url;
 
-// Agent binds provider, extensions, and permission channels to a single session.
-// ACP has no session/close, so sessions accumulate until transport closes.
 struct LeafAcpSession {
     agent: Arc<Agent>,
     messages: Conversation,
@@ -61,7 +68,7 @@ pub struct LeafAcpAgent {
     sessions: Arc<Mutex<HashMap<String, LeafAcpSession>>>,
     provider_factory: ProviderConstructor,
     builtins: Vec<String>,
-    client_fs_capabilities: OnceCell<FileSystemCapability>,
+    client_fs_capabilities: OnceCell<FileSystemCapabilities>,
     client_terminal: OnceCell<bool>,
     config_dir: std::path::PathBuf,
     session_manager: Arc<SessionManager>,
@@ -306,25 +313,22 @@ fn builtin_to_extension_config(name: &str) -> ExtensionConfig {
     }
 }
 
-async fn build_model_state(provider: &dyn Provider, current_model: &str) -> SessionModelState {
-    let models = match provider.fetch_recommended_models().await {
-        Ok(models) => models,
-        Err(e) => {
-            warn!(error = %e, "failed to fetch models, model selection will be unavailable");
-            vec![]
-        }
-    };
-    SessionModelState::new(
-        ModelId::new(current_model),
+async fn build_model_state(provider: &dyn Provider) -> Result<SessionModelState, sacp::Error> {
+    let models = provider
+        .fetch_recommended_models()
+        .await
+        .map_err(|e| sacp::Error::internal_error().data(e.to_string()))?;
+    let current_model = &provider.get_model_config().model_name;
+    Ok(SessionModelState::new(
+        ModelId::new(current_model.as_str()),
         models
             .iter()
             .map(|name| ModelInfo::new(ModelId::new(&**name), &**name))
             .collect(),
-    )
+    ))
 }
 
 fn build_mode_state(current_mode: LeafMode) -> Result<SessionModeState, sacp::Error> {
-    use strum::{EnumMessage, VariantNames};
     let mut available = Vec::with_capacity(LeafMode::VARIANTS.len());
     for &name in LeafMode::VARIANTS {
         let leaf_mode: LeafMode = name.parse().map_err(|_| {
@@ -341,11 +345,46 @@ fn build_mode_state(current_mode: LeafMode) -> Result<SessionModeState, sacp::Er
     ))
 }
 
+fn build_config_options(
+    mode_state: &SessionModeState,
+    model_state: &SessionModelState,
+) -> Vec<SessionConfigOption> {
+    let mode_options: Vec<SessionConfigSelectOption> = mode_state
+        .available_modes
+        .iter()
+        .map(|m| {
+            SessionConfigSelectOption::new(m.id.0.clone(), m.name.clone())
+                .description(m.description.clone())
+        })
+        .collect();
+    let model_options: Vec<SessionConfigSelectOption> = model_state
+        .available_models
+        .iter()
+        .map(|m| SessionConfigSelectOption::new(m.model_id.0.clone(), m.name.clone()))
+        .collect();
+    vec![
+        SessionConfigOption::select(
+            "mode",
+            "Mode",
+            mode_state.current_mode_id.0.clone(),
+            mode_options,
+        )
+        .category(SessionConfigOptionCategory::Mode),
+        SessionConfigOption::select(
+            "model",
+            "Model",
+            model_state.current_model_id.0.clone(),
+            model_options,
+        )
+        .category(SessionConfigOptionCategory::Model),
+    ]
+}
 impl LeafAcpAgent {
     pub fn permission_manager(&self) -> Arc<PermissionManager> {
         Arc::clone(&self.permission_manager)
     }
 
+    // TODO: leaf reads Paths::in_state_dir globally (e.g. RequestLog), ignoring this data_dir.
     pub async fn new(
         provider_factory: ProviderConstructor,
         builtins: Vec<String>,
@@ -373,7 +412,7 @@ impl LeafAcpAgent {
 
     async fn create_agent_for_session(
         &self,
-        cx: Option<&JrConnectionCx<AgentToClient>>,
+        cx: Option<&ConnectionTo<Client>>,
         session_id: Option<&SessionId>,
         leaf_mode: Option<LeafMode>,
     ) -> Result<Arc<Agent>> {
@@ -515,7 +554,7 @@ impl LeafAcpAgent {
         content_item: &MessageContent,
         session_id: &SessionId,
         session: &mut LeafAcpSession,
-        cx: &JrConnectionCx<AgentToClient>,
+        cx: &ConnectionTo<Client>,
     ) -> Result<(), sacp::Error> {
         match content_item {
             MessageContent::Text(text) => {
@@ -571,7 +610,7 @@ impl LeafAcpAgent {
         tool_request: &leaf::conversation::message::ToolRequest,
         session_id: &SessionId,
         session: &mut LeafAcpSession,
-        cx: &JrConnectionCx<AgentToClient>,
+        cx: &ConnectionTo<Client>,
     ) -> Result<(), sacp::Error> {
         session
             .tool_requests
@@ -601,7 +640,7 @@ impl LeafAcpAgent {
         tool_response: &leaf::conversation::message::ToolResponse,
         session_id: &SessionId,
         session: &mut LeafAcpSession,
-        cx: &JrConnectionCx<AgentToClient>,
+        cx: &ConnectionTo<Client>,
     ) -> Result<(), sacp::Error> {
         let status = match &tool_response.tool_result {
             Ok(result) if result.is_error == Some(true) => ToolCallStatus::Failed,
@@ -644,7 +683,7 @@ impl LeafAcpAgent {
     #[allow(clippy::too_many_arguments)]
     fn handle_tool_permission_request(
         &self,
-        cx: &JrConnectionCx<AgentToClient>,
+        cx: &ConnectionTo<Client>,
         agent: &Arc<Agent>,
         session_id: &SessionId,
         request_id: String,
@@ -785,7 +824,11 @@ impl LeafAcpAgent {
 
         let capabilities = AgentCapabilities::new()
             .load_session(true)
-            .session_capabilities(SessionCapabilities::new().list(SessionListCapabilities::new()))
+            .session_capabilities(
+                SessionCapabilities::new()
+                    .list(SessionListCapabilities::new())
+                    .close(SessionCloseCapabilities::new()),
+            )
             .prompt_capabilities(
                 PromptCapabilities::new()
                     .image(true)
@@ -795,15 +838,15 @@ impl LeafAcpAgent {
             .mcp_capabilities(McpCapabilities::new().http(true));
         Ok(InitializeResponse::new(args.protocol_version)
             .agent_capabilities(capabilities)
-            .auth_methods(vec![AuthMethod::new("leaf-provider", "Configure Provider")
-                .description(
-                    "Run `leaf configure` to set up your AI provider and API key",
-                )]))
+            .auth_methods(vec![AuthMethod::Agent(
+                AuthMethodAgent::new("leaf-provider", "Configure Provider")
+                    .description("Run `leaf configure` to set up your AI provider and API key"),
+            )]))
     }
 
     async fn on_new_session(
         &self,
-        cx: &JrConnectionCx<AgentToClient>,
+        cx: &ConnectionTo<Client>,
         args: NewSessionRequest,
     ) -> Result<NewSessionResponse, sacp::Error> {
         debug!(?args, "new session request");
@@ -855,13 +898,13 @@ impl LeafAcpAgent {
             "Session started"
         );
 
-        let model_state =
-            build_model_state(&*provider, &provider.get_model_config().model_name).await;
+        let model_state = build_model_state(&*provider).await?;
         let mode_state = build_mode_state(self.leaf_mode)?;
 
         Ok(NewSessionResponse::new(SessionId::new(leaf_session.id))
-            .models(model_state)
-            .modes(mode_state))
+            .models(model_state.clone())
+            .modes(mode_state.clone())
+            .config_options(build_config_options(&mode_state, &model_state)))
     }
 
     async fn init_provider(&self, agent: &Agent, session: &Session) -> Result<Arc<dyn Provider>> {
@@ -887,7 +930,8 @@ impl LeafAcpAgent {
     ) -> Result<Arc<Agent>, sacp::Error> {
         let mut sessions = self.sessions.lock().await;
         let session = sessions.get_mut(session_id).ok_or_else(|| {
-            sacp::Error::invalid_params().data(format!("Session not found: {}", session_id))
+            sacp::Error::resource_not_found(Some(session_id.to_string()))
+                .data(format!("Session not found: {}", session_id))
         })?;
         if let Some(token) = cancel_token {
             session.cancel_token = Some(token);
@@ -933,7 +977,7 @@ impl LeafAcpAgent {
 
     async fn on_load_session(
         &self,
-        cx: &JrConnectionCx<AgentToClient>,
+        cx: &ConnectionTo<Client>,
         args: LoadSessionRequest,
     ) -> Result<LoadSessionResponse, sacp::Error> {
         debug!(?args, "load session request");
@@ -944,9 +988,9 @@ impl LeafAcpAgent {
             .session_manager
             .get_session(&session_id, true)
             .await
-            .map_err(|e| {
-                sacp::Error::invalid_params()
-                    .data(format!("Failed to load session {}: {}", session_id, e))
+            .map_err(|_| {
+                sacp::Error::resource_not_found(Some(session_id.clone()))
+                    .data(format!("Session not found: {}", session_id))
             })?;
 
         let loaded_mode = leaf_session.leaf_mode;
@@ -1048,18 +1092,18 @@ impl LeafAcpAgent {
             "Session loaded"
         );
 
-        let model_state =
-            build_model_state(&*provider, &provider.get_model_config().model_name).await;
+        let model_state = build_model_state(&*provider).await?;
         let mode_state = build_mode_state(leaf_mode)?;
 
         Ok(LoadSessionResponse::new()
-            .models(model_state)
-            .modes(mode_state))
+            .models(model_state.clone())
+            .modes(mode_state.clone())
+            .config_options(build_config_options(&mode_state, &model_state)))
     }
 
     async fn on_prompt(
         &self,
-        cx: &JrConnectionCx<AgentToClient>,
+        cx: &ConnectionTo<Client>,
         args: PromptRequest,
     ) -> Result<PromptResponse, sacp::Error> {
         let session_id = args.session_id.0.to_string();
@@ -1183,6 +1227,24 @@ impl LeafAcpAgent {
         Ok(SetSessionModelResponse::new())
     }
 
+    async fn build_config_update(
+        &self,
+        session_id: &SessionId,
+    ) -> Result<(SessionNotification, Vec<SessionConfigOption>), sacp::Error> {
+        let agent = self.get_session_agent(&session_id.0, None).await?;
+        let provider = agent.provider().await.map_err(|e| {
+            sacp::Error::internal_error().data(format!("Failed to get provider: {}", e))
+        })?;
+        let leaf_mode = agent.leaf_mode().await;
+        let model_state = build_model_state(&*provider).await?;
+        let mode_state = build_mode_state(leaf_mode)?;
+        let config_options = build_config_options(&mode_state, &model_state);
+        let notification = SessionNotification::new(
+            session_id.clone(),
+            SessionUpdate::ConfigOptionUpdate(ConfigOptionUpdate::new(config_options.clone())),
+        );
+        Ok((notification, config_options))
+    }
     async fn on_set_mode(
         &self,
         session_id: &str,
@@ -1202,11 +1264,44 @@ impl LeafAcpAgent {
 
         Ok(SetSessionModeResponse::new())
     }
+
+    async fn on_list_sessions(&self) -> Result<ListSessionsResponse, sacp::Error> {
+        let sessions = self
+            .session_manager
+            .list_sessions_by_types(&[SessionType::Acp])
+            .await
+            .map_err(|e| sacp::Error::internal_error().data(e.to_string()))?;
+        let session_infos: Vec<SessionInfo> = sessions
+            .into_iter()
+            .map(|s| {
+                SessionInfo::new(SessionId::new(s.id), s.working_dir)
+                    .title(s.name)
+                    .updated_at(s.updated_at.to_rfc3339())
+            })
+            .collect();
+        Ok(ListSessionsResponse::new(session_infos))
+    }
+
+    async fn on_close_session(
+        &self,
+        session_id: &str,
+    ) -> Result<CloseSessionResponse, sacp::Error> {
+        let mut sessions = self.sessions.lock().await;
+        // Cancel before removing so on_prompt sees cancellation before session disappears.
+        if let Some(session) = sessions.get(session_id) {
+            if let Some(ref token) = session.cancel_token {
+                token.cancel();
+            }
+        }
+        sessions.remove(session_id);
+        info!(session_id = %session_id, "session closed");
+        Ok(CloseSessionResponse::new())
+    }
 }
 
 #[custom_methods]
 impl LeafAcpAgent {
-    #[custom_method("extensions/add")]
+    #[custom_method(AddExtensionRequest)]
     async fn on_add_extension(
         &self,
         req: AddExtensionRequest,
@@ -1221,7 +1316,7 @@ impl LeafAcpAgent {
         Ok(EmptyResponse {})
     }
 
-    #[custom_method("extensions/remove")]
+    #[custom_method(RemoveExtensionRequest)]
     async fn on_remove_extension(
         &self,
         req: RemoveExtensionRequest,
@@ -1234,7 +1329,7 @@ impl LeafAcpAgent {
         Ok(EmptyResponse {})
     }
 
-    #[custom_method("tools")]
+    #[custom_method(GetToolsRequest)]
     async fn on_get_tools(&self, req: GetToolsRequest) -> Result<GetToolsResponse, sacp::Error> {
         let agent = self.get_session_agent(&req.session_id, None).await?;
         let tools = agent.list_tools(&req.session_id, None).await;
@@ -1246,7 +1341,7 @@ impl LeafAcpAgent {
         Ok(GetToolsResponse { tools: tools_json })
     }
 
-    #[custom_method("resource/read")]
+    #[custom_method(ReadResourceRequest)]
     async fn on_read_resource(
         &self,
         req: ReadResourceRequest,
@@ -1265,7 +1360,7 @@ impl LeafAcpAgent {
         })
     }
 
-    #[custom_method("working_dir/update")]
+    #[custom_method(UpdateWorkingDirRequest)]
     async fn on_update_working_dir(
         &self,
         req: UpdateWorkingDirRequest,
@@ -1297,25 +1392,7 @@ impl LeafAcpAgent {
         Ok(EmptyResponse {})
     }
 
-    #[custom_method("session/list")]
-    async fn on_list_sessions(&self) -> Result<ListSessionsResponse, sacp::Error> {
-        let sessions = self
-            .session_manager
-            .list_sessions()
-            .await
-            .map_err(|e| sacp::Error::internal_error().data(e.to_string()))?;
-        let session_infos: Vec<SessionInfo> = sessions
-            .into_iter()
-            .map(|s| {
-                SessionInfo::new(SessionId::new(s.id), s.working_dir)
-                    .title(s.name)
-                    .updated_at(s.updated_at.to_rfc3339())
-            })
-            .collect();
-        Ok(ListSessionsResponse::new(session_infos))
-    }
-
-    #[custom_method("session/get")]
+    #[custom_method(GetSessionRequest)]
     async fn on_get_session(
         &self,
         req: GetSessionRequest,
@@ -1332,7 +1409,7 @@ impl LeafAcpAgent {
         })
     }
 
-    #[custom_method("session/delete")]
+    #[custom_method(DeleteSessionRequest)]
     async fn on_delete_session(
         &self,
         req: DeleteSessionRequest,
@@ -1341,10 +1418,11 @@ impl LeafAcpAgent {
             .delete_session(&req.session_id)
             .await
             .map_err(|e| sacp::Error::internal_error().data(e.to_string()))?;
+        self.sessions.lock().await.remove(&req.session_id);
         Ok(EmptyResponse {})
     }
 
-    #[custom_method("session/export")]
+    #[custom_method(ExportSessionRequest)]
     async fn on_export_session(
         &self,
         req: ExportSessionRequest,
@@ -1357,14 +1435,14 @@ impl LeafAcpAgent {
         Ok(ExportSessionResponse { data })
     }
 
-    #[custom_method("session/import")]
+    #[custom_method(ImportSessionRequest)]
     async fn on_import_session(
         &self,
         req: ImportSessionRequest,
     ) -> Result<ImportSessionResponse, sacp::Error> {
         let session = self
             .session_manager
-            .import_session(&req.data)
+            .import_session(&req.data, Some(SessionType::Acp))
             .await
             .map_err(|e| sacp::Error::internal_error().data(e.to_string()))?;
         let session_json = serde_json::to_value(&session)
@@ -1374,7 +1452,7 @@ impl LeafAcpAgent {
         })
     }
 
-    #[custom_method("config/extensions")]
+    #[custom_method(GetExtensionsRequest)]
     async fn on_get_extensions(&self) -> Result<GetExtensionsResponse, sacp::Error> {
         let extensions = leaf::config::extensions::get_all_extensions();
         let warnings = leaf::config::extensions::get_warnings();
@@ -1394,62 +1472,57 @@ pub struct LeafAcpHandler {
     pub agent: Arc<LeafAcpAgent>,
 }
 
-impl JrMessageHandler for LeafAcpHandler {
-    type Link = AgentToClient;
-
+impl HandleDispatchFrom<Client> for LeafAcpHandler {
     fn describe_chain(&self) -> impl std::fmt::Debug {
         "leaf-acp"
     }
 
-    fn handle_message(
+    fn handle_dispatch_from(
         &mut self,
-        message: MessageCx,
-        cx: JrConnectionCx<AgentToClient>,
-    ) -> impl std::future::Future<Output = Result<Handled<MessageCx>, sacp::Error>> + Send {
-        use sacp::util::MatchMessageFrom;
-        use sacp::JrRequestCx;
-
+        message: Dispatch,
+        cx: ConnectionTo<Client>,
+    ) -> impl std::future::Future<Output = Result<Handled<Dispatch>, sacp::Error>> + Send {
         let agent = self.agent.clone();
 
-        // The MatchMessageFrom chain produces an ~85KB async state machine.
+        // The MatchDispatchFrom chain produces an ~85KB async state machine.
         // Box::pin moves it to the heap so it doesn't overflow the tokio worker stack.
         Box::pin(async move {
-            MatchMessageFrom::new(message, &cx)
+            MatchDispatchFrom::new(message, &cx)
                 .if_request(
-                    |req: InitializeRequest, req_cx: JrRequestCx<InitializeResponse>| async {
-                        req_cx.respond(agent.on_initialize(req).await?)
+                    |req: InitializeRequest, responder: Responder<InitializeResponse>| async {
+                        responder.respond_with_result(agent.on_initialize(req).await)
                     },
                 )
                 .await
                 .if_request(
-                    |_req: AuthenticateRequest, req_cx: JrRequestCx<AuthenticateResponse>| async {
-                        req_cx.respond(AuthenticateResponse::new())
+                    |_req: AuthenticateRequest, responder: Responder<AuthenticateResponse>| async {
+                        responder.respond(AuthenticateResponse::new())
                     },
                 )
                 .await
                 .if_request(
-                    |req: NewSessionRequest, req_cx: JrRequestCx<NewSessionResponse>| async {
-                        req_cx.respond(agent.on_new_session(&cx, req).await?)
+                    |req: NewSessionRequest, responder: Responder<NewSessionResponse>| async {
+                        responder.respond_with_result(agent.on_new_session(&cx, req).await)
                     },
                 )
                 .await
                 .if_request(
-                    |req: LoadSessionRequest, req_cx: JrRequestCx<LoadSessionResponse>| async {
-                        req_cx.respond(agent.on_load_session(&cx, req).await?)
+                    |req: LoadSessionRequest, responder: Responder<LoadSessionResponse>| async {
+                        responder.respond_with_result(agent.on_load_session(&cx, req).await)
                     },
                 )
                 .await
                 .if_request(
-                    |req: PromptRequest, req_cx: JrRequestCx<PromptResponse>| async {
+                    |req: PromptRequest, responder: Responder<PromptResponse>| async {
                         let agent = agent.clone();
                         let cx_clone = cx.clone();
                         cx.spawn(async move {
                             match agent.on_prompt(&cx_clone, req).await {
                                 Ok(response) => {
-                                    req_cx.respond(response)?;
+                                    responder.respond(response)?;
                                 }
                                 Err(e) => {
-                                    req_cx.respond_with_error(e)?;
+                                    responder.respond_with_error(e)?;
                                 }
                             }
                             Ok(())
@@ -1460,76 +1533,118 @@ impl JrMessageHandler for LeafAcpHandler {
                 .await
                 .if_notification(|notif: CancelNotification| async { agent.on_cancel(notif).await })
                 .await
-                // Handle methods not yet in the sacp typed API.
-                // - session/set_model, session/set_mode: typed support pending in sacp
-                // - _<method>: custom requests that will eventually route to leaf-server
-                .otherwise({
+                // set_config_option (SACP 11) and legacy set_mode/set_model; custom _goose/* in otherwise.
+                .if_request({
                     let agent = agent.clone();
                     let cx = cx.clone();
-                    |message: MessageCx| async move {
+                    |req: SetSessionConfigOptionRequest, responder: Responder<SetSessionConfigOptionResponse>| async move {
+                        let value_id = req.value.as_value_id()
+                            .ok_or_else(|| sacp::Error::invalid_params().data("Expected a value ID"))?
+                            .clone();
+                        let session_id = req.session_id.clone();
+                        match req.config_id.0.as_ref() {
+                            "mode" => {
+                                match agent.on_set_mode(&session_id.0, &value_id.0).await {
+                                    Ok(_) => {}
+                                    Err(e) => { responder.respond_with_error(e)?; return Ok(()); }
+                                }
+                            }
+                            "model" => {
+                                match agent.on_set_model(&session_id.0, &value_id.0).await {
+                                    Ok(_) => {}
+                                    Err(e) => { responder.respond_with_error(e)?; return Ok(()); }
+                                }
+                            }
+                            other => {
+                                responder.respond_with_error(
+                                    sacp::Error::invalid_params().data(format!("Unsupported config option: {}", other))
+                                )?;
+                                return Ok(());
+                            }
+                        }
+                        let (notification, config_options) = agent.build_config_update(&session_id).await?;
+                        cx.send_notification(notification)?;
+                        responder.respond(SetSessionConfigOptionResponse::new(config_options))?;
+                        Ok(())
+                    }
+                })
+                .await
+                .if_request({
+                    let agent = agent.clone();
+                    let cx = cx.clone();
+                    |req: SetSessionModeRequest, responder: Responder<SetSessionModeResponse>| async move {
+                        let session_id = req.session_id.clone();
+                        let mode_id = req.mode_id.clone();
+                        match agent.on_set_mode(&session_id.0, &mode_id.0).await {
+                            Ok(resp) => {
+                                // Notify before responding so clients see the mode update before block_task unblocks.
+                                cx.send_notification(SessionNotification::new(
+                                    session_id,
+                                    SessionUpdate::CurrentModeUpdate(
+                                        CurrentModeUpdate::new(mode_id),
+                                    ),
+                                ))?;
+                                responder.respond(resp)?;
+                            }
+                            Err(e) => {
+                                responder.respond_with_error(e)?;
+                            }
+                        }
+                        Ok(())
+                    }
+                })
+                .await
+                .if_request({
+                    let agent = agent.clone();
+                    let cx = cx.clone();
+                    |req: SetSessionModelRequest, responder: Responder<SetSessionModelResponse>| async move {
+                        let session_id = req.session_id.clone();
+                        match agent.on_set_model(&session_id.0, &req.model_id.0).await {
+                            Ok(resp) => {
+                                let (notification, _) = agent.build_config_update(&session_id).await?;
+                                cx.send_notification(notification)?;
+                                responder.respond(resp)?;
+                            }
+                            Err(e) => responder.respond_with_error(e)?,
+                        }
+                        Ok(())
+                    }
+                })
+                .await
+                .if_request({
+                    let agent = agent.clone();
+                    |_req: ListSessionsRequest, responder: Responder<ListSessionsResponse>| async move {
+                        responder.respond(agent.on_list_sessions().await?)
+                    }
+                })
+                .await
+                .if_request({
+                    let agent = agent.clone();
+                    |req: CloseSessionRequest, responder: Responder<CloseSessionResponse>| async move {
+                        responder.respond(agent.on_close_session(&req.session_id.0).await?)
+                    }
+                })
+                .await
+                .otherwise({
+                    let agent = agent.clone();
+                    |message: Dispatch| async move {
                         match message {
-                            MessageCx::Request(req, request_cx)
-                                if req.method == "session/set_mode" =>
-                            {
-                                let params: SetSessionModeRequest =
-                                    serde_json::from_value(req.params).map_err(|e| {
-                                        sacp::Error::invalid_params().data(e.to_string())
-                                    })?;
-                                let session_id = params.session_id.clone();
-                                let mode_id = params.mode_id.clone();
-                                match agent.on_set_mode(&session_id.0, &mode_id.0).await {
-                                    Ok(resp) => {
-                                        let json = serde_json::to_value(resp).map_err(|e| {
-                                            sacp::Error::internal_error().data(e.to_string())
-                                        })?;
-                                        // Notify before responding so clients see the mode
-                                        // update before block_task unblocks (serial dispatch).
-                                        cx.send_notification(SessionNotification::new(
-                                            session_id,
-                                            SessionUpdate::CurrentModeUpdate(
-                                                CurrentModeUpdate::new(mode_id),
-                                            ),
-                                        ))?;
-                                        request_cx.respond(json)?;
-                                    }
-                                    Err(e) => {
-                                        request_cx.respond_with_error(e)?;
-                                    }
-                                }
-                                Ok(())
-                            }
-                            MessageCx::Request(req, request_cx)
-                                if req.method == "session/set_model" =>
-                            {
-                                let params: SetSessionModelRequest =
-                                    serde_json::from_value(req.params).map_err(|e| {
-                                        sacp::Error::invalid_params().data(e.to_string())
-                                    })?;
-                                let resp = agent
-                                    .on_set_model(&params.session_id.0, &params.model_id.0)
-                                    .await?;
-                                let json = serde_json::to_value(resp).map_err(|e| {
-                                    sacp::Error::internal_error().data(e.to_string())
-                                })?;
-                                request_cx.respond(json)?;
-                                Ok(())
-                            }
-                            MessageCx::Request(req, request_cx) if req.method == "session/list" => {
-                                let resp = agent.on_list_sessions().await?;
-                                let json = serde_json::to_value(resp).map_err(|e| {
-                                    sacp::Error::internal_error().data(e.to_string())
-                                })?;
-                                request_cx.respond(json)?;
-                                Ok(())
-                            }
-                            MessageCx::Request(req, request_cx) if req.method.starts_with('_') => {
+                            Dispatch::Request(req, responder) => {
                                 match agent.handle_custom_request(&req.method, req.params).await {
-                                    Ok(json) => request_cx.respond(json)?,
-                                    Err(e) => request_cx.respond_with_error(e)?,
+                                    Ok(json) => responder.respond(json)?,
+                                    Err(e) => responder.respond_with_error(e)?,
                                 }
                                 Ok(())
                             }
-                            _ => Err(sacp::Error::method_not_found()),
+                            Dispatch::Response(result, router) => {
+                                debug!(method = %router.method(), id = %router.id(), ok = result.is_ok(), "routing response");
+                                router.respond_with_result(result)?;
+                                Ok(())
+                            }
+                            Dispatch::Notification(notif) => {
+                                debug!(method = %notif.method, "unhandled notification");
+                                Ok(())
+                            }
                         }
                     }
                 })
@@ -1551,10 +1666,11 @@ where
     Box::pin(async move {
         let handler = LeafAcpHandler { agent };
 
-        AgentToClient::builder()
+        SacpAgent
+            .builder()
             .name("leaf-acp")
             .with_handler(handler)
-            .serve(ByteStreams::new(write, read))
+            .connect_to(ByteStreams::new(write, read))
             .await?;
 
         Ok(())
@@ -1586,8 +1702,8 @@ mod tests {
     use rmcp::model::{CallToolRequestParams, Content as RmcpContent};
     use sacp::schema::{
         EnvVariable, HttpHeader, McpServer, McpServerHttp, McpServerSse, McpServerStdio,
-        PermissionOptionId, ResourceLink, SelectedPermissionOutcome, SessionMode, SessionModeId,
-        SessionModeState,
+        PermissionOptionId, ResourceLink, SelectedPermissionOutcome, SessionConfigSelectOption,
+        SessionMode, SessionModeId, SessionModeState,
     };
     use std::io::Write;
     use std::path::PathBuf;
@@ -1767,40 +1883,30 @@ print(\"hello, world\")
     }
 
     #[test_case(
-        "model-a", Ok(vec!["model-a".into(), "model-b".into()])
-        => SessionModelState::new(
-            ModelId::new("model-a"),
+        Ok(vec!["model-a".into(), "model-b".into()])
+        => Ok(SessionModelState::new(
+            ModelId::new("unused"),
             vec![ModelInfo::new(ModelId::new("model-a"), "model-a"),
                  ModelInfo::new(ModelId::new("model-b"), "model-b")],
-        )
+        ))
         ; "returns current and available models"
     )]
     #[test_case(
-        "model-a", Ok(vec![])
-        => SessionModelState::new(ModelId::new("model-a"), vec![])
+        Ok(vec![])
+        => Ok(SessionModelState::new(ModelId::new("unused"), vec![]))
         ; "empty model list"
     )]
     #[test_case(
-        "model-a", Err(ProviderError::ExecutionError("fail".into()))
-        => SessionModelState::new(ModelId::new("model-a"), vec![])
-        ; "fetch error falls back to current model only"
-    )]
-    #[test_case(
-        "switched-model", Ok(vec!["model-a".into(), "switched-model".into()])
-        => SessionModelState::new(
-            ModelId::new("switched-model"),
-            vec![ModelInfo::new(ModelId::new("model-a"), "model-a"),
-                 ModelInfo::new(ModelId::new("switched-model"), "switched-model")],
-        )
-        ; "current model reflects switched model"
+        Err(ProviderError::ExecutionError("fail".into()))
+        => Err(sacp::Error::internal_error().data("Execution error: fail".to_string()))
+        ; "fetch error propagates"
     )]
     #[tokio::test]
     async fn test_build_model_state(
-        current_model: &str,
         models: Result<Vec<String>, ProviderError>,
-    ) -> SessionModelState {
+    ) -> Result<SessionModelState, sacp::Error> {
         let provider = MockModelProvider { models };
-        build_model_state(&provider, current_model).await
+        build_model_state(&provider).await
     }
 
     fn json_object(pairs: Vec<(&str, serde_json::Value)>) -> rmcp::model::JsonObject {
@@ -1953,24 +2059,94 @@ print(\"hello, world\")
             .map(|locs| locs.into_iter().map(|loc| (loc.path, loc.line)).collect())
     }
 
-    #[test]
-    fn test_build_mode_state() {
-        let state = build_mode_state(LeafMode::Auto).unwrap();
-        assert_eq!(
-            state,
-            SessionModeState::new(
-                SessionModeId::new("auto"),
+    #[test_case(
+        LeafMode::Auto
+        => Ok(SessionModeState::new(
+            SessionModeId::new("auto"),
+            vec![
+                SessionMode::new(SessionModeId::new("auto"), "auto")
+                    .description("Automatically approve tool calls"),
+                SessionMode::new(SessionModeId::new("approve"), "approve")
+                    .description("Ask before every tool call"),
+                SessionMode::new(SessionModeId::new("smart_approve"), "smart_approve")
+                    .description("Ask only for sensitive tool calls"),
+                SessionMode::new(SessionModeId::new("chat"), "chat")
+                    .description("Chat only, no tool calls"),
+            ],
+        ))
+        ; "auto mode"
+    )]
+    #[test_case(
+        LeafMode::Approve
+        => Ok(SessionModeState::new(
+            SessionModeId::new("approve"),
+            vec![
+                SessionMode::new(SessionModeId::new("auto"), "auto")
+                    .description("Automatically approve tool calls"),
+                SessionMode::new(SessionModeId::new("approve"), "approve")
+                    .description("Ask before every tool call"),
+                SessionMode::new(SessionModeId::new("smart_approve"), "smart_approve")
+                    .description("Ask only for sensitive tool calls"),
+                SessionMode::new(SessionModeId::new("chat"), "chat")
+                    .description("Chat only, no tool calls"),
+            ],
+        ))
+        ; "approve mode"
+    )]
+    fn test_build_mode_state(current_mode: LeafMode) -> Result<SessionModeState, sacp::Error> {
+        build_mode_state(current_mode)
+    }
+
+    #[test_case(
+        build_mode_state(LeafMode::Auto).unwrap(),
+        SessionModelState::new(
+            ModelId::new("gpt-4"),
+            vec![ModelInfo::new(ModelId::new("gpt-4"), "gpt-4"), ModelInfo::new(ModelId::new("gpt-3.5"), "gpt-3.5")],
+        )
+        => vec![
+            SessionConfigOption::select(
+                "mode", "Mode", "auto",
                 vec![
-                    SessionMode::new(SessionModeId::new("auto"), "auto")
-                        .description("Automatically approve tool calls"),
-                    SessionMode::new(SessionModeId::new("approve"), "approve")
-                        .description("Ask before every tool call"),
-                    SessionMode::new(SessionModeId::new("smart_approve"), "smart_approve")
-                        .description("Ask only for sensitive tool calls"),
-                    SessionMode::new(SessionModeId::new("chat"), "chat")
-                        .description("Chat only, no tool calls"),
+                    SessionConfigSelectOption::new("auto", "auto").description("Automatically approve tool calls"),
+                    SessionConfigSelectOption::new("approve", "approve").description("Ask before every tool call"),
+                    SessionConfigSelectOption::new("smart_approve", "smart_approve").description("Ask only for sensitive tool calls"),
+                    SessionConfigSelectOption::new("chat", "chat").description("Chat only, no tool calls"),
                 ],
-            )
-        );
+            ).category(SessionConfigOptionCategory::Mode),
+            SessionConfigOption::select(
+                "model", "Model", "gpt-4",
+                vec![
+                    SessionConfigSelectOption::new("gpt-4", "gpt-4"),
+                    SessionConfigSelectOption::new("gpt-3.5", "gpt-3.5"),
+                ],
+            ).category(SessionConfigOptionCategory::Model),
+        ]
+        ; "auto mode with multiple models"
+    )]
+    #[test_case(
+        build_mode_state(LeafMode::Approve).unwrap(),
+        SessionModelState::new(ModelId::new("only-model"), vec![ModelInfo::new(ModelId::new("only-model"), "only-model")])
+        => vec![
+            SessionConfigOption::select(
+                "mode", "Mode", "approve",
+                vec![
+                    SessionConfigSelectOption::new("auto", "auto").description("Automatically approve tool calls"),
+                    SessionConfigSelectOption::new("approve", "approve").description("Ask before every tool call"),
+                    SessionConfigSelectOption::new("smart_approve", "smart_approve").description("Ask only for sensitive tool calls"),
+                    SessionConfigSelectOption::new("chat", "chat").description("Chat only, no tool calls"),
+                ],
+            ).category(SessionConfigOptionCategory::Mode),
+            SessionConfigOption::select(
+                "model", "Model", "only-model",
+                vec![SessionConfigSelectOption::new("only-model", "only-model")],
+            ).category(SessionConfigOptionCategory::Model),
+        ]
+        ; "approve mode with single model"
+    )]
+    fn test_build_config_options(
+        mode_state: SessionModeState,
+        model_state: SessionModelState,
+    ) -> Vec<SessionConfigOption> {
+        build_config_options(&mode_state, &model_state)
     }
 }
