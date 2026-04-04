@@ -72,6 +72,7 @@ tokio-cron-scheduler = "0.14.0"
 urlencoding = { workspace = true }
 v_htmlescape = "0.15"
 sqlx = { version = "0.8", default-features = false, features = [
+    "runtime-tokio-rustls",
     "sqlite",
     "chrono",
     "json",
