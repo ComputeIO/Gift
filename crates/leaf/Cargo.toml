@@ -26,7 +26,7 @@ native-tls = [
     "reqwest/native-tls",
     "rmcp/reqwest-native-tls",
     "sqlx/runtime-tokio-native-tls",
-    "jsonwebtoken/rust_crypto",
+    "jsonwebtoken/aws_lc_rs",
     "oauth2/reqwest",
     "oauth2/native-tls",
 ]
