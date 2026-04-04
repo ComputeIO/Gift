@@ -3,13 +3,13 @@ use async_stream::try_stream;
 use rmcp::model::{Role, Tool};
 use sacp::schema::{
     AuthMethod, ContentBlock, ContentChunk, EnvVariable, HttpHeader, ImageContent,
-    InitializeRequest, InitializeResponse, McpCapabilities, McpServer, McpServerHttp,
-    McpServerStdio, NewSessionRequest, NewSessionResponse, PromptRequest, ProtocolVersion,
-    RequestPermissionOutcome, RequestPermissionRequest, RequestPermissionResponse, SessionId,
-    SessionNotification, SessionUpdate, SetSessionModeRequest, StopReason, TextContent,
-    ToolCallContent,
+    InitializeRequest, InitializeResponse, ListSessionsRequest, ListSessionsResponse,
+    McpCapabilities, McpServer, McpServerHttp, McpServerStdio, NewSessionRequest,
+    NewSessionResponse, PromptRequest, ProtocolVersion, RequestPermissionOutcome,
+    RequestPermissionRequest, RequestPermissionResponse, SessionId, SessionNotification,
+    SessionUpdate, SetSessionModeRequest, StopReason, TextContent, ToolCallContent,
 };
-use sacp::{ClientToAgent, JrConnectionCx};
+use sacp::{Agent, Client, ConnectionTo};
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::process::Stdio;
@@ -45,6 +45,9 @@ pub struct AcpProviderConfig {
 enum ClientRequest {
     NewSession {
         response_tx: oneshot::Sender<Result<NewSessionResponse>>,
+    },
+    ListSessions {
+        response_tx: oneshot::Sender<Result<ListSessionsResponse>>,
     },
     Untyped {
         method: String,
@@ -130,24 +133,19 @@ impl AcpProvider {
         ))
     }
 
-    pub async fn connect_with_transport<R, W>(
+    #[doc(hidden)]
+    pub async fn connect_with_transport(
         name: String,
         model: ModelConfig,
         leaf_mode: LeafMode,
         config: AcpProviderConfig,
-        read: R,
-        write: W,
-    ) -> Result<Self>
-    where
-        R: futures::AsyncRead + Unpin + Send + 'static,
-        W: futures::AsyncWrite + Unpin + Send + 'static,
-    {
+        transport: impl sacp::ConnectTo<Client> + 'static,
+    ) -> Result<Self> {
         let (tx, mut rx) = mpsc::channel(32);
         let (init_tx, init_rx) = oneshot::channel();
         let permission_mapping = config.permission_mapping.clone();
         let rejected_tool_calls = Arc::new(TokioMutex::new(HashSet::new()));
         let leaf_mode = Arc::new(Mutex::new(leaf_mode));
-        let transport = sacp::ByteStreams::new(write, read);
         let client_loop = AcpClientLoop::new(config, leaf_mode.clone());
         tokio::spawn(async move {
             if let Err(e) = client_loop.run(transport, &mut rx, init_tx).await {
@@ -203,6 +201,35 @@ impl AcpProvider {
             .await
             .context("ACP client is unavailable")?;
         response_rx.await.context("ACP session/new cancelled")?
+    }
+
+    pub async fn list_sessions(&self) -> Result<ListSessionsResponse> {
+        let (response_tx, response_rx) = oneshot::channel();
+        self.tx
+            .send(ClientRequest::ListSessions { response_tx })
+            .await
+            .context("ACP client is unavailable")?;
+        response_rx.await.context("ACP request cancelled")?
+    }
+
+    pub async fn delete_session(&self, leaf_id: &str) -> Result<()> {
+        let map = self.leaf_to_acp_id.lock().await;
+        let acp_session_id = map
+            .get(leaf_id)
+            .map(|r| r.session_id.clone())
+            .ok_or_else(|| anyhow::anyhow!("Session not found: {leaf_id}"))?;
+        drop(map);
+        self.send_untyped(
+            "session/delete",
+            serde_json::json!({ "sessionId": acp_session_id.0 }),
+        )
+        .await?;
+        self.leaf_to_acp_id.lock().await.remove(leaf_id);
+        Ok(())
+    }
+
+    pub async fn has_session(&self, leaf_id: &str) -> bool {
+        self.leaf_to_acp_id.lock().await.contains_key(leaf_id)
     }
 
     pub async fn send_untyped(
@@ -509,16 +536,12 @@ impl AcpClientLoop {
         self.run(transport, rx, init_tx).await
     }
 
-    async fn run<R, W>(
+    async fn run(
         self,
-        transport: sacp::ByteStreams<W, R>,
+        transport: impl sacp::ConnectTo<Client> + 'static,
         rx: &mut mpsc::Receiver<ClientRequest>,
         init_tx: oneshot::Sender<Result<InitializeResponse>>,
-    ) -> Result<()>
-    where
-        R: futures::AsyncRead + Unpin + Send + 'static,
-        W: futures::AsyncWrite + Unpin + Send + 'static,
-    {
+    ) -> Result<()> {
         let AcpClientLoop {
             config,
             leaf_mode,
@@ -526,7 +549,8 @@ impl AcpClientLoop {
         } = self;
         let notification_callback = config.notification_callback.clone();
 
-        ClientToAgent::builder()
+        Client
+            .builder()
             .on_receive_notification(
                 {
                     let prompt_response_tx = prompt_response_tx.clone();
@@ -585,7 +609,7 @@ impl AcpClientLoop {
             .on_receive_request(
                 {
                     let prompt_response_tx = prompt_response_tx.clone();
-                    async move |request: RequestPermissionRequest, request_cx, _connection_cx| {
+                    async move |request: RequestPermissionRequest, responder, _cx| {
                         let (response_tx, response_rx) = oneshot::channel();
 
                         let handler = prompt_response_tx
@@ -608,14 +632,13 @@ impl AcpClientLoop {
                         let response = response_rx.await.unwrap_or_else(|_| {
                             RequestPermissionResponse::new(RequestPermissionOutcome::Cancelled)
                         });
-                        request_cx.respond(response)
+                        responder.respond(response)
                     }
                 },
                 sacp::on_receive_request!(),
             )
-            .connect_to(transport)?
-            .run_until(move |cx: JrConnectionCx<ClientToAgent>| {
-                handle_requests(config, cx, rx, prompt_response_tx, init_tx)
+            .connect_with(transport, async move |cx: ConnectionTo<Agent>| {
+                handle_requests(config, cx, rx, prompt_response_tx, init_tx).await
             })
             .await?;
 
@@ -645,7 +668,7 @@ async fn spawn_acp_process(config: &AcpProviderConfig) -> Result<Child> {
 
 async fn handle_requests(
     config: AcpProviderConfig,
-    cx: JrConnectionCx<ClientToAgent>,
+    cx: ConnectionTo<Agent>,
     rx: &mut mpsc::Receiver<ClientRequest>,
     prompt_response_tx: Arc<Mutex<Option<mpsc::Sender<AcpUpdate>>>>,
     init_tx: oneshot::Sender<Result<InitializeResponse>>,
@@ -673,6 +696,14 @@ async fn handle_requests(
         match request {
             ClientRequest::NewSession { response_tx } => {
                 handle_new_session_request(&config, &cx, &mcp_capabilities, response_tx).await;
+            }
+            ClientRequest::ListSessions { response_tx } => {
+                let result = cx
+                    .send_request(ListSessionsRequest::new())
+                    .block_task()
+                    .await
+                    .map_err(anyhow::Error::from);
+                let _ = response_tx.send(result);
             }
             ClientRequest::Untyped {
                 method,
@@ -723,7 +754,7 @@ async fn handle_requests(
 
 async fn handle_new_session_request(
     config: &AcpProviderConfig,
-    cx: &JrConnectionCx<ClientToAgent>,
+    cx: &ConnectionTo<Agent>,
     mcp_capabilities: &McpCapabilities,
     response_tx: oneshot::Sender<Result<NewSessionResponse>>,
 ) {
@@ -743,7 +774,7 @@ async fn handle_new_session_request(
 
 async fn apply_session_mode(
     config: &AcpProviderConfig,
-    cx: &JrConnectionCx<ClientToAgent>,
+    cx: &ConnectionTo<Agent>,
     session: NewSessionResponse,
 ) -> Result<NewSessionResponse> {
     if let (Some(mode_id), Some(modes)) = (config.session_mode_id.clone(), session.modes.as_ref()) {

@@ -8,8 +8,28 @@ repository.workspace = true
 description.workspace = true
 
 [features]
-default = []
+default = ["rustls-tls"]
 telemetry = ["dep:tracing-opentelemetry", "dep:opentelemetry", "dep:opentelemetry_sdk", "dep:opentelemetry-appender-tracing", "dep:opentelemetry-otlp", "dep:opentelemetry-stdout"]
+rustls-tls = [
+    "reqwest/rustls",
+    "rmcp/reqwest",
+    "sqlx/runtime-tokio-rustls",
+    "jsonwebtoken/aws_lc_rs",
+    "oauth2/reqwest",
+    "oauth2/rustls-tls",
+]
+native-tls = [
+    "dep:pem",
+    "dep:pkcs1",
+    "dep:pkcs8",
+    "dep:sec1",
+    "reqwest/native-tls",
+    "rmcp/reqwest-native-tls",
+    "sqlx/runtime-tokio-native-tls",
+    "jsonwebtoken/aws_lc_rs",
+    "oauth2/reqwest",
+    "oauth2/native-tls",
+]
 
 [lints]
 workspace = true
@@ -18,17 +38,16 @@ workspace = true
 lru = { workspace = true }
 rmcp = { workspace = true, features = [
     "client",
-    "reqwest",
     "transport-child-process",
     "transport-streamable-http-client",
     "transport-streamable-http-client-reqwest",
 ] }
-oauth2 = "5.0"
+oauth2 = { version = "5.0", default-features = false }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
 futures = { workspace = true }
 dirs = { workspace = true }
-reqwest = { workspace = true, features = ["rustls", "json", "cookies", "gzip", "brotli", "deflate", "zstd", "charset", "http2", "stream", "blocking", "multipart", "system-proxy"], default-features = false }
+reqwest = { workspace = true, features = ["json", "cookies", "gzip", "brotli", "deflate", "zstd", "charset", "http2", "stream", "blocking", "multipart", "system-proxy"], default-features = false }
 tokio = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -45,7 +64,7 @@ chrono = { workspace = true }
 clap = { workspace = true }
 indoc = { workspace = true }
 nanoid = "0.4"
-sha2 = "0.10"
+sha2 = { workspace = true }
 base64 = { workspace = true }
 url = { workspace = true }
 axum = { workspace = true }
@@ -60,12 +79,7 @@ opentelemetry_sdk = { workspace = true, optional = true }
 opentelemetry-appender-tracing = { workspace = true, optional = true }
 opentelemetry-otlp = { workspace = true, optional = true }
 opentelemetry-stdout = { workspace = true, optional = true }
-keyring = { version = "3.6.2", features = [
-    "apple-native",
-    "windows-native",
-    "sync-secret-service",
-    "vendored",
-] }
+keyring = { version = "3.6.2", features = ["vendored"] }
 serde_yaml = { workspace = true }
 strum = { workspace = true }
 once_cell = { workspace = true }
@@ -84,8 +98,8 @@ sqlx = { version = "0.8", default-features = false, features = [
     "migrate",
 ] }
 
-# For GCP auth (used by chatgpt_codex)
-jsonwebtoken = { version = "10.3.0", features = ["aws_lc_rs"] }
+# For GCP Vertex AI provider auth
+jsonwebtoken = { version = "10.3.0", default-features = false, features = ["aws_lc_rs", "use_pem"] }
 
 blake3 = "1.5"
 fs2 = { workspace = true }
@@ -94,10 +108,11 @@ tempfile = { workspace = true }
 dashmap = "6.1"
 ahash = "0.8"
 tokio-util = { workspace = true, features = ["compat"] }
-sacp = { workspace = true }
-agent-client-protocol-schema = { version = "0.10", features = ["unstable"] }
+agent-client-protocol-schema = { workspace = true }
+sacp = { workspace = true, features = ["unstable"] }
 unicode-normalization = "0.1"
-zip = "0.6"
+
+zip = { workspace = true }
 sys-info = "0.9"
 
 schemars = { workspace = true, features = [
@@ -121,10 +136,22 @@ tree-sitter-typescript = { workspace = true }
 which = { workspace = true }
 pulldown-cmark = "0.13.0"
 pastey = "0.2.1"
-shell-words = "1.1.1"
+shell-words = { workspace = true }
+pem = { version = "3", optional = true }
+pkcs1 = { version = "0.7", default-features = false, features = ["pkcs8"], optional = true }
+pkcs8 = { version = "0.10", default-features = false, features = ["alloc"], optional = true }
+sec1 = { version = "0.7", default-features = false, features = ["der", "pkcs8"], optional = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
-winapi = { version = "0.3", features = ["wincred"] }
+winapi = { workspace = true }
+keyring = { version = "3.6.2", features = ["windows-native"] }
+
+# Platform-specific GPU acceleration for Whisper and local inference
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3.6.2", features = ["apple-native"] }
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "3.6.2", features = ["sync-secret-service"] }
+libc = "0.2.184"
 
 [dev-dependencies]
 serial_test = { workspace = true }
@@ -165,7 +192,12 @@ path = "src/providers/canonical/build_canonical_models.rs"
 
 ignored = [
     # Used only on windows
-    "winapi", 
-    # Used to provide sacp additional schemas to deserialization
-    "agent-client-protocol-schema"
+    "winapi",
+    # Used to provide extras imports for sacp
+    "agent-client-protocol-schema",
+    # Used only with native-tls feature
+    "pem",
+    "pkcs1",
+    "pkcs8",
+    "sec1",
 ]

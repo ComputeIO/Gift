@@ -5,3 +5,5 @@ yanked = "deny"
 # Emulate cargo-audit which only checks vulnerabilities and yanked crates, not unmaintained/unsound.
 unmaintained = "none"
 unsound = "none"
+# RSA vulnerability via sqlx-core - no safe upgrade available
+ignore = ["RUSTSEC-2023-0071"]

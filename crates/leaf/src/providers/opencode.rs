@@ -250,6 +250,7 @@ fn register_providers_from_catalog(
                 env_vars: None,
                 dynamic_models: None,
                 skip_canonical_filtering: true,
+                fast_model: None,
             };
 
             register_declarative_provider(registry, config, ProviderType::Preferred);
