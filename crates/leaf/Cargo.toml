@@ -99,7 +99,7 @@ sqlx = { version = "0.8", default-features = false, features = [
 ] }
 
 # For GCP Vertex AI provider auth
-jsonwebtoken = { version = "10.3.0", default-features = false, features = ["use_pem"] }
+jsonwebtoken = { version = "10.3.0", default-features = false, features = ["aws_lc_rs"] }
 
 blake3 = "1.5"
 fs2 = { workspace = true }
